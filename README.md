@@ -1,2 +1,1 @@
-# Morning-stretch
-Stretching 
+# Morning Stretch\n\nA guided 10 or 15 minute back and hamstring routine with spoken timing, photos and a streak tracker. It installs to a phone home screen and works offline.\n\nExercise photos: Free Exercise DB (public domain). Banner photo by Ivan Radic and finish screen photo by KMo Foto (both CC BY 2.0, cropped). Voices are computer-generated.\n

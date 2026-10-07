@@ -1,0 +1,1043 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Morning Stretch</title>
+<meta name="theme-color" content="#0D474A" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#123A3D" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Stretch">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+:root{color-scheme:light;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+/* the strip behind the phone's status bar matches the banner */
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);background:var(--hero-bg)}
+</style>
+</head>
+<body>
+<style>
+/* Layout: one phone-width column. Home is a scrolling stack; the session is a fixed
+   one-screen stage whose ground changes colour with the phase (amber = get ready, teal = working). */
+:root{
+  --bg:#EDF1F0; --surface:#FBFCFC; --weak:#DFE6E4; --line:#C9D3D1;
+  --ink:#14232A; --muted:#55666C;
+  --hold:#0B7A75; --hold-bg:#D7EEEA;
+  --ready:#A85C06; --ready-bg:#FAEDD8;
+  --pause-bg:#E2E8E7; --on-accent:#FFFFFF;
+  --hero-bg:#0D474A; --hero-fg:#F1F7F6; --hero-soft:#8FDCD1; --photo-dim:1;
+  --font-display:"Barlow Condensed","Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --font-body:"Barlow","Segoe UI",Roboto,system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F181C; --surface:#16232A; --weak:#1D2C33; --line:#2D3E45;
+    --ink:#E7EEED; --muted:#93A5AA;
+    --hold:#41C6BA; --hold-bg:#0D2C2C;
+    --ready:#F2A640; --ready-bg:#2C2210;
+    --pause-bg:#1A262B; --on-accent:#06201F;
+    --hero-bg:#123A3D; --hero-fg:#EDF5F4; --hero-soft:#86D6CB; --photo-dim:.84;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F181C; --surface:#16232A; --weak:#1D2C33; --line:#2D3E45;
+  --ink:#E7EEED; --muted:#93A5AA;
+  --hold:#41C6BA; --hold-bg:#0D2C2C;
+  --ready:#F2A640; --ready-bg:#2C2210;
+  --pause-bg:#1A262B; --on-accent:#06201F;
+  --hero-bg:#123A3D; --hero-fg:#EDF5F4; --hero-soft:#86D6CB; --photo-dim:.84;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible{outline:3px solid var(--hold);outline-offset:2px}
+h1,h2,h3,p,ol,figure{margin:0}
+ol{padding:0;list-style:none}
+
+.wrap{max-width:460px;margin-inline:auto;padding-inline:18px;padding-block:22px 40px;display:flex;flex-direction:column;gap:26px}
+.eyebrow{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--font-display);font-weight:700;font-size:44px;line-height:1;letter-spacing:.005em;text-wrap:balance}
+h2,h3{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.block{display:flex;flex-direction:column;gap:12px}
+
+/* hero: the word STRETCH is set across the full width, and stretches out as the page opens */
+.hero{margin:-22px -18px 0;padding:18px 18px 20px;background:var(--hero-bg);color:var(--hero-fg);border-radius:0 0 16px 16px;display:flex;flex-direction:column;gap:16px}
+.hero-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hero .eyebrow{color:var(--hero-soft)}
+.hero .ghost{border-color:color-mix(in srgb,var(--hero-fg) 38%,transparent);color:var(--hero-fg)}
+.title{display:flex;flex-direction:column;gap:6px;font-size:16px;letter-spacing:0}
+.title .t1{font-family:var(--font-display);font-weight:600;font-size:30px;line-height:1;letter-spacing:.2em;text-transform:uppercase}
+.title .t2{display:flex;justify-content:space-between;width:100%;font-family:var(--font-display);font-weight:700;font-size:clamp(68px,22vw,104px);line-height:.86;color:var(--hero-soft);padding-bottom:12px;position:relative}
+.title .t2::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:color-mix(in srgb,var(--hero-soft) 45%,transparent)}
+.title .t2 i{font-style:normal;display:block}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.hero-photo{aspect-ratio:3/1;max-width:100%;border-radius:10px;overflow:hidden;background:color-mix(in srgb,var(--hero-fg) 12%,transparent)}
+.hero-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.done-photo{aspect-ratio:2/1;max-width:100%;border-radius:10px;overflow:hidden;background:var(--weak)}
+.done-photo img{display:block;width:100%;height:100%;object-fit:cover}
+.hero .status{font-size:17px}
+.hero .status b{color:var(--hero-soft)}
+/* One smooth breath: the letters close up and the word squashes, then both ease back out.
+   Only transforms move, on a single sine curve, so nothing jumps or re-lays out. */
+@keyframes sq-word{from{transform:scale(.87,1.04)}to{transform:scale(1,1)}}
+@keyframes sq-letter{from{transform:translateX(calc(var(--i) * -1 * min(3.2vw,15px)))}to{transform:translateX(0)}}
+@keyframes sq-line{from{transform:scaleX(.79)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:no-preference){
+  .title .t2{transform-origin:left bottom;will-change:transform;animation:sq-word 4s cubic-bezier(.37,0,.63,1) infinite alternate}
+  .title .t2 i{will-change:transform;animation:sq-letter 4s cubic-bezier(.37,0,.63,1) infinite alternate}
+  .title .t2::after{transform-origin:left;animation:sq-line 4s cubic-bezier(.37,0,.63,1) infinite alternate}
+}
+.ghost{background:none;border:1.5px solid var(--line);border-radius:5px;padding:9px 14px;font-family:var(--font-display);font-weight:600;font-size:16px;letter-spacing:.07em;text-transform:uppercase}
+.status{font-size:17px;font-weight:500}
+.status b{color:var(--hold);font-weight:600}
+
+#soundPanel{background:var(--surface);border:1.5px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+.voices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.voices button{background:var(--bg);border:1.5px solid var(--line);border-radius:5px;padding:10px 12px;text-align:left;display:flex;flex-direction:column;gap:1px}
+.voices .vn{font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:.03em;line-height:1.1}
+.voices .vd{font-size:13px;color:var(--muted)}
+.voices button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.voices button[aria-pressed="true"] .vd{color:inherit;opacity:.75}
+.switch{display:flex;align-items:center;gap:12px;font-size:16px;font-weight:500}
+.switch input{width:22px;height:22px;accent-color:var(--hold);margin:0}
+.small{font-size:14px;color:var(--muted)}
+
+/* back score */
+.scores{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.scores button{height:54px;background:var(--surface);border:1.5px solid var(--line);border-radius:5px;font-family:var(--font-display);font-weight:600;font-size:26px}
+.scores button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.ends{display:flex;justify-content:space-between;font-size:14px;color:var(--muted)}
+
+/* length */
+.lengths{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.lengths button{background:var(--surface);border:1.5px solid var(--line);border-radius:6px;padding:0;overflow:hidden;text-align:left;display:flex;flex-direction:column}
+.lengths .lp{display:block;aspect-ratio:2/1;max-width:100%;background:var(--weak)}
+.lengths .lp img{display:block;width:100%;height:100%;object-fit:cover;filter:brightness(var(--photo-dim))}
+.lengths .lt{display:flex;flex-direction:column;gap:2px;padding:10px 12px 11px}
+.lengths button[aria-pressed="false"] .lp img{opacity:.72}
+.lengths .big{font-family:var(--font-display);font-weight:700;font-size:38px;line-height:1}
+.lengths .big small{font-size:18px;font-weight:600;letter-spacing:.06em;margin-left:5px}
+.lengths .sub{font-size:14px;color:var(--muted)}
+.lengths button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.lengths button[aria-pressed="true"] .sub{color:inherit;opacity:.75}
+
+.start{width:100%;height:68px;border:0;border-radius:6px;background:var(--hold);color:var(--on-accent);font-family:var(--font-display);font-weight:700;font-size:28px;letter-spacing:.08em;text-transform:uppercase}
+.start:active{filter:brightness(.92)}
+
+/* record */
+.stats{display:grid;grid-template-columns:repeat(3,1fr);border-block:1.5px solid var(--line)}
+.stats > div{padding:12px 0 10px;display:flex;flex-direction:column;gap:2px}
+.stats > div + div{border-left:1.5px solid var(--line);padding-left:14px}
+.stats .n{font-family:var(--font-display);font-weight:700;font-size:46px;line-height:1;font-variant-numeric:tabular-nums}
+.stats .k{font-size:13px;color:var(--muted);line-height:1.25}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}
+.cal .dow{font-family:var(--font-display);font-weight:600;font-size:13px;letter-spacing:.08em;color:var(--muted);text-align:center}
+.cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cal-head span{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.06em;text-transform:uppercase}
+.cal-head .ghost{width:46px;height:42px;padding:0;font-size:26px;line-height:1}
+.cal-head .ghost:disabled{opacity:.3;cursor:default}
+.cal .day{position:relative;aspect-ratio:1;max-width:100%;border-radius:4px;background:var(--weak);color:var(--muted);font-family:var(--font-display);font-variant-numeric:tabular-nums}
+.cal .day small{position:absolute;top:3px;left:5px;font-size:12px;font-weight:600;line-height:1}
+.cal .day b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-top:7px;font-size:23px;font-weight:700;line-height:1}
+.cal .day.we{background:transparent;border:1.5px dashed var(--line)}
+.cal .day.future{opacity:.45}
+.cal .day.done{background:var(--hold);border:0;color:var(--on-accent)}
+.cal .day.today{outline:2.5px solid var(--ink);outline-offset:1px}
+.cal .gap{aspect-ratio:1}
+
+/* photos and drawings */
+.photo{position:relative;aspect-ratio:3/2;max-width:100%;border-radius:6px;overflow:hidden;background:var(--weak)}
+.photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block}
+.photo .p1{opacity:0}
+.photo.f1 .p1{opacity:1}
+@media (prefers-reduced-motion:no-preference){ .photo .p1{transition:opacity var(--fade,1s) ease-in-out} .bar i{transition:width .25s linear} }
+.drawing{aspect-ratio:3/2;max-width:100%;border-radius:6px;background:var(--surface);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;padding:4px 8px}
+.fig{display:block;width:100%;height:100%;overflow:visible}
+.fig *{fill:none;stroke-linecap:round;stroke-linejoin:round}
+.fig .f-body{stroke:var(--ink);stroke-width:6.5}
+.fig .f-back{stroke:var(--muted);stroke-width:6.5;opacity:.75}
+.fig .f-hl{stroke:var(--hold);stroke-width:6.5}
+.fig .f-arc{stroke:var(--ready);stroke-width:2.5}
+.fig .f-head{fill:var(--ink);stroke:none}
+.fig text{fill:var(--muted);stroke:none;font-family:var(--font-display);font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase}
+.arr-fill{fill:var(--ready)}
+
+/* routine list */
+.routine li{border-top:1.5px solid var(--line)}
+.routine li:last-child{border-bottom:1.5px solid var(--line)}
+.routine button{width:100%;background:none;border:0;padding:9px 0;text-align:left;display:grid;grid-template-columns:20px 104px minmax(0,1fr) auto;align-items:center;gap:10px}
+.routine .num{font-family:var(--font-display);font-weight:600;font-size:17px;color:var(--muted);font-variant-numeric:tabular-nums}
+.routine .photo,.routine .drawing{border-radius:4px}
+.routine .fig text{display:none}
+.routine .nm{display:block;font-weight:600;font-size:16px;line-height:1.25}
+.routine .dt{display:block;font-size:14px;color:var(--muted)}
+.routine .tm{font-family:var(--font-display);font-weight:600;font-size:19px;font-variant-numeric:tabular-nums;text-align:right}
+.routine .tm small{display:block;font-size:13px;letter-spacing:.07em;text-transform:uppercase;color:var(--hold)}
+.rule{font-size:15px;color:var(--muted);border-left:3px solid var(--ready);padding-left:12px}
+.rule b{color:var(--ink);font-weight:600}
+
+/* session stage */
+#session{position:fixed;inset:0;overflow:auto;background:var(--pause-bg);--phase:var(--muted);
+  padding:calc(env(safe-area-inset-top,0px) + 12px) 18px calc(env(safe-area-inset-bottom,0px) + 14px);
+  display:flex;flex-direction:column;align-items:center}
+#session[data-phase="ready"]{background:var(--ready-bg);--phase:var(--ready)}
+#session[data-phase="hold"],#session[data-phase="reps"]{background:var(--hold-bg);--phase:var(--hold)}
+.stage{width:100%;max-width:460px;flex:1;display:flex;flex-direction:column;gap:10px;min-height:0}
+.s-top{display:flex;align-items:center;gap:10px}
+.s-top .x{height:44px;min-width:44px;flex:none;border:1.5px solid var(--line);border-radius:5px;background:none;font-size:20px;line-height:1;padding:0 10px}
+.s-top .how{font-family:var(--font-display);font-weight:700;font-size:16px;letter-spacing:.08em;text-transform:uppercase}
+.s-prog{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.s-prog .row{display:flex;justify-content:space-between;font-family:var(--font-display);font-weight:600;font-size:16px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-variant-numeric:tabular-nums}
+.bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ink)}
+.s-main{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:6px}
+.s-phase{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.14em;text-transform:uppercase;color:var(--phase)}
+.s-fig{width:min(100%,340px,calc(26vh * 3 / 2))}
+.s-name{font-family:var(--font-display);font-weight:700;font-size:36px;line-height:1.02;text-wrap:balance}
+.s-side{font-family:var(--font-display);font-weight:700;font-size:21px;letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--bg);padding:3px 12px 4px;border-radius:4px}
+.s-count{font-family:var(--font-display);font-weight:700;font-size:clamp(88px,29vw,150px);line-height:.92;color:var(--phase);font-variant-numeric:tabular-nums}
+.s-rep{font-family:var(--font-display);font-weight:600;font-size:22px;letter-spacing:.08em;text-transform:uppercase;min-height:1.2em}
+.s-cue{font-size:17px;font-weight:500;line-height:1.35;max-width:22em;text-wrap:balance}
+.s-next{font-size:15px;color:var(--muted)}
+.s-ctl{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:10px;width:100%}
+.s-ctl button{height:62px;border-radius:6px;border:1.5px solid var(--ink);background:none;font-family:var(--font-display);font-weight:700;font-size:20px;letter-spacing:.08em;text-transform:uppercase}
+.s-ctl .main{background:var(--ink);color:var(--bg)}
+.sheet{position:fixed;inset:0;z-index:5;background:color-mix(in srgb,var(--bg) 82%,transparent);display:flex;align-items:flex-end;justify-content:center;padding:18px 18px calc(env(safe-area-inset-bottom,0px) + 18px)}
+.sheet > div{width:100%;max-width:460px;background:var(--surface);border:1.5px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.sheet p{font-size:17px;font-weight:500}
+.sheet .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sheet button{height:54px;border-radius:6px;border:1.5px solid var(--ink);background:none;font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:.07em;text-transform:uppercase}
+.sheet .main{background:var(--ink);color:var(--bg)}
+
+/* how-to sheet */
+#how{position:fixed;inset:0;z-index:10;overflow:auto;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 14px) 18px calc(env(safe-area-inset-bottom,0px) + 30px)}
+#how .in{max-width:460px;margin-inline:auto;display:flex;flex-direction:column;gap:20px}
+#how .hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+#how .hd h1{font-size:38px}
+#how .hd div{display:flex;flex-direction:column;gap:4px;min-width:0}
+#how figure{display:flex;flex-direction:column;gap:6px}
+#how figcaption{font-family:var(--font-display);font-weight:600;font-size:15px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+#how .steps{display:flex;flex-direction:column;gap:10px;counter-reset:s}
+#how .steps li{display:grid;grid-template-columns:30px minmax(0,1fr);gap:8px;font-size:17px;line-height:1.4;counter-increment:s}
+#how .steps li::before{content:counter(s);font-family:var(--font-display);font-weight:700;font-size:24px;line-height:1.05;color:var(--hold)}
+#how .pair{display:flex;flex-direction:column;gap:4px}
+#how .pair p{font-size:17px;line-height:1.4}
+#how .note{font-size:15px;color:var(--muted);border-left:3px solid var(--ready);padding-left:12px}
+
+#done h1{font-size:54px}
+#done .wrapin{display:flex;flex-direction:column;gap:26px;padding-top:2vh}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <marker id="arr" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="arr-fill"/></marker>
+</defs></svg>
+
+<main id="home" class="wrap">
+  <header class="hero">
+    <div class="hero-top">
+      <p class="eyebrow" id="todayDate"></p>
+      <button class="ghost" id="soundBtn" aria-expanded="false" aria-controls="soundPanel">Sound</button>
+    </div>
+    <h1 class="title">
+      <span class="t1" id="heroWord" aria-hidden="true">Morning</span>
+      <span class="t2" aria-hidden="true"><i style="--i:0">S</i><i style="--i:1">T</i><i style="--i:2">R</i><i style="--i:3">E</i><i style="--i:4">T</i><i style="--i:5">C</i><i style="--i:6">H</i></span>
+      <span class="sr">Morning stretch</span>
+    </h1>
+    <div class="hero-photo"><img src="img/hero.jpg" alt="A woman stretching forward on a mat in a sunlit room"></div>
+    <p class="status" id="todayStatus">Not done yet today.</p>
+  </header>
+
+  <section id="soundPanel" hidden>
+    <div class="block">
+      <h2 id="voiceLabel">Voice</h2>
+      <div class="voices" id="voiceList" role="group" aria-labelledby="voiceLabel"></div>
+      <p class="small" id="voiceNote">Tap a voice to hear it. Your choice is remembered.</p>
+    </div>
+    <label class="switch"><input type="checkbox" id="optVoice" checked> Spoken instructions</label>
+    <label class="switch"><input type="checkbox" id="optBeeps" checked> Beeps at each change</label>
+    <p class="small">Turn the volume up and take the phone off silent.</p>
+  </section>
+
+  <section class="block">
+    <h2 id="scoreLabel">How is your back today?</h2>
+    <div class="scores" data-scores role="group" aria-labelledby="scoreLabel"></div>
+    <div class="ends"><span>1 = sore</span><span>5 = great</span></div>
+  </section>
+
+  <section class="block">
+    <h2 id="lenLabel">Length</h2>
+    <div class="lengths" role="group" aria-labelledby="lenLabel">
+      <button id="len10" data-len="10" aria-pressed="true"><span class="lp"><img src="img/len10.jpg" alt=""></span><span class="lt"><span class="big">10<small>MIN</small></span><span class="sub" id="len10sub"></span></span></button>
+      <button id="len15" data-len="15" aria-pressed="false"><span class="lp"><img src="img/len15.jpg" alt=""></span><span class="lt"><span class="big">15<small>MIN</small></span><span class="sub" id="len15sub"></span></span></button>
+    </div>
+  </section>
+
+  <button class="start" id="startBtn">Start</button>
+
+  <section class="block">
+    <h2>Your record</h2>
+    <div class="stats">
+      <div><span class="n" id="stStreak">0</span><span class="k">day streak<br>(weekends optional)</span></div>
+      <div><span class="n" id="stBest">0</span><span class="k">best<br>streak</span></div>
+      <div><span class="n" id="stTotal">0</span><span class="k">sessions<br>in total</span></div>
+    </div>
+    <div class="cal-head">
+      <button class="ghost" id="calPrev" aria-label="Previous month">&#8249;</button>
+      <span id="calTitle" aria-live="polite"></span>
+      <button class="ghost" id="calNext" aria-label="Next month">&#8250;</button>
+    </div>
+    <div class="cal" id="cal"></div>
+  </section>
+
+  <section class="block">
+    <h2 id="routineTitle">In the 10 minute routine</h2>
+    <p class="small" id="routineNote">Tap any exercise to see how to do it.</p>
+    <ol class="routine" id="routineList"></ol>
+  </section>
+
+  <p class="rule"><b>Stop rule.</b> If a stretch sends pain, tingling or numbness further down a leg, stop that one and skip it. Easing back towards the spine is fine.</p>
+  <p class="small">Exercise photos: Free Exercise DB (public domain). Banner photo by Ivan Radic and finish screen photo by KMo Foto (both CC BY 2.0, cropped). The voices are computer-generated.</p>
+</main>
+
+<section id="session" hidden data-phase="ready">
+  <div class="stage">
+    <div class="s-top">
+      <button class="x" id="btnExit" aria-label="End session">&#10005;</button>
+      <div class="s-prog">
+        <div class="row"><span id="sStep"></span><span id="sLeft"></span></div>
+        <div class="bar"><i id="sBar"></i></div>
+      </div>
+      <button class="x how" id="btnHow">How</button>
+    </div>
+    <div class="s-main">
+      <div class="s-phase" id="sPhase">Get ready</div>
+      <div class="s-fig" id="sFig"></div>
+      <div class="s-name" id="sName"></div>
+      <div class="s-side" id="sSide" hidden></div>
+      <div class="s-count" id="sCount">0</div>
+      <div class="s-rep" id="sRep"></div>
+      <p class="s-cue" id="sCue"></p>
+      <p class="s-next" id="sNext"></p>
+    </div>
+    <div class="s-ctl">
+      <button id="btnBack">Back</button>
+      <button id="btnPause" class="main">Pause</button>
+      <button id="btnSkip">Skip</button>
+    </div>
+  </div>
+  <div class="sheet" id="exitSheet" hidden>
+    <div>
+      <p>End this session? It will not count towards today.</p>
+      <div class="two">
+        <button id="exitNo" class="main">Keep going</button>
+        <button id="exitYes">End session</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" hidden aria-labelledby="howName">
+  <div class="in">
+    <div class="hd">
+      <div><p class="eyebrow" id="howDetail"></p><h1 id="howName"></h1></div>
+      <button class="ghost" id="howClose">Close</button>
+    </div>
+    <div class="block" id="howMedia"></div>
+    <div class="block"><h3>How to do it</h3><ol class="steps" id="howSteps"></ol></div>
+    <div class="pair"><h3>You should feel</h3><p id="howFeel"></p></div>
+    <div class="pair"><h3>Watch out for</h3><p id="howAvoid"></p></div>
+    <p class="note" id="howNote" hidden></p>
+  </div>
+</section>
+
+<section id="done" class="wrap" hidden>
+  <div class="wrapin">
+    <div class="done-photo"><img src="img/done.jpg" alt="A woman stretching upwards in a sunlit studio"></div>
+    <div class="block">
+      <p class="eyebrow" id="doneKicker">10 minute routine complete</p>
+      <h1>Done for today</h1>
+    </div>
+    <div class="stats">
+      <div><span class="n" id="dnStreak">0</span><span class="k">day<br>streak</span></div>
+      <div><span class="n" id="dnBest">0</span><span class="k">best<br>streak</span></div>
+      <div><span class="n" id="dnTotal">0</span><span class="k">sessions<br>in total</span></div>
+    </div>
+    <section class="block">
+      <h2 id="scoreLabel2">Back score for today</h2>
+      <div class="scores" data-scores role="group" aria-labelledby="scoreLabel2"></div>
+      <div class="ends"><span>1 = sore</span><span>5 = great</span></div>
+    </section>
+    <button class="start" id="doneBtn">Finish</button>
+  </div>
+</section>
+
+<script id="core">
+/* ---------- routine data and pure logic (no DOM) ---------- */
+/* Length in seconds of each recorded voice clip. The timer is built from these, so the
+   countdown never starts until the instruction has finished. */
+const VOICES=/*VOICES*/[{"id":"nova","label":"Natural","desc":"Most lifelike","idx":{"in-tilt":[0,19389],"t-15-15":[19389,17037],"cue-tilt":[36426,30645],"in-kneeroll":[67071,19221],"cue-kneeroll":[86292,31653],"in-ham":[117945,41733],"t-15-30":[159678,17037],"t-30-15":[176715,14853],"cue-ham":[191568,30645],"sw-ham":[222213,13173],"r2-ham":[235386,14013],"in-activeham":[249399,34005],"cue-activeham":[283404,18717],"sw-activeham":[302121,13173],"in-fig4":[315294,36357],"t-20-20":[351651,16197],"cue-fig4":[367848,28965],"sw-fig4":[396813,17205],"in-bridge":[414018,20061],"cue-bridge":[434079,20901],"in-openbook":[454980,29301],"cue-openbook":[484281,26613],"sw-openbook":[510894,15861],"in-sideplank":[526755,36693],"t-10-10":[563448,15693],"cue-sideplank":[579141,22413],"sw-sideplank":[601554,14853],"in-catcow":[616407,18549],"cue-catcow":[634956,29469],"in-birddog":[664425,18885],"cue-birddog":[683310,31485],"in-pressup":[714795,19557],"cue-pressup":[734352,27285],"in-cobra":[761637,21741],"cue-cobra":[783378,34677],"in-hipflexor":[818055,37197],"cue-hipflexor":[855252,30309],"sw-hipflexor":[885561,15693],"in-calf":[901254,31989],"cue-calf":[933243,21069],"sw-calf":[954312,15021],"in-tilt-10":[969333,25269],"in-tilt-15":[994602,27789],"n1":[1022391,4437],"n2":[1026828,4605],"n3":[1031433,5109],"n4":[1036542,4773],"n5":[1041315,5445],"n6":[1046760,5277],"n7":[1052037,5109],"n8":[1057146,4773],"n9":[1061919,5109],"n10":[1067028,4773],"n11":[1071801,5277],"n12":[1077078,5445],"carry":[1082523,8973],"done":[1091496,15021],"test":[1106517,16869]}},{"id":"heart","label":"Warm","desc":"Soft American","idx":{"in-tilt":[0,17205],"t-15-15":[17205,16701],"cue-tilt":[33906,27117],"in-kneeroll":[61023,15525],"cue-kneeroll":[76548,32829],"in-ham":[109377,40053],"t-15-30":[149430,16197],"t-30-15":[165627,15525],"cue-ham":[181152,33333],"sw-ham":[214485,11829],"r2-ham":[226314,12669],"in-activeham":[238983,28293],"cue-activeham":[267276,18381],"sw-activeham":[285657,11829],"in-fig4":[297486,34845],"t-20-20":[332331,15189],"cue-fig4":[347520,29973],"sw-fig4":[377493,15189],"in-bridge":[392682,15189],"cue-bridge":[407871,19557],"in-openbook":[427428,29301],"cue-openbook":[456729,27957],"sw-openbook":[484686,14685],"in-sideplank":[499371,36861],"t-10-10":[536232,14349],"cue-sideplank":[550581,24093],"sw-sideplank":[574674,14517],"in-catcow":[589191,15525],"cue-catcow":[604716,25437],"in-birddog":[630153,16533],"cue-birddog":[646686,30141],"in-pressup":[676827,17037],"cue-pressup":[693864,23925],"in-cobra":[717789,17037],"cue-cobra":[734826,31821],"in-hipflexor":[766647,35181],"cue-hipflexor":[801828,30477],"sw-hipflexor":[832305,13173],"in-calf":[845478,30141],"cue-calf":[875619,17373],"sw-calf":[892992,13509],"in-tilt-10":[906501,25773],"in-tilt-15":[932274,26109],"n1":[958383,4437],"n2":[962820,4605],"n3":[967425,5109],"n4":[972534,4773],"n5":[977307,5445],"n6":[982752,5277],"n7":[988029,5109],"n8":[993138,4773],"n9":[997911,5109],"n10":[1003020,4773],"n11":[1007793,5277],"n12":[1013070,5445],"carry":[1018515,8805],"done":[1027320,9981],"test":[1037301,15357]}},{"id":"bella","label":"Bright","desc":"Friendly American","idx":{"in-tilt":[0,17541],"t-15-15":[17541,17541],"cue-tilt":[35082,28293],"in-kneeroll":[63375,15357],"cue-kneeroll":[78732,33333],"in-ham":[112065,42909],"t-15-30":[154974,16869],"t-30-15":[171843,16197],"cue-ham":[188040,33837],"sw-ham":[221877,12501],"r2-ham":[234378,13005],"in-activeham":[247383,30477],"cue-activeham":[277860,18717],"sw-activeham":[296577,12501],"in-fig4":[309078,36189],"t-20-20":[345267,15525],"cue-fig4":[360792,31485],"sw-fig4":[392277,16197],"in-bridge":[408474,15357],"cue-bridge":[423831,19725],"in-openbook":[443556,30813],"cue-openbook":[474369,29301],"sw-openbook":[503670,15357],"in-sideplank":[519027,40053],"t-10-10":[559080,14685],"cue-sideplank":[573765,26109],"sw-sideplank":[599874,15189],"in-catcow":[615063,15693],"cue-catcow":[630756,26613],"in-birddog":[657369,16701],"cue-birddog":[674070,32325],"in-pressup":[706395,16701],"cue-pressup":[723096,23925],"in-cobra":[747021,17037],"cue-cobra":[764058,33501],"in-hipflexor":[797559,37869],"cue-hipflexor":[835428,31149],"sw-hipflexor":[866577,14181],"in-calf":[880758,30477],"cue-calf":[911235,18381],"sw-calf":[929616,14013],"in-tilt-10":[943629,26613],"in-tilt-15":[970242,27117],"n1":[997359,4269],"n2":[1001628,4437],"n3":[1006065,4605],"n4":[1010670,4605],"n5":[1015275,4773],"n6":[1020048,4605],"n7":[1024653,4941],"n8":[1029594,4437],"n9":[1034031,4605],"n10":[1038636,4605],"n11":[1043241,4773],"n12":[1048014,4941],"carry":[1052955,8805],"done":[1061760,10653],"test":[1072413,15525]}},{"id":"blend","label":"Balanced","desc":"Between Warm and Bright","idx":{"in-tilt":[0,17709],"t-15-15":[17709,16701],"cue-tilt":[34410,27621],"in-kneeroll":[62031,15357],"cue-kneeroll":[77388,32997],"in-ham":[110385,41229],"t-15-30":[151614,16365],"t-30-15":[167979,15693],"cue-ham":[183672,33333],"sw-ham":[217005,11997],"r2-ham":[229002,13005],"in-activeham":[242007,30141],"cue-activeham":[272148,18549],"sw-activeham":[290697,11997],"in-fig4":[302694,35517],"t-20-20":[338211,15189],"cue-fig4":[353400,30981],"sw-fig4":[384381,15525],"in-bridge":[399906,15525],"cue-bridge":[415431,19557],"in-openbook":[434988,30141],"cue-openbook":[465129,28293],"sw-openbook":[493422,15189],"in-sideplank":[508611,38541],"t-10-10":[547152,14517],"cue-sideplank":[561669,25101],"sw-sideplank":[586770,15021],"in-catcow":[601791,15525],"cue-catcow":[617316,25941],"in-birddog":[643257,17205],"cue-birddog":[660462,31317],"in-pressup":[691779,16869],"cue-pressup":[708648,24093],"in-cobra":[732741,17037],"cue-cobra":[749778,32997],"in-hipflexor":[782775,36525],"cue-hipflexor":[819300,30813],"sw-hipflexor":[850113,13677],"in-calf":[863790,30477],"cue-calf":[894267,17877],"sw-calf":[912144,13677],"in-tilt-10":[925821,26781],"in-tilt-15":[952602,26613],"n1":[979215,4269],"n2":[983484,4605],"n3":[988089,4941],"n4":[993030,4773],"n5":[997803,4773],"n6":[1002576,4773],"n7":[1007349,5109],"n8":[1012458,4605],"n9":[1017063,4773],"n10":[1021836,4605],"n11":[1026441,5109],"n12":[1031550,5277],"carry":[1036827,8805],"done":[1045632,9981],"test":[1055613,15189]}},{"id":"sarah","label":"Clear","desc":"Calm American","idx":{"in-tilt":[0,17373],"t-15-15":[17373,16197],"cue-tilt":[33570,27789],"in-kneeroll":[61359,15021],"cue-kneeroll":[76380,32493],"in-ham":[108873,39717],"t-15-30":[148590,15693],"t-30-15":[164283,15021],"cue-ham":[179304,31989],"sw-ham":[211293,11997],"r2-ham":[223290,13509],"in-activeham":[236799,28461],"cue-activeham":[265260,17709],"sw-activeham":[282969,11997],"in-fig4":[294966,34845],"t-20-20":[329811,15021],"cue-fig4":[344832,30141],"sw-fig4":[374973,15357],"in-bridge":[390330,15189],"cue-bridge":[405519,19389],"in-openbook":[424908,28797],"cue-openbook":[453705,26109],"sw-openbook":[479814,15357],"in-sideplank":[495171,36861],"t-10-10":[532032,14013],"cue-sideplank":[546045,23757],"sw-sideplank":[569802,15021],"in-catcow":[584823,15021],"cue-catcow":[599844,25605],"in-birddog":[625449,16197],"cue-birddog":[641646,30981],"in-pressup":[672627,16701],"cue-pressup":[689328,23253],"in-cobra":[712581,17205],"cue-cobra":[729786,32493],"in-hipflexor":[762279,35181],"cue-hipflexor":[797460,30141],"sw-hipflexor":[827601,13005],"in-calf":[840606,29469],"cue-calf":[870075,16533],"sw-calf":[886608,13341],"in-tilt-10":[899949,24429],"in-tilt-15":[924378,24765],"n1":[949143,4773],"n2":[953916,4773],"n3":[958689,5445],"n4":[964134,5277],"n5":[969411,5613],"n6":[975024,5109],"n7":[980133,5445],"n8":[985578,5109],"n9":[990687,5277],"n10":[995964,4773],"n11":[1000737,5445],"n12":[1006182,5445],"carry":[1011627,8637],"done":[1020264,9981],"test":[1030245,15357]}},{"id":"aoede","label":"Light","desc":"Gentle American","idx":{"in-tilt":[0,15357],"t-15-15":[15357,15693],"cue-tilt":[31050,26277],"in-kneeroll":[57327,13677],"cue-kneeroll":[71004,31989],"in-ham":[102993,39885],"t-15-30":[142878,15021],"t-30-15":[157899,14517],"cue-ham":[172416,31821],"sw-ham":[204237,9981],"r2-ham":[214218,10485],"in-activeham":[224703,26277],"cue-activeham":[250980,16701],"sw-activeham":[267681,9981],"in-fig4":[277662,32997],"t-20-20":[310659,13677],"cue-fig4":[324336,30309],"sw-fig4":[354645,13005],"in-bridge":[367650,12837],"cue-bridge":[380487,17541],"in-openbook":[398028,26109],"cue-openbook":[424137,26277],"sw-openbook":[450414,12333],"in-sideplank":[462747,34341],"t-10-10":[497088,12669],"cue-sideplank":[509757,22917],"sw-sideplank":[532674,12333],"in-catcow":[545007,13005],"cue-catcow":[558012,24765],"in-birddog":[582777,14349],"cue-birddog":[597126,28461],"in-pressup":[625587,14181],"cue-pressup":[639768,22245],"in-cobra":[662013,15021],"cue-cobra":[677034,31317],"in-hipflexor":[708351,33333],"cue-hipflexor":[741684,29637],"sw-hipflexor":[771321,11325],"in-calf":[782646,27285],"cue-calf":[809931,16029],"sw-calf":[825960,11325],"in-tilt-10":[837285,22581],"in-tilt-15":[859866,22581],"n1":[882447,4437],"n2":[886884,4773],"n3":[891657,4941],"n4":[896598,4941],"n5":[901539,4773],"n6":[906312,4605],"n7":[910917,4941],"n8":[915858,4269],"n9":[920127,4941],"n10":[925068,4605],"n11":[929673,5277],"n12":[934950,4605],"carry":[939555,8301],"done":[947856,8805],"test":[956661,14181]}},{"id":"nicole","label":"Hushed","desc":"Very soft and slow","idx":{"in-tilt":[0,19389],"t-15-15":[19389,19389],"cue-tilt":[38778,34509],"in-kneeroll":[73287,17373],"cue-kneeroll":[90660,41061],"in-ham":[131721,52485],"t-15-30":[184206,18213],"t-30-15":[202419,18549],"cue-ham":[220968,41229],"sw-ham":[262197,13845],"r2-ham":[276042,14181],"in-activeham":[290223,36357],"cue-activeham":[326580,21405],"sw-activeham":[347985,13845],"in-fig4":[361830,45765],"t-20-20":[407595,17373],"cue-fig4":[424968,39045],"sw-fig4":[464013,17709],"in-bridge":[481722,16701],"cue-bridge":[498423,24093],"in-openbook":[522516,37701],"cue-openbook":[560217,35181],"sw-openbook":[595398,17709],"in-sideplank":[613107,47949],"t-10-10":[661056,16029],"cue-sideplank":[677085,28125],"sw-sideplank":[705210,17205],"in-catcow":[722415,16701],"cue-catcow":[739116,32157],"in-birddog":[771273,19389],"cue-birddog":[790662,39885],"in-pressup":[830547,18213],"cue-pressup":[848760,27621],"in-cobra":[876381,18885],"cue-cobra":[895266,41397],"in-hipflexor":[936663,45261],"cue-hipflexor":[981924,38205],"sw-hipflexor":[1020129,16029],"in-calf":[1036158,39045],"cue-calf":[1075203,20061],"sw-calf":[1095264,15861],"in-tilt-10":[1111125,31317],"in-tilt-15":[1142442,31485],"n1":[1173927,4605],"n2":[1178532,4773],"n3":[1183305,4773],"n4":[1188078,4941],"n5":[1193019,5109],"n6":[1198128,5277],"n7":[1203405,5109],"n8":[1208514,4773],"n9":[1213287,4941],"n10":[1218228,4605],"n11":[1222833,5277],"n12":[1228110,5109],"carry":[1233219,8637],"done":[1241856,10317],"test":[1252173,16029]}},{"id":"emma","label":"British","desc":"English accent","idx":{"in-tilt":[0,17205],"t-15-15":[17205,16701],"cue-tilt":[33906,26445],"in-kneeroll":[60351,15021],"cue-kneeroll":[75372,31653],"in-ham":[107025,38709],"t-15-30":[145734,16365],"t-30-15":[162099,15861],"cue-ham":[177960,31485],"sw-ham":[209445,11325],"r2-ham":[220770,12333],"in-activeham":[233103,27117],"cue-activeham":[260220,17709],"sw-activeham":[277929,11325],"in-fig4":[289254,33837],"t-20-20":[323091,15357],"cue-fig4":[338448,29133],"sw-fig4":[367581,14013],"in-bridge":[381594,14685],"cue-bridge":[396279,18045],"in-openbook":[414324,28461],"cue-openbook":[442785,26109],"sw-openbook":[468894,13677],"in-sideplank":[482571,34509],"t-10-10":[517080,14013],"cue-sideplank":[531093,22413],"sw-sideplank":[553506,13677],"in-catcow":[567183,15357],"cue-catcow":[582540,24765],"in-birddog":[607305,15861],"cue-birddog":[623166,29133],"in-pressup":[652299,15693],"cue-pressup":[667992,21573],"in-cobra":[689565,16533],"cue-cobra":[706098,30645],"in-hipflexor":[736743,33837],"cue-hipflexor":[770580,28797],"sw-hipflexor":[799377,12333],"in-calf":[811710,28965],"cue-calf":[840675,16197],"sw-calf":[856872,13173],"in-tilt-10":[870045,24597],"in-tilt-15":[894642,24093],"n1":[918735,5949],"n2":[924684,5613],"n3":[930297,6117],"n4":[936414,5109],"n5":[941523,5277],"n6":[946800,5109],"n7":[951909,7125],"n8":[959034,5277],"n9":[964311,7629],"n10":[971940,5109],"n11":[977049,8301],"n12":[985350,5781],"carry":[991131,9981],"done":[1001112,10317],"test":[1011429,16365]}},{"id":"isabella","label":"British 2","desc":"English, lighter","idx":{"in-tilt":[0,17877],"t-15-15":[17877,17877],"cue-tilt":[35754,26277],"in-kneeroll":[62031,16701],"cue-kneeroll":[78732,30981],"in-ham":[109713,39717],"t-15-30":[149430,17541],"t-30-15":[166971,17541],"cue-ham":[184512,31149],"sw-ham":[215661,11829],"r2-ham":[227490,13173],"in-activeham":[240663,28293],"cue-activeham":[268956,17541],"sw-activeham":[286497,11829],"in-fig4":[298326,34845],"t-20-20":[333171,16365],"cue-fig4":[349536,29301],"sw-fig4":[378837,15357],"in-bridge":[394194,16197],"cue-bridge":[410391,18885],"in-openbook":[429276,29973],"cue-openbook":[459249,26445],"sw-openbook":[485694,14181],"in-sideplank":[499875,35853],"t-10-10":[535728,15021],"cue-sideplank":[550749,23589],"sw-sideplank":[574338,14013],"in-catcow":[588351,16197],"cue-catcow":[604548,24933],"in-birddog":[629481,16533],"cue-birddog":[646014,29301],"in-pressup":[675315,17205],"cue-pressup":[692520,23253],"in-cobra":[715773,18213],"cue-cobra":[733986,31317],"in-hipflexor":[765303,35517],"cue-hipflexor":[800820,29133],"sw-hipflexor":[829953,13173],"in-calf":[843126,30981],"cue-calf":[874107,16365],"sw-calf":[890472,13509],"in-tilt-10":[903981,25605],"in-tilt-15":[929586,24765],"n1":[954351,7629],"n2":[961980,5277],"n3":[967257,8301],"n4":[975558,6453],"n5":[982011,6117],"n6":[988128,7461],"n7":[995589,6285],"n8":[1001874,5613],"n9":[1007487,6285],"n10":[1013772,7629],"n11":[1021401,6789],"n12":[1028190,8301],"carry":[1036491,10317],"done":[1046808,10485],"test":[1057293,16533]}}]/*ENDV*/;
+const CLIP=/*CLIPS*/{"in-tilt":2.68,"t-15-15":2.69,"cue-tilt":4.85,"in-kneeroll":2.65,"cue-kneeroll":5.78,"in-ham":7.4,"t-15-30":2.52,"t-30-15":2.55,"cue-ham":5.8,"sw-ham":1.89,"r2-ham":1.93,"in-activeham":5.1,"cue-activeham":2.96,"sw-activeham":1.89,"in-fig4":6.44,"t-20-20":2.39,"cue-fig4":5.48,"sw-fig4":2.43,"in-bridge":2.78,"cue-bridge":3.34,"in-openbook":5.29,"cue-openbook":4.93,"sw-openbook":2.43,"in-sideplank":6.74,"t-10-10":2.2,"cue-sideplank":3.93,"sw-sideplank":2.38,"in-catcow":2.55,"cue-catcow":4.51,"in-birddog":2.67,"cue-birddog":5.6,"in-pressup":2.7,"cue-pressup":3.86,"in-cobra":3.02,"cue-cobra":5.81,"in-hipflexor":6.38,"cue-hipflexor":5.36,"sw-hipflexor":2.19,"in-calf":5.49,"cue-calf":2.91,"sw-calf":2.16,"in-tilt-10":4.39,"in-tilt-15":4.41,"n1":1.0,"n2":0.71,"n3":1.09,"n4":0.83,"n5":0.79,"n6":0.98,"n7":0.92,"n8":0.71,"n9":1.0,"n10":1.0,"n11":1.08,"n12":1.09,"carry":1.37,"done":2.04,"test":2.32}/*END*/;
+
+/* Changing position: 2 seconds. The voice starts as the 2 seconds begin and carries on over the start of the exercise. */
+const TRANS=2;
+const EX = {
+  tilt:{name:'Pelvic tilts', say:'pelvic tilts', sayDur:'Thirty seconds', detail:'Slow and small', dur:30, go:true, photos:1,
+    setup:'Lie on your back, knees bent, feet flat.',
+    cue:'Flatten your lower back into the floor, then release. Small and slow.',
+    steps:['Lie on your back with knees bent and feet flat, arms relaxed by your sides.','Gently tighten your stomach and flatten the small of your back into the floor.','Hold for a second, then relax and let the natural curve return.','Keep it small and slow. Breathe normally.'],
+    feel:'Your lower stomach working gently and a mild stretch in the lower back.',
+    avoid:'Pushing through your feet or lifting your hips. This is a tiny movement.',
+    labels:['Position'], note:'The photo shows the position. The movement is too small to see: only your pelvis rocks.'},
+  kneeroll:{name:'Knee rolls', say:'knee rolls', sayDur:'Thirty seconds', detail:'Side to side', dur:30, go:true, photos:1,
+    setup:'Stay on your back, knees together.',
+    cue:'Let both knees drop gently to one side, then the other. Shoulders stay down.',
+    steps:['Stay on your back, knees bent and together, feet flat. Rest your arms out to the sides.','Let both knees roll slowly to one side, only as far as is comfortable.','Bring them back through the middle and roll to the other side.','Keep both shoulders on the floor throughout.'],
+    feel:'An easy stretch across the lower back and the outside of the hip.',
+    avoid:'Forcing your knees to the floor. Stay in a pain-free range.',
+    labels:['Start position'], note:'The photo shows the start. From here, let both knees roll to one side and then the other.'},
+  ham:{name:'Hamstring stretch', say:'hamstring stretch with the strap', sayDur:'Forty-five seconds each leg, twice', detail:'2 x 45 sec each leg', dur:45, rounds:2, photos:2,
+    sides:['Left leg','Right leg'],
+    setup:'Loop the strap round your foot and raise that leg.',
+    cue:'Straighten the knee until you feel the stretch behind your thigh. Lower back relaxed.',
+    steps:['Lie on your back and loop the strap round the ball of one foot.','Keep the other leg relaxed. Flat is fine, or bend that knee if it is easier on your back.','Raise the strapped leg and straighten the knee until you feel a firm stretch behind the thigh.','Hold still and breathe. Do not bounce.'],
+    feel:'A strong but comfortable stretch in the back of the thigh. Not behind the knee, and not in your back.',
+    avoid:'Letting your lower back round or your hips lift. If the stretch feels sharp or tingly, bend the knee a little.',
+    labels:['Start','Stretch']},
+  activeham:{name:'Active hamstring', say:'active hamstring', sayDur:'Ten reps each leg', detail:'10 slow reps each leg', reps:10, every:3, photos:2,
+    sides:['Left leg','Right leg'],
+    setup:'Strap down. Hold behind one thigh, knee above your hip.',
+    cue:'Slowly straighten the knee, then bend it again.',
+    steps:['Put the strap down. Bring one knee up so the thigh points at the ceiling, and hold behind the thigh with both hands.','Slowly straighten the knee as far as it will go without the thigh moving.','Pause for a second, then bend it again.','Each rep takes about three seconds.'],
+    feel:'A stretch behind the thigh at the top of each rep, with the front of the thigh working.',
+    avoid:'Letting the thigh drift away from you as the knee straightens.',
+    labels:['Knee bent','Knee straight']},
+  fig4:{name:'Figure-4 stretch', say:'figure four stretch', sayDur:'Forty seconds each side', detail:'40 sec each side', dur:40, photos:2,
+    sides:['Left ankle across','Right ankle across'],
+    setup:'Cross one ankle over the opposite knee and draw both legs in.',
+    cue:'Draw the legs towards you until you feel it in the buttock. Head down, breathe.',
+    steps:['Lie on your back with both knees bent.','Cross one ankle over the opposite knee.','Reach through and hold behind the thigh of the bottom leg, then draw both legs towards your chest.','Keep your head and shoulders resting on the floor, and breathe.'],
+    feel:'A deep stretch in the buttock and outer hip of the crossed leg.',
+    avoid:'Pulling so hard that your tailbone lifts off the floor.',
+    labels:['Start','Stretch'], note:'The man in the photo has lifted his head. Keep yours down.'},
+  bridge:{name:'Glute bridge', say:'glute bridge', sayDur:'Ten reps', detail:'10 slow reps', reps:10, every:4, photos:2,
+    setup:'Feet flat, hip width apart, arms by your sides.',
+    cue:'Squeeze your glutes, lift your hips, lower slowly.',
+    steps:['Lie on your back, knees bent, feet flat and hip width apart, arms by your sides.','Squeeze your buttocks and lift your hips until shoulders, hips and knees are in a line.','Pause for a second at the top.','Lower slowly. One rep every four seconds.'],
+    feel:'Your buttocks and the backs of your thighs working. Your lower back should stay quiet.',
+    avoid:'Arching your back to get higher. The height comes from your hips.',
+    labels:['Start','Lift']},
+  openbook:{name:'Open book', say:'open book', sayDur:'Five reps each side', detail:'5 each side', reps:5, every:5, photos:2, anim:'move',
+    sides:['Right side down','Left side down'],
+    setup:'Roll onto your side, knees bent up, arms out in front, palms together.',
+    cue:'Open the top arm up and over, follow it with your eyes, then close.',
+    steps:['Lie on your side with knees bent up to hip height and stacked, arms straight out in front, palms together.','Keep your knees together and on the floor.','Lift the top arm up and over, opening your chest to the ceiling. Follow your hand with your eyes.','Pause, then close the arm back. Five on each side.'],
+    feel:'A stretch across the chest and a twist through the upper and middle back.',
+    avoid:'Letting the top knee slide back. The twist should come from above the waist.',
+    labels:['On your side','Opened out'], note:'These are the closest gym photos, not an exact match. Start on your side with both knees bent up, which the first photo does not show. Finish with your chest open and your top arm out as in the second, keeping both knees stacked.'},
+  sideplank:{name:'Side plank from knees', say:'side plank from the knees', sayDur:'Twenty seconds each side', detail:'20 sec each side', dur:20, photos:2,
+    sides:['Left side down','Right side down'],
+    setup:'Stay on your side, elbow under shoulder, knees bent.',
+    cue:'Lift your hips so you make a straight line from knees to shoulders.',
+    steps:['Lie on your side, propped on your elbow, with the elbow directly under your shoulder.','Bend your knees so your feet are behind you.','Lift your hips until your body is straight from knees to shoulders.','Hold and breathe. Lower with control.'],
+    feel:'The side of your waist nearest the floor working hard.',
+    avoid:'Letting your hips sag or roll forwards.',
+    labels:['Start','Lift'], note:'The photos show the harder version from the feet. Yours is from the knees: keep your knees bent and on the floor.'},
+  catcow:{name:'Cat-cow', say:'cat cow', sayDur:'Thirty seconds', detail:'Move with your breath', dur:30, go:true, photos:2, anim:'move',
+    setup:'Come onto your hands and knees.',
+    cue:'Round your back up gently, then let it sink. Move with your breath.',
+    steps:['Come onto your hands and knees, hands under shoulders and knees under hips.','Breathe out and gently round your back up towards the ceiling, tucking your tailbone.','Breathe in and let your back sink and your chest open, looking slightly forwards.','Flow slowly between the two.'],
+    feel:'Easy movement through the whole spine.',
+    avoid:'Pushing hard into the rounded position. Keep it gentle.',
+    labels:['Flat back','Rounded up']},
+  birddog:{name:'Bird dog', say:'bird dog', sayDur:'Six each side', detail:'6 each side, alternating', reps:12, every:4, photos:2,
+    setup:'Stay on hands and knees, back flat.',
+    cue:'Reach one arm forward and the opposite leg back, then swap. Hips level.',
+    steps:['Stay on your hands and knees with a flat back.','Slide one leg straight back and reach the opposite arm forwards until both are level with your body.','Pause for a second without letting your hips tip.','Return and swap sides. One rep every four seconds.'],
+    feel:'Your buttock, back and stomach muscles working together to keep you steady.',
+    avoid:'Lifting the leg too high or letting your lower back sag.',
+    labels:['Start','Leg reach'], note:'The photos show the leg reach only. Reach the opposite arm forwards at the same time.'},
+  pressup:{name:'Press-ups, hips down', say:'back press ups', sayDur:'Ten reps', detail:'10 slow reps', reps:10, every:4, photos:2,
+    setup:'Lie face down, hands under your shoulders.',
+    cue:'Push your chest up, keep your hips on the floor, lower slowly.',
+    steps:['Lie face down with your hands under your shoulders.','Keep your hips and legs relaxed on the floor and push your chest up.','Go only as high as is comfortable. Straight arms are not the target.','Lower slowly. One rep every four seconds.'],
+    feel:'A gentle arch and some pressure in the lower back. It often eases with each rep.',
+    avoid:'Clenching your buttocks or lifting your hips. Stop if it sends symptoms into a leg.',
+    labels:['Start','Press up'], note:'The photos show a low press-up with the hands wide. Hands under your shoulders is fine, and go a little higher if it is comfortable.'},
+  cobra:{name:'Cobra raises', say:'cobra raises', sayDur:'Eight reps', detail:'8 reps, 5 sec each', reps:8, every:5, photos:2,
+    setup:'Stay face down, hands resting by your shoulders.',
+    cue:'Lift your chest a few inches without pushing through your hands. Pause, then lower.',
+    steps:['Stay face down with your legs relaxed and your hands resting on the floor by your shoulders.','Using your back muscles, lift your head and chest a few inches. Keep looking at the floor so your neck stays long.','Squeeze your shoulder blades together and hold for about three seconds.','Lower slowly. One rep every five seconds.'],
+    feel:'The muscles either side of your spine and between your shoulder blades working.',
+    avoid:'Pushing up with your hands, lifting too high or tipping your head back. Stop if it sends symptoms into a leg.',
+    labels:['Start','Raise'], note:'The photos show a harder version, with arms stretched forward and legs lifted. Keep your feet on the floor and your hands by your shoulders.'},
+  hipflexor:{name:'Hip flexor stretch', say:'hip flexor stretch', sayDur:'Forty-five seconds each side', detail:'45 sec each side', dur:45, photos:2,
+    sides:['Left knee down','Right knee down'],
+    setup:'Kneel on one knee, other foot flat in front.',
+    cue:'Tuck your tailbone under and ease your hips forward. Stay tall, no arching.',
+    steps:['Kneel on one knee with the other foot flat in front. Pad the knee if you need to.','Tuck your tailbone under, as if tucking a tail between your legs.','Ease your hips forwards until you feel a stretch at the front of the hip on the kneeling side.','Stay tall through your chest.'],
+    feel:'A stretch at the front of the hip and thigh on the kneeling side.',
+    avoid:'Arching your lower back. The tuck matters more than how far forward you go.',
+    labels:['Start','Stretch']},
+  calf:{name:'Calf stretch', say:'calf stretch', sayDur:'Forty seconds each leg', detail:'40 sec each leg', dur:40, photos:2, holdFrame:0,
+    sides:['Left leg back','Right leg back'],
+    setup:'Stand facing a wall, hands on it, one leg back.',
+    cue:'Back heel down, back knee straight, lean in.',
+    steps:['Stand facing a wall with both hands on it.','Step one leg back, toes pointing straight ahead.','Keep the back knee straight and the heel pressed down.','Bend the front knee and lean in until you feel the stretch.'],
+    feel:'A stretch in the calf of the back leg.',
+    avoid:'Letting the back heel lift or the back foot turn out.',
+    labels:['Side view','Back view']}
+};
+const ORDER = {
+  10:['tilt','kneeroll','ham','bridge','openbook','catcow','birddog','pressup','cobra','hipflexor'],
+  15:['tilt','kneeroll','ham','activeham','fig4','bridge','openbook','sideplank','catcow','birddog','pressup','cobra','hipflexor','calf']
+};
+const NUM=['one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
+
+const SECW={10:'Ten',15:'Fifteen',20:'Twenty',25:'Twenty-five',30:'Thirty',40:'Forty',45:'Forty-five'};
+/* When the voice calls the time during a hold: every 15 seconds, or once at halfway if the hold does not divide by 15. */
+function timeCalls(dur){
+  if(dur%15!==0) return [dur/2];
+  const a=[]; for(let c=15;c<dur;c+=15) a.push(c); return a;
+}
+/* Every line the voice says, by clip name. */
+function phrases(){
+  const p={};
+  Object.keys(EX).forEach(function(id){
+    const e=EX[id], first=e.sides?' '+e.sides[0]+' first.':'';
+    p['in-'+id]='Next: '+e.say+'. '+e.sayDur+'.'+first;
+    if(e.dur) timeCalls(e.dur).forEach(function(c){p['t-'+c+'-'+(e.dur-c)]=SECW[c]+' seconds gone, '+SECW[e.dur-c].toLowerCase()+' to go.';});
+    p['cue-'+id]=e.cue;
+    if(e.sides){
+      p['sw-'+id]='Switch sides. '+e.sides[1]+'.';
+      if((e.rounds||1)>1) p['r2-'+id]='Second round. '+e.sides[0]+'.';
+    }
+  });
+  [10,15].forEach(function(m){
+    const id=ORDER[m][0], e=EX[id];
+    p['in-'+id+'-'+m]=(m===15?'The long routine':'The short routine')+'. First: '+e.say+'. '+e.sayDur+'.'+(e.sides?' '+e.sides[0]+' first.':'');
+  });
+  NUM.forEach(function(w,i){p['n'+(i+1)]=w.charAt(0).toUpperCase()+w.slice(1)+'.';});
+  p.carry='Okay, carry on.';
+  p.done='All done. Well done.'; p.test='This is how your instructions will sound.';
+  return p;
+}
+function clipSecs(key,text){return CLIP[key]||((text||'').split(/\s+/).length/2.7+0.5);}
+
+function buildTimeline(mins){
+  const P=phrases(), segs=[];
+  ORDER[mins].forEach(function(id,ei){
+    const e=EX[id], sides=e.sides||[null], rounds=e.rounds||1;
+    let first=true;
+    for(let r=0;r<rounds;r++){
+      for(let s=0;s<sides.length;s++){
+        const side=sides[s];
+        const key=first?(ei===0?'in-'+id+'-'+mins:'in-'+id):(r>0&&s===0?'r2-'+id:'sw-'+id);
+        /* the name and length, then the technique reminder, spoken back to back */
+        segs.push({ex:id, ei:ei, phase:'ready', side:side, clips:first?[key,'cue-'+id]:[key], first:first,
+                   dur:(ei===0&&first)?Math.ceil(clipSecs(key,P[key])+TRANS):TRANS});
+        if(e.reps) segs.push({ex:id, ei:ei, phase:'reps', side:side, clips:[], lead:0, reps:e.reps, every:e.every, dur:e.reps*e.every});
+        else segs.push({ex:id, ei:ei, phase:'hold', side:side, clips:timeCalls(e.dur).map(function(c){return 't-'+c+'-'+(e.dur-c);}), dur:e.dur});
+        first=false;
+      }
+    }
+  });
+  let t=0; segs.forEach(function(g){g.start=t; t+=g.dur;});
+  return segs;
+}
+function totalSeconds(segs){return segs.reduce(function(a,g){return a+g.dur;},0);}
+function workSeconds(mins,id){return buildTimeline(mins).filter(function(g){return g.ex===id&&g.phase!=='ready';}).reduce(function(a,g){return a+g.dur-(g.lead||0);},0);}
+/* Which photo to show: 0 = start, 1 = finish. The page cross-fades between them.
+   Reps: out to the finish as each count is spoken, back again before the next count.
+   Holds: start position first, one slow fade into the stretch, then it stays on the stretch. */
+function frameFor(g,e,t){
+  if((e.photos||0)<2) return 0;
+  if(g.phase==='reps') return (t%g.every)/g.every<0.5?1:0;
+  if(g.phase==='hold'){
+    if(e.anim==='move') return Math.floor(t/3)%2;      /* cat-cow keeps flowing: it is a movement, not a hold */
+    if(e.holdFrame===0) return 0;                      /* two views of one position: stay on the side view */
+    return t<1?0:1;
+  }
+  return 0;
+}
+/* How long each cross-fade takes, in seconds */
+function fadeFor(g,e){
+  if(g.phase==='reps') return Math.min(1.8,g.every*0.42);
+  if(g.phase==='hold') return e.anim==='move'?1.8:3;
+  return 0.4;
+}
+
+function dateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function addDays(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);}
+function isWeekend(d){const w=d.getDay();return w===0||w===6;}
+/* Streak: consecutive weekdays done. A missed weekend never breaks it; a weekend session adds to it. */
+function currentStreak(sessions,today){
+  let c=addDays(today,0), n=0;
+  if(!sessions[dateKey(c)]) c=addDays(c,-1);
+  for(let i=0;i<5000;i++){
+    if(sessions[dateKey(c)]) n++;
+    else if(!isWeekend(c)) break;
+    c=addDays(c,-1);
+  }
+  return n;
+}
+function bestStreak(sessions,today){
+  const keys=Object.keys(sessions).sort();
+  if(!keys.length) return 0;
+  const p=keys[0].split('-').map(Number);
+  let c=new Date(p[0],p[1]-1,p[2]), run=0, best=0;
+  const end=dateKey(today);
+  for(let i=0;i<5000;i++){
+    if(sessions[dateKey(c)]){run++; if(run>best) best=run;}
+    else if(!isWeekend(c)) run=0;
+    if(dateKey(c)>=end) break;
+    c=addDays(c,1);
+  }
+  return best;
+}
+function fmt(sec){sec=Math.max(0,Math.round(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
+if(typeof module!=='undefined') module.exports={VOICES,CLIP,timeCalls,fadeFor,EX,ORDER,phrases,buildTimeline,totalSeconds,workSeconds,frameFor,dateKey,addDays,currentStreak,bestStreak,fmt};
+</script>
+
+<script>
+(function(){
+'use strict';
+const $=function(id){return document.getElementById(id);};
+
+/* ---------- photos and drawings ---------- */
+function pts(a){return a.map(function(p){return p[0]+','+p[1];}).join(' ');}
+function figSVG(f,label){
+  let s='<svg class="fig" viewBox="0 0 200 116" role="img" aria-label="'+label+'">';
+  (f.back||[]).forEach(function(l){s+='<polyline class="f-back" points="'+pts(l)+'"/>';});
+  (f.body||[]).forEach(function(l){s+='<polyline class="f-body" points="'+pts(l)+'"/>';});
+  (f.hl||[]).forEach(function(l){s+='<polyline class="f-hl" points="'+pts(l)+'"/>';});
+  (f.arcs||[]).forEach(function(c){s+='<path class="f-arc" marker-start="url(#arr)" marker-end="url(#arr)" d="M'+c[0]+' '+c[1]+'Q'+c[2]+' '+c[3]+' '+c[4]+' '+c[5]+'"/>';});
+  s+='<circle class="f-head" cx="'+f.head[0]+'" cy="'+f.head[1]+'" r="'+(f.headR||8.5)+'"/>';
+  if(f.note) s+='<text x="104" y="10">'+f.note+'</text>';
+  return s+'</svg>';
+}
+function src(id,i){return 'img/'+id+'-'+i+'.jpg';}
+/* both = stack both frames for cross-fading; otherwise one still frame */
+function media(id,both,frame){
+  const e=EX[id];
+  if(!e.photos) return '<div class="drawing">'+figSVG(e.fig,e.name)+'</div>';
+  if(both&&e.photos>1) return '<div class="photo"><img class="p0" src="'+src(id,0)+'" alt="'+e.name+'"><img class="p1" src="'+src(id,1)+'" alt=""></div>';
+  const f=Math.min(frame||0,e.photos-1);
+  return '<div class="photo"><img src="'+src(id,f)+'" alt="'+e.name+'" loading="lazy"></div>';
+}
+
+/* ---------- settings (per device) ---------- */
+const store={
+  get:function(k,d){try{const v=localStorage.getItem(k);return v===null?d:JSON.parse(v);}catch(e){return d;}},
+  set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+};
+const settings={voiceId:store.get('mbs.voice2',''), voice:store.get('mbs.voice',true), beeps:store.get('mbs.beeps',true), mins:store.get('mbs.mins',10)===15?15:10};
+
+if(!VOICES.some(function(v){return v.id===settings.voiceId;})) settings.voiceId=VOICES.length?VOICES[0].id:'';
+/* ---------- sound: recorded voice clips through Web Audio, phone speech only as a fallback ---------- */
+const P=phrases();
+const KEEP={};
+Object.keys(P).forEach(function(k){if(/^(n\d+|t-|carry|done)/.test(k)) KEEP[k]=1;});
+let actx=null, voiceSrcs=[], voiceToken=0, busyUntil=0;
+let pack=null, bufs={};          /* one audio file per voice, holding every clip; both reset when the voice changes */
+function loadPack(){
+  const id=settings.voiceId;
+  const p=fetch('pack/'+id+'.mp3').then(function(r){if(!r.ok) throw new Error('missing'); return r.arrayBuffer();});
+  p.catch(function(){if(pack===p) pack=null;});
+  pack=p; return p;
+}
+function fetchRaw(key){
+  const v=VOICES.filter(function(x){return x.id===settings.voiceId;})[0];
+  return (pack||loadPack()).then(function(ab){
+    const at=v&&v.idx[key]; if(!at) throw new Error('missing');
+    return ab.slice(at[0],at[0]+at[1]);
+  });
+}
+function getBuf(key){
+  const c=bufs;
+  if(!c[key]){
+    c[key]=fetchRaw(key).then(function(ab){
+      return new Promise(function(res,rej){actx.decodeAudioData(ab,res,rej);});
+    });
+    c[key].catch(function(){delete c[key];});
+  }
+  return c[key];
+}
+function prefetch(){(pack||loadPack()).catch(function(){});}
+function voiceNote(ok){
+  const n=document.getElementById('voiceNote'); if(!n) return;
+  n.textContent=ok?'Recorded voice playing. Tap a voice to hear it. Your choice is remembered.'
+    :'The recorded voice could not load here, so you are hearing this device\u2019s own voice. Check your connection and reopen the app.';
+}
+function audioOn(){
+  try{
+    if(navigator.audioSession) navigator.audioSession.type='playback';
+  }catch(e){}
+  try{
+    if(!actx){const C=window.AudioContext||window.webkitAudioContext; if(C) actx=new C();}
+    if(actx&&actx.state!=='running') actx.resume();
+  }catch(e){}
+}
+function beep(freq,len,vol){
+  if(!settings.beeps||!actx) return;
+  try{
+    const o=actx.createOscillator(), g=actx.createGain(), t=actx.currentTime;
+    o.type='sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol||0.2,t+0.01); g.gain.exponentialRampToValueAtTime(0.001,t+len);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t+len+0.02);
+  }catch(e){}
+}
+const hasSpeech=('speechSynthesis' in window)&&('SpeechSynthesisUtterance' in window);
+let synthVoice=null, keepUtter=null;
+function pickVoice(){
+  if(!hasSpeech) return;
+  const vs=(speechSynthesis.getVoices()||[]).filter(function(v){return /^en/i.test(v.lang);});
+  const score=function(v){let s=0; if(/en[-_]GB/i.test(v.lang)) s+=4; if(/natural|neural|premium|enhanced|siri/i.test(v.name)) s+=6; if(/google/i.test(v.name)) s+=2; return s;};
+  vs.sort(function(a,b){return score(b)-score(a);});
+  synthVoice=vs[0]||null;
+}
+if(hasSpeech){pickVoice(); try{speechSynthesis.addEventListener('voiceschanged',pickVoice);}catch(e){}}
+function synthSay(text){
+  if(!hasSpeech||!text) return;
+  try{
+    const ss=speechSynthesis, u=new SpeechSynthesisUtterance(text);
+    if(synthVoice) u.voice=synthVoice;
+    u.lang=synthVoice?synthVoice.lang:'en-GB'; u.rate=1; keepUtter=u;
+    if(ss.speaking||ss.pending){ss.cancel(); setTimeout(function(){try{ss.speak(u);}catch(e){}},90);} else ss.speak(u);
+  }catch(e){}
+}
+function stopVoice(){
+  voiceToken++; busyUntil=0;
+  voiceSrcs.forEach(function(s){try{s.stop();}catch(e){}}); voiceSrcs=[];
+  if(hasSpeech){try{speechSynthesis.cancel();}catch(e){}}
+}
+/* polite = stay silent if something is already being said; delay = seconds to wait (lets a beep finish) */
+function speak(keys,polite,delay,force){
+  if(typeof keys==='string') keys=[keys];
+  if(!keys.length||(!settings.voice&&!force)) return;
+  const now=performance.now();
+  if(polite&&now<busyUntil) return;
+  stopVoice();
+  const token=++voiceToken, GAP=0.3;
+  const words=function(){return keys.map(function(k){return P[k];}).join(' ');};
+  busyUntil=now+((delay||0)+keys.reduce(function(a,k){return a+(CLIP[k]||1.5)+GAP;},-GAP))*1000;
+  if(!actx){synthSay(words()); return;}
+  Promise.all(keys.map(getBuf)).then(function(bs){
+    if(token!==voiceToken||(!settings.voice&&!force)) return;
+    let at=actx.currentTime+(delay||0);
+    voiceSrcs=bs.map(function(buf){
+      const s=actx.createBufferSource(); s.buffer=buf; s.connect(actx.destination); s.start(at); at+=buf.duration+GAP; return s;
+    });
+    voiceNote(true);
+  }).catch(function(){ voiceNote(false); if(token===voiceToken) synthSay(words()); });
+}
+/* fetch the clips quietly once the page has settled, so nothing waits on the network mid-session */
+setTimeout(prefetch,1200);
+
+/* ---------- record: account store when available, this device otherwise ---------- */
+let sessions=store.get('mbs.sessions',{})||{};
+let col=null, chain=Promise.resolve(), pendingScore=null;
+function setSync(mode){}   /* the note about where the record is saved was removed from the page */
+function persist(key){
+  store.set('mbs.sessions',sessions);
+  if(!col) return;
+  const r=sessions[key];
+  const body={date:key, minutes:r.minutes, score:r.score==null?null:r.score, at:r.at};
+  chain=chain.then(function(){return col.doc(key).set(body);}).catch(function(){setSync('device');});
+}
+(async function(){
+  try{
+    if(!window.claude||!window.claude.use){setSync('device');return;}
+    const got=await Promise.all([window.claude.use('db'),window.claude.use('user')]);
+    const db=got[0], user=got[1];
+    if(!db||!user){setSync('device');return;}
+    const id=await user.id();
+    if(!id){setSync('device');return;}
+    col=db.collection('data/users/'+id);
+    let pushed=false;
+    col.limit(1000).onSnapshot(function(snap){
+      const remote={};
+      snap.docs.forEach(function(d){const v=d.data(); if(v&&typeof v.date==='string') remote[v.date]={minutes:v.minutes,score:v.score==null?null:v.score,at:v.at};});
+      const localOnly=Object.keys(sessions).filter(function(k){return !remote[k];});
+      const merged={};
+      localOnly.forEach(function(k){merged[k]=sessions[k];});
+      Object.keys(remote).forEach(function(k){merged[k]=remote[k];});
+      sessions=merged; store.set('mbs.sessions',sessions);
+      if(!snap.metadata.fromCache&&!pushed){pushed=true; localOnly.forEach(persist);}
+      setSync('account'); renderRecord();
+    },function(){col=null; setSync('device');});
+  }catch(e){col=null; setSync('device');}
+})();
+
+/* ---------- home ---------- */
+const DOW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function today(){const n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate());}
+function currentScore(){const r=sessions[dateKey(today())];return r&&r.score!=null?r.score:pendingScore;}
+function renderScores(){
+  const cur=currentScore();
+  document.querySelectorAll('[data-scores]').forEach(function(box){
+    if(!box.children.length){
+      for(let i=1;i<=5;i++){const b=document.createElement('button'); b.textContent=i; b.dataset.score=i; b.setAttribute('aria-label','Back score '+i+' out of 5'); box.appendChild(b);}
+      box.addEventListener('click',function(ev){
+        const b=ev.target.closest('button'); if(!b) return;
+        const n=Number(b.dataset.score), k=dateKey(today());
+        pendingScore=(currentScore()===n)?null:n;
+        if(sessions[k]){sessions[k]=Object.assign({},sessions[k],{score:pendingScore}); persist(k); renderRecord();}
+        renderScores();
+      });
+    }
+    Array.prototype.forEach.call(box.children,function(b){b.setAttribute('aria-pressed',String(Number(b.dataset.score)===cur));});
+  });
+}
+function renderRecord(){
+  const t=today(), k=dateKey(t), total=Object.keys(sessions).length;
+  const cs=currentStreak(sessions,t), bs=bestStreak(sessions,t);
+  $('stStreak').textContent=cs; $('stBest').textContent=bs; $('stTotal').textContent=total;
+  $('dnStreak').textContent=cs; $('dnBest').textContent=bs; $('dnTotal').textContent=total;
+  const st=$('todayStatus');
+  if(sessions[k]) st.innerHTML='<b>Done today.</b> '+sessions[k].minutes+' minute routine.';
+  else st.textContent = cs>0 ? 'Not done yet today. '+cs+' day streak to keep going.' : 'Not done yet today.';
+  renderCal();
+  renderScores();
+}
+let calMonth=null;                 /* first day of the month on show */
+function renderCal(){
+  const t=today(), k=dateKey(t), now=new Date(t.getFullYear(),t.getMonth(),1);
+  if(!calMonth) calMonth=now;
+  const y=calMonth.getFullYear(), m=calMonth.getMonth(), days=new Date(y,m+1,0).getDate();
+  $('calTitle').textContent=MON[m]+' '+y;
+  $('calNext').disabled=calMonth>=now;
+  let h='';
+  ['M','T','W','T','F','S','S'].forEach(function(d){h+='<span class="dow">'+d+'</span>';});
+  for(let i=0;i<(calMonth.getDay()+6)%7;i++) h+='<span class="gap"></span>';
+  for(let n=1;n<=days;n++){
+    const d=new Date(y,m,n), dk=dateKey(d), r=sessions[dk];
+    let c='day'; if(isWeekend(d)) c+=' we'; if(dk===k) c+=' today'; if(dk>k) c+=' future'; if(r) c+=' done';
+    const label=n+' '+MON[m]+(r?', done'+(r.score!=null?', back score '+r.score:''):'');
+    h+='<span class="'+c+'" title="'+label+'" aria-label="'+label+'"><small>'+n+'</small>'+(r?'<b>'+(r.score!=null?r.score:'\u2713')+'</b>':'')+'</span>';
+  }
+  $('cal').innerHTML=h;
+}
+function thumbFrame(e){return e.photos>1?(e.holdFrame==null?1:e.holdFrame):0;}
+function renderLength(){
+  [10,15].forEach(function(m){
+    $('len'+m).setAttribute('aria-pressed',String(settings.mins===m));
+    $('len'+m+'sub').textContent=ORDER[m].length+' exercises, '+fmt(totalSeconds(buildTimeline(m)));
+  });
+  $('routineTitle').textContent='In the '+settings.mins+' minute routine';
+  let h='';
+  ORDER[settings.mins].forEach(function(id,i){
+    const e=EX[id];
+    h+='<li><button data-ex="'+id+'" aria-label="How to do '+e.name+'"><span class="num">'+(i+1)+'</span>'+media(id,false,thumbFrame(e))+
+       '<span><span class="nm">'+e.name+'</span><span class="dt">'+e.detail+'</span></span><span class="tm">'+fmt(workSeconds(settings.mins,id))+'<small>How</small></span></button></li>';
+  });
+  $('routineList').innerHTML=h;
+  const tot=totalSeconds(buildTimeline(settings.mins));
+  const work=ORDER[settings.mins].reduce(function(a,id){return a+workSeconds(settings.mins,id);},0);
+  $('routineNote').textContent=fmt(work)+' of exercise, plus '+fmt(tot-work)+' for instructions and changing position. Tap any exercise to see how to do it.';
+}
+(function initHome(){
+  const t=today();
+  $('todayDate').textContent=DOW[t.getDay()]+' '+t.getDate()+' '+MON[t.getMonth()];
+  const hr=new Date().getHours(); $('heroWord').textContent=hr<12?'Morning':hr<18?'Afternoon':'Evening';
+  $('optVoice').checked=settings.voice; $('optBeeps').checked=settings.beeps;
+  renderLength(); renderRecord();
+})();
+$('calPrev').addEventListener('click',function(){calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1); renderCal();});
+$('calNext').addEventListener('click',function(){calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1); renderCal();});
+$('len10').addEventListener('click',function(){settings.mins=10; store.set('mbs.mins',10); renderLength();});
+$('len15').addEventListener('click',function(){settings.mins=15; store.set('mbs.mins',15); renderLength();});
+$('soundBtn').addEventListener('click',function(){const p=$('soundPanel'); p.hidden=!p.hidden; this.setAttribute('aria-expanded',String(!p.hidden));});
+$('optVoice').addEventListener('change',function(){settings.voice=this.checked; store.set('mbs.voice',settings.voice); if(!settings.voice) stopVoice();});
+$('optBeeps').addEventListener('change',function(){settings.beeps=this.checked; store.set('mbs.beeps',settings.beeps);});
+function renderVoices(){
+  $('voiceList').innerHTML=VOICES.map(function(v){
+    return '<button data-voice="'+v.id+'" aria-pressed="'+(v.id===settings.voiceId)+'"><span class="vn">'+v.label+'</span><span class="vd">'+v.desc+'</span></button>';
+  }).join('');
+}
+renderVoices();
+$('voiceList').addEventListener('click',function(ev){
+  const b=ev.target.closest('button[data-voice]'); if(!b) return;
+  audioOn(); stopVoice();
+  if(b.dataset.voice!==settings.voiceId){
+    settings.voiceId=b.dataset.voice; store.set('mbs.voice2',settings.voiceId);
+    pack=null; bufs={}; renderVoices(); prefetch();
+  }
+  speak('test',false,0,true);
+});
+
+/* ---------- how-to sheet ---------- */
+function openHow(id){
+  const e=EX[id];
+  $('howName').textContent=e.name; $('howDetail').textContent=e.detail;
+  let m='';
+  if(!e.photos) m='<figure>'+media(id)+'</figure>';
+  else for(let i=0;i<e.photos;i++) m+='<figure>'+media(id,false,i)+'<figcaption>'+((e.labels||['Start','Finish'])[i]||'')+'</figcaption></figure>';
+  $('howMedia').innerHTML=m;
+  $('howSteps').innerHTML=e.steps.map(function(s){return '<li><span>'+s+'</span></li>';}).join('');
+  $('howFeel').textContent=e.feel; $('howAvoid').textContent=e.avoid;
+  $('howNote').hidden=!e.note; $('howNote').textContent=e.note||'';
+  $('how').hidden=false; $('how').scrollTop=0;
+}
+$('routineList').addEventListener('click',function(ev){const b=ev.target.closest('button[data-ex]'); if(b) openHow(b.dataset.ex);});
+$('howClose').addEventListener('click',function(){$('how').hidden=true;});
+
+/* ---------- session ---------- */
+const S={segs:[],i:0,t:0,running:false,last:0,timer:null,total:0,flags:{},mins:10,open:false,figEx:null};
+let wake=null;
+async function wakeOn(){try{if('wakeLock' in navigator){wake=await navigator.wakeLock.request('screen');}}catch(e){}}
+function wakeOff(){try{if(wake){wake.release();}}catch(e){} wake=null;}
+function show(which){['home','session','done'].forEach(function(id){$(id).hidden=(id!==which);}); window.scrollTo(0,0);}
+function warm(i){
+  if(!actx) return;
+  const want={};
+  for(let j=i;j<Math.min(S.segs.length,i+3);j++) S.segs[j].clips.forEach(function(k){want[k]=1;});
+  Object.keys(want).forEach(function(k){getBuf(k).catch(function(){});});
+  Object.keys(bufs).forEach(function(k){if(!KEEP[k]&&!want[k]) delete bufs[k];});
+}
+function startSession(){
+  audioOn();
+  S.mins=settings.mins; S.segs=buildTimeline(S.mins); S.total=totalSeconds(S.segs);
+  S.open=true; S.running=true; S.last=performance.now(); S.figEx=null;
+  show('session'); $('exitSheet').hidden=true;
+  if(actx) Object.keys(KEEP).forEach(function(k){getBuf(k).catch(function(){});});
+  enter(0);
+  wakeOn();
+  clearInterval(S.timer); S.timer=setInterval(tick,100);
+}
+function enter(i,carry){
+  S.i=i; S.t=carry||0; S.flags={};
+  const g=S.segs[i];
+  /* the voice starts with the 2 second changeover and is left to finish over the start of the exercise */
+  if(g.phase==='ready') speak(g.clips); else beep(990,0.2,0.12);
+  warm(i);
+  renderSeg(); paint();
+}
+function renderSeg(){
+  const g=S.segs[S.i], e=EX[g.ex];
+  $('session').dataset.phase=S.running?g.phase:'paused';
+  $('sPhase').textContent=!S.running?'Paused':g.phase==='ready'?'Get ready':g.phase==='hold'?(e.go?'Go':'Hold'):'Reps';
+  if(S.figEx!==g.ex){S.figEx=g.ex; $('sFig').innerHTML=media(g.ex,true,0);}
+  $('sName').textContent=e.name;
+  $('sSide').hidden=!g.side; $('sSide').textContent=g.side||'';
+  $('sCue').textContent=g.phase==='ready'?(g.first?e.setup:'Change over.'):e.cue;
+  let nx='';
+  for(let j=S.i+1;j<S.segs.length;j++){
+    const n=S.segs[j];
+    if(n.phase==='ready') continue;
+    if(n.ex!==g.ex){nx='Next: '+EX[n.ex].name; break;}
+    if(g.phase!=='ready'){nx='Next: '+n.side.toLowerCase(); break;}
+  }
+  $('sNext').textContent=nx||(S.i>=S.segs.length-2?'Last one.':'');
+  $('sStep').textContent=(g.ei+1)+' of '+ORDER[S.mins].length;
+  $('btnPause').textContent=S.running?'Pause':'Resume';
+}
+function paint(){
+  const g=S.segs[S.i], e=EX[g.ex], left=Math.max(0,g.dur-S.t);
+  if(g.phase==='reps'){
+    const going=S.t>=g.lead;
+    $('sCount').textContent=going?Math.min(g.reps,Math.floor((S.t-g.lead)/g.every)+1):'×'+g.reps;
+    $('sRep').textContent=going?'of '+g.reps:'slow reps';
+  }else if(g.phase==='ready'){
+    /* the number counts the 2 second changeover; at the very start it waits while the routine is announced */
+    const listening=left>TRANS;
+    $('sCount').textContent=listening?TRANS:Math.ceil(left);
+    $('sRep').textContent=listening?'listen first':'seconds to start';
+  }else{
+    $('sCount').textContent=Math.ceil(left);
+    $('sRep').textContent='seconds';
+  }
+  const ph=$('sFig').firstElementChild;
+  if(ph&&ph.classList.contains('photo')){ph.style.setProperty('--fade',fadeFor(g,e)+'s'); ph.classList.toggle('f1',frameFor(g,e,S.t)===1);}
+  const el=g.start+Math.min(S.t,g.dur);
+  $('sLeft').textContent=fmt(S.total-el)+' left';
+  $('sBar').style.width=(100*el/S.total).toFixed(2)+'%';
+}
+function tick(){
+  const now=performance.now(); let d=(now-S.last)/1000; S.last=now;
+  if(!S.running||!S.open) return;
+  if(d<0||d>8) d=0;            /* the phone was asleep or the app was in the background */
+  S.t+=d;
+  const g=S.segs[S.i], left=g.dur-S.t;
+  if(g.phase==='reps'){
+    if(S.t>=g.lead){
+      const n=Math.min(g.reps,Math.floor((S.t-g.lead)/g.every)+1);
+      if(S.flags.rep!==n){S.flags.rep=n; speak('n'+n,true);}
+    }
+  }else{
+    if(g.phase==='hold') timeCalls(g.dur).forEach(function(c){ if(S.t>=c&&!S.flags['c'+c]){S.flags['c'+c]=1; if(S.t<c+2) speak('t-'+c+'-'+(g.dur-c),true);} });
+    if(g.phase==='hold') for(let k=3;k>=1;k--){ if(left<=k&&left>0&&!S.flags['b'+k]){S.flags['b'+k]=1; beep(700,0.09,0.15);} }
+  }
+  if(S.t>=g.dur) advance(Math.min(1,S.t-g.dur)); else paint();
+}
+function advance(carry){
+  if(S.i+1>=S.segs.length){finish(); return;}
+  enter(S.i+1,carry);
+}
+function firstSegOf(ei){return S.segs.findIndex(function(g){return g.ei===ei;});}
+function skip(){
+  const j=firstSegOf(S.segs[S.i].ei+1);
+  resumeIfPaused();
+  if(j<0) finish(); else enter(j);
+}
+function back(){
+  const g=S.segs[S.i], f=firstSegOf(g.ei);
+  resumeIfPaused();
+  if(S.i===f&&S.t<3&&g.ei>0) enter(firstSegOf(g.ei-1)); else enter(f);
+}
+function resumeIfPaused(){ if(!S.running){audioOn(); S.running=true; S.last=performance.now(); wakeOn();} }
+function pause(){ if(!S.running) return; S.running=false; stopVoice(); renderSeg(); }
+function resume(){
+  if(S.running) return;
+  audioOn(); S.running=true; S.last=performance.now(); wakeOn();
+  /* a get-ready step starts again so the instruction is heard in full */
+  if(S.segs[S.i].phase==='ready') enter(S.i); else {speak('carry'); renderSeg();}
+}
+function closeSession(){ S.open=false; S.running=false; clearInterval(S.timer); stopVoice(); wakeOff(); }
+function finish(){
+  closeSession();
+  const k=dateKey(today()), prev=sessions[k];
+  sessions[k]={minutes:Math.max(S.mins,prev?prev.minutes||0:0), score:currentScore(), at:new Date().toISOString()};
+  persist(k);
+  renderRecord();
+  $('doneKicker').textContent=S.mins+' minute routine complete';
+  show('done');
+  beep(660,0.18); setTimeout(function(){beep(990,0.35);},180);
+  speak('done',false,0.6);
+}
+$('startBtn').addEventListener('click',startSession);
+$('btnPause').addEventListener('click',function(){S.running?pause():resume();});
+$('btnSkip').addEventListener('click',skip);
+$('btnBack').addEventListener('click',back);
+$('btnHow').addEventListener('click',function(){pause(); openHow(S.segs[S.i].ex);});
+$('btnExit').addEventListener('click',function(){pause(); $('exitSheet').hidden=false;});
+$('exitNo').addEventListener('click',function(){$('exitSheet').hidden=true; resume();});
+$('exitYes').addEventListener('click',function(){closeSession(); show('home');});
+$('doneBtn').addEventListener('click',function(){stopVoice(); show('home');});
+document.addEventListener('visibilitychange',function(){
+  if(!S.open) return;
+  if(document.hidden) pause(); else if(S.running) wakeOn();
+});
+document.addEventListener('keydown',function(ev){
+  if(!S.open||!$('how').hidden||ev.target.closest('button')) return;
+  if(ev.code==='Space'){ev.preventDefault(); S.running?pause():resume();}
+});
+})();
+</script>
+
+<script>
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+</script>
+</body>
+</html>
