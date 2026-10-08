@@ -573,14 +573,6 @@ function buildTimeline(mins){
     }
   });
   let t=0; segs.forEach(function(g){g.start=t; t+=g.dur;});
-  /* Milestones: halfway, about 2 minutes in and about 2 minutes to go. Each is spoken at the end of
-     whichever stretch finishes closest to that moment, and left out if nothing ends within 45 seconds of it. */
-  const ends=segs.filter(function(g,i){return g.phase==='ready'&&i>0;}), used=[];
-  [['ms-half',t/2],['ms-in',120],['ms-left',t-120]].forEach(function(m){
-    let best=null;
-    ends.forEach(function(g){ if(used.indexOf(g)<0&&(!best||Math.abs(g.start-m[1])<Math.abs(best.start-m[1]))) best=g; });
-    if(best&&Math.abs(best.start-m[1])<=45){used.push(best); best.clips=[m[0]].concat(best.clips); best.mark=m[0];}
-  });
   return segs;
 }
 function totalSeconds(segs){return segs.reduce(function(a,g){return a+g.dur;},0);}
@@ -971,6 +963,8 @@ function startSession(){
   audioOn();
   S.mins=settings.mins; S.segs=buildTimeline(S.mins); S.total=totalSeconds(S.segs);
   S.open=true; S.running=true; S.last=performance.now(); S.figEx=null;
+  /* spoken at the exact moment: 2 minutes in, halfway, and 2 minutes from the end */
+  S.ms=[['ms-in',120],['ms-half',S.total/2],['ms-left',S.total-120]].map(function(m){return {key:m[0],at:m[1],done:false};});
   show('session'); $('exitSheet').hidden=true;
   if(actx) Object.keys(KEEP).forEach(function(k){getBuf(k).catch(function(){});});
   enter(0);
@@ -1030,14 +1024,24 @@ function tick(){
   if(!S.running||!S.open) return;
   if(d<0||d>8) d=0;            /* the phone was asleep or the app was in the background */
   S.t+=d;
-  const g=S.segs[S.i], left=g.dur-S.t;
+  const g=S.segs[S.i], left=g.dur-S.t, idle=performance.now()>=busyUntil, el=g.start+S.t;
+  /* a milestone waits a moment if the voice is mid-sentence, and is dropped if it would be over 10 seconds late */
+  (S.ms||[]).forEach(function(m){
+    if(m.done||el<m.at) return;
+    if(el>m.at+10){m.done=true; return;}
+    if(idle&&performance.now()>=busyUntil){m.done=true; speak(m.key);}
+  });
   if(g.phase==='reps'){
     if(S.t>=g.lead){
       const n=Math.min(g.reps,Math.floor((S.t-g.lead)/g.every)+1);
       if(S.flags.rep!==n){S.flags.rep=n; speak('n'+n,true);}
     }
   }else{
-    if(g.phase==='hold') timeCalls(g.dur).forEach(function(c){ if(S.t>=c&&!S.flags['c'+c]){S.flags['c'+c]=1; if(S.t<c+2) speak('t-'+c+'-'+(g.dur-c),true);} });
+    if(g.phase==='hold') timeCalls(g.dur).forEach(function(c){
+      const f='c'+c; if(S.flags[f]||S.t<c) return;
+      if(S.t>c+4){S.flags[f]=1; return;}
+      if(performance.now()>=busyUntil){S.flags[f]=1; speak('t-'+c+'-'+(g.dur-c));}
+    });
     if(g.phase==='hold') for(let k=3;k>=1;k--){ if(left<=k&&left>0&&!S.flags['b'+k]){S.flags['b'+k]=1; beep(700,0.09,0.15);} }
   }
   if(S.t>=g.dur) advance(Math.min(1,S.t-g.dur)); else paint();
