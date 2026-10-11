@@ -158,7 +158,6 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
 .cal .day{position:relative;aspect-ratio:1;max-width:100%;border-radius:12px;background:var(--surface);color:var(--muted);font-variant-numeric:tabular-nums}
 .cal .day small{position:absolute;top:4px;left:6px;font-size:11px;font-weight:700;line-height:1}
 .cal .day b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding-top:6px;font-size:19px;font-weight:800;line-height:1}
-.cal .day.we{background:transparent;box-shadow:inset 0 0 0 1px var(--line)}
 .cal .day.future{opacity:.45}
 .cal .day.done{background:var(--accent);box-shadow:none;color:var(--on-accent)}
 .cal .day.done small{opacity:.7}
@@ -346,6 +345,72 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
 .routine.lib .tag{display:inline-block;margin-top:4px;font-size:11.5px;font-weight:700;color:var(--accent-text);background:color-mix(in srgb,var(--accent) 22%,transparent);border-radius:999px;padding:2px 8px}
 .pick{flex:none;border:0;border-radius:999px;background:var(--accent);color:var(--on-accent);font-weight:800;font-size:14px;padding:9px 14px}
 .pick:disabled{opacity:.35}
+
+/* music from Spotify: a block in the Sound panel and a now-playing chip on the player */
+.music{display:flex;flex-direction:column;gap:14px;border-top:1px solid var(--line);padding-top:16px}
+.mu-sub{display:flex;flex-direction:column;gap:12px}
+.mu-set{display:flex;flex-direction:column;gap:12px;background:var(--bg);border-radius:16px;padding:14px}
+.mu-set h3{font-size:16px}
+.mu-lbl{font-size:14px;font-weight:700;color:var(--muted)}
+.mu-idrow{display:flex;gap:8px;align-items:stretch}
+.mu-idrow input{flex:1;min-width:0;font:inherit;font-size:15px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.mu-uri{font-size:14px;font-weight:600;line-height:1.35;word-break:break-all;-webkit-user-select:all;user-select:all;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.mu-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.mu-link{background:none;border:0;padding:4px 0;font-size:14px;font-weight:700;color:var(--muted);text-decoration:underline;text-underline-offset:3px;align-self:flex-start}
+.mu-pick{display:grid;grid-template-columns:48px minmax(0,1fr) auto;align-items:center;gap:12px;background:var(--weak);border-radius:16px;padding:8px 8px 8px 8px}
+.mu-pick .ghost{background:var(--surface);padding:9px 14px}
+.mu-cv{display:block;width:48px;height:48px;border-radius:10px;object-fit:cover;background:var(--line)}
+.mu-cv.none{position:relative}
+.mu-cv.none::before{content:"";position:absolute;inset:0;margin:auto;width:22px;height:22px;background:var(--muted);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 18.5V6.2l10-2.2v11.7' fill='none' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3Ccircle cx='6.5' cy='18.5' r='2.8'/%3E%3Ccircle cx='16.5' cy='16' r='2.8'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M9 18.5V6.2l10-2.2v11.7' fill='none' stroke='%23000' stroke-width='2' stroke-linejoin='round'/%3E%3Ccircle cx='6.5' cy='18.5' r='2.8'/%3E%3Ccircle cx='16.5' cy='16' r='2.8'/%3E%3C/svg%3E") center/contain no-repeat}
+.mu-nm{display:block;font-weight:700;font-size:16px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mu-dt{display:block;font-size:13px;color:var(--muted);line-height:1.3;margin-top:1px}
+.mu-list{display:flex;flex-direction:column;gap:4px;max-height:340px;overflow-y:auto;margin:0 -6px;padding:0 6px;overscroll-behavior:contain}
+.mu-list button{display:grid;grid-template-columns:44px minmax(0,1fr) 26px;align-items:center;gap:12px;width:100%;text-align:left;background:none;border:0;border-radius:14px;padding:6px}
+.mu-list button .mu-cv{width:44px;height:44px;border-radius:9px}
+.mu-list button[aria-pressed="true"]{background:var(--weak)}
+.mu-list button[aria-pressed="true"]::after{content:"";width:24px;height:24px;border-radius:50%;
+  background:var(--accent) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7.5' fill='none' stroke='%23141618' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/15px no-repeat}
+.mu-vol{display:flex;flex-direction:column;gap:6px;font-size:16px;font-weight:600}
+.mu-vol span{display:flex;justify-content:space-between}
+.mu-vol output{font-size:14px;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
+.mu-vol input{width:100%;margin:6px 0;accent-color:var(--accent-text)}
+.mu-err{font-size:14px;font-weight:600;color:var(--warn);background:var(--warn-bg);border-radius:12px;padding:10px 12px;line-height:1.4}
+.mu-err:empty{display:none}
+/* sits under the progress bar, out of the flow, so the top bar keeps its exact layout */
+.s-prog{position:relative}
+#sNow{position:absolute;left:0;top:calc(100% + 9px)}
+.s-np{max-width:100%;display:flex;align-items:center;gap:7px;padding:3px 11px 3px 3px;border-radius:999px;background:rgba(13,15,16,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);color:#fff;font-size:12.5px;font-weight:600;line-height:1.2}
+.s-np img{flex:none;width:22px;height:22px;border-radius:50%;object-fit:cover;background:rgba(255,255,255,.15)}
+.s-np span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-np b{font-weight:800}
+.s-np i{font-style:normal;color:rgba(255,255,255,.72)}
+.s-np.err{border-radius:12px;padding:6px 10px;max-width:calc(100vw - 120px)}
+.s-np.err span{white-space:normal;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical}
+
+.hero-btns{display:flex;gap:8px}
+.help{display:flex;flex-direction:column;gap:10px}
+.help details{background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:0 16px}
+.help summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 0;font-weight:800;font-size:17px;letter-spacing:-.01em}
+.help summary::-webkit-details-marker{display:none}
+.help summary::after{content:"";flex:none;width:28px;height:28px;border-radius:50%;background:var(--weak) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M7 10l5 5 5-5' fill='none' stroke='%236B7074' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/18px no-repeat;transition:transform .2s}
+.help details[open] summary::after{transform:rotate(180deg)}
+.help details > :not(summary){margin:0 0 12px;font-size:15.5px;line-height:1.5}
+.help details > :last-child{margin-bottom:16px}
+.help ol,.help ul{padding-left:20px;display:flex;flex-direction:column;gap:6px}
+.help ol{list-style:decimal} .help ul{list-style:disc}
+.help li::marker{color:var(--muted);font-weight:700}
+.help code{font-family:inherit;font-weight:700;font-size:14px;background:var(--weak);border-radius:6px;padding:1px 5px;overflow-wrap:anywhere}
+
+/* comfortable tap targets for use lying down */
+.ghost{min-height:44px}
+.sec-head .ghost{padding:10px 18px}
+.cal-head .ghost{width:44px;height:44px}
+.s-top .x{height:44px;min-width:44px}
+.ed-acts button{min-height:40px;padding:9px 14px}
+.ed-x{width:44px;height:44px}
+.ed-row{grid-template-columns:76px minmax(0,1fr) 44px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -356,7 +421,7 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
   <header class="hero">
     <div class="hero-top">
       <p class="eyebrow" id="todayDate"></p>
-      <button class="ghost" id="soundBtn" aria-expanded="false" aria-controls="soundPanel">Sound</button>
+      <div class="hero-btns"><button class="ghost" id="helpBtn" aria-controls="help">Help</button><button class="ghost" id="soundBtn" aria-expanded="false" aria-controls="soundPanel">Sound</button></div>
     </div>
     <h1 class="title">
       <span class="t1" id="heroWord" aria-hidden="true">Morning</span>
@@ -375,6 +440,34 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
     </div>
     <label class="switch"><input type="checkbox" id="optVoice" checked> Spoken instructions</label>
     <label class="switch"><input type="checkbox" id="optBeeps" checked> Beeps at each change</label>
+    <div class="music" id="musicBlock" hidden>
+      <h2>Music</h2>
+      <p class="small" id="muNo" hidden>Music from Spotify works in the phone app version.</p>
+      <div class="mu-sub" id="muYes" hidden>
+        <label class="switch"><input type="checkbox" id="muOn"> Play music from Spotify</label>
+        <p class="small" id="muAbout">Your playlist plays during the routine, pauses when you pause and stops at the end.</p>
+        <div class="mu-set" id="muSetup" hidden>
+          <h3>Set up</h3>
+          <label class="mu-lbl" for="muId">Spotify Client ID</label>
+          <div class="mu-idrow"><input id="muId" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Paste it here"><button class="ghost go" id="muIdSave">Save</button></div>
+          <span class="mu-lbl">Redirect address to register</span>
+          <div class="mu-uri" id="muUri"></div>
+          <div class="mu-row"><button class="ghost" id="muCopy">Copy address</button></div>
+          <p class="small">The setup steps are in Help, the button at the top of the front page.</p>
+        </div>
+        <div class="mu-sub" id="muConnect" hidden>
+          <button class="ghost go" id="muConnectBtn">Connect Spotify</button>
+          <button class="mu-link" id="muChangeId">Change Client ID</button>
+        </div>
+        <div class="mu-sub" id="muLinked" hidden>
+          <div class="mu-pick" id="muChoice"></div>
+          <div class="mu-list" id="muList" role="group" aria-label="Your playlists" hidden></div>
+          <label class="mu-vol"><span>Music volume <output id="muVolOut"></output></span><input type="range" id="muVol" min="0" max="100" step="5"></label>
+          <div class="mu-row"><button class="ghost" id="muDisconnect">Disconnect Spotify</button></div>
+        </div>
+      </div>
+      <p class="mu-err" id="muErr" role="status"></p>
+    </div>
     <p class="small">Turn the volume up and take the phone off silent.</p>
   </section>
 
@@ -394,7 +487,7 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
   <section class="block">
     <h2>Your record</h2>
     <div class="stats">
-      <div><span class="n" id="stStreak">0</span><span class="k">day streak<br>(weekends optional)</span></div>
+      <div><span class="n" id="stStreak">0</span><span class="k">day<br>streak</span></div>
       <div><span class="n" id="stBest">0</span><span class="k">best<br>streak</span></div>
       <div><span class="n" id="stTotal">0</span><span class="k">sessions<br>in total</span></div>
     </div>
@@ -438,6 +531,7 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
       <div class="s-prog">
         <div class="row"><span id="sStep"></span><span id="sLeft"></span></div>
         <div class="bar"><i id="sBar"></i></div>
+        <div class="s-np" id="sNow" hidden><img id="sNowImg" alt=""><span id="sNowTxt"></span></div>
       </div>
       <button class="x how" id="btnHow">How</button>
     </div>
@@ -494,6 +588,115 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
     </div>
     <div class="chips" id="libChips" role="group" aria-label="Body part"></div>
     <div id="libList"></div>
+  </div>
+</section>
+
+<section id="help" class="page" hidden aria-labelledby="helpTitle">
+  <div class="in">
+    <div class="hd">
+      <div><p class="eyebrow">Morning Stretch</p><h1 id="helpTitle">How it works</h1></div>
+      <button class="ghost" id="helpClose">Close</button>
+    </div>
+    <div class="help">
+      <details open>
+        <summary>Your daily stretch</summary>
+        <ol>
+          <li>Pick a routine under <b>Routine</b>: short (about 10 minutes), long (about 15) or one of your own.</li>
+          <li>Score your back from 1 (sore) to 5 (great). You can also do this at the end.</li>
+          <li>Tap <b>Start</b>. Put the phone where you can hear it and lie down.</li>
+        </ol>
+        <p>The voice names each stretch and says how long it lasts. You get 2 seconds to change position, time calls during each hold, and a word of encouragement at about two minutes in, halfway and near the end.</p>
+      </details>
+      <details>
+        <summary>During a stretch</summary>
+        <ul>
+          <li>The ring fills as each stretch goes on. Amber means get ready, green means stretch.</li>
+          <li><b>Pause</b> stops everything. <b>Back</b> and <b>Skip</b> move between stretches.</li>
+          <li><b>How</b> pauses the routine and shows the photos and steps.</li>
+          <li>The cross at the top ends the session. It will not count towards today.</li>
+          <li>The screen stays on while you stretch.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>Change a routine</summary>
+        <ol>
+          <li>Tap <b>Edit</b> next to the list of stretches.</li>
+          <li>Use <b>Swap</b> to replace a stretch with another for the same part of the body.</li>
+          <li>Use <b>Up</b> and <b>Down</b> to change the order, and the cross to remove one.</li>
+          <li>Tap <b>Add a stretch</b> to pick more from the library.</li>
+          <li>Tap <b>Save</b>. The new total time shows at the top as you go.</li>
+        </ol>
+        <p><b>Reset to the original</b> puts the short or long routine back as it was. Each stretch keeps its own set length.</p>
+      </details>
+      <details>
+        <summary>Create your own routine</summary>
+        <ol>
+          <li>Under <b>Routine</b>, tap <b>Create your own</b>.</li>
+          <li>Give it a name, for example "Before golf".</li>
+          <li>Tap <b>Add a stretch</b> for each one you want, then <b>Save</b>.</li>
+          <li>Tap its card to choose it, then <b>Start</b>.</li>
+        </ol>
+        <p>To change or delete it, choose it and tap <b>Edit</b>.</p>
+      </details>
+      <details>
+        <summary>Stretch library</summary>
+        <p>The <b>Stretch library</b> card lists every stretch by body part: lower back, hamstrings, hips and glutes, thighs and calves, upper back and sides, chest, shoulders and neck, and core. Tap the buttons at the top to show one area. Tap any stretch to see how to do it.</p>
+      </details>
+      <details>
+        <summary>Voice and sound</summary>
+        <ul>
+          <li>Tap <b>Sound</b> at the top to choose a voice. Tap one to hear it.</li>
+          <li>Turn spoken instructions or beeps off there too.</li>
+          <li>Turn the volume up and take the phone off silent.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>Music from Spotify</summary>
+        <p>Your own Spotify playlist can play during the routine. You need Spotify Premium and the phone app version. Music does not work in the Claude version.</p>
+        <p><b>One-off setup</b></p>
+        <ol>
+          <li>Go to developer.spotify.com/dashboard and log in with your Spotify account.</li>
+          <li>Tap <b>Create app</b>. Name it <b>Morning Stretch</b> and give it any description.</li>
+          <li>Under Redirect URIs paste <code>https://akuropatwa.github.io/Morning-stretch/</code> and tap <b>Add</b>.</li>
+          <li>Tick <b>Web API</b> and <b>Web Playback SDK</b>, agree to the terms and tap <b>Save</b>.</li>
+          <li>Copy the <b>Client ID</b> from the app's page.</li>
+          <li>In this app, tap <b>Sound</b>, turn on <b>Play music from Spotify</b>, paste the Client ID and tap <b>Save</b>.</li>
+          <li>Tap <b>Connect Spotify</b>, log in and agree, then choose a playlist.</li>
+        </ol>
+        <p><b>Using it</b></p>
+        <ul>
+          <li>The music starts with <b>Start</b>, pauses with <b>Pause</b> and stops at the end.</li>
+          <li>Change the playlist any time in <b>Sound</b>.</li>
+          <li>On an iPhone, Spotify does not let other apps change its volume, so the music cannot get quieter while the voice speaks. Pick a calm playlist and set the volume with the phone's buttons.</li>
+          <li>If the music does not start, tap <b>Pause</b> and then <b>Resume</b>.</li>
+          <li>Keep the phone off silent, or the coach's voice may not be heard over the music.</li>
+          <li>Up to five Spotify accounts, including yours, can use your setup. Each needs Spotify Premium, and you add them by name and email in the Spotify dashboard under your app's <b>Settings</b>, <b>User Management</b>.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>Your record</summary>
+        <ul>
+          <li>Every day you finish a routine counts, weekdays and weekends alike. Your streak is the number of days in a row.</li>
+          <li>The calendar shows your back score for each day, or a tick if you did not give one. Use the arrows to look back at earlier months.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>Back up your record</summary>
+        <p>In the phone app your record is kept on that phone only. Tap <b>Back up or restore</b>, then <b>Copy backup</b>, and paste it into a note or an email to yourself. To restore, paste it into the box and tap <b>Restore</b>. Your own routines are included. Nothing already in the app is overwritten.</p>
+      </details>
+      <details>
+        <summary>The phone app</summary>
+        <ul>
+          <li>Install it from <code>https://akuropatwa.github.io/Morning-stretch/</code>. On an iPhone use Safari, tap Share, then <b>Add to Home Screen</b>.</li>
+          <li>It works without a connection once it has been opened online. Music needs a connection.</li>
+          <li>To get an update, close the app fully and open it again while online. Do it twice if the voices have changed.</li>
+        </ul>
+      </details>
+      <details>
+        <summary>Stay safe</summary>
+        <p>If a stretch sends pain, tingling or numbness further down a leg, stop that one and skip it. Easing back towards the spine is fine. Gentle is better than far. If your back gets worse, check with your physio.</p>
+      </details>
+    </div>
   </div>
 </section>
 
@@ -890,13 +1093,13 @@ function fadeFor(g,e){
 function dateKey(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function addDays(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);}
 function isWeekend(d){const w=d.getDay();return w===0||w===6;}
-/* Streak: consecutive weekdays done. A missed weekend never breaks it; a weekend session adds to it. */
+/* Streak: days in a row with a routine done. Weekends count the same as weekdays. */
 function currentStreak(sessions,today){
   let c=addDays(today,0), n=0;
   if(!sessions[dateKey(c)]) c=addDays(c,-1);
   for(let i=0;i<5000;i++){
     if(sessions[dateKey(c)]) n++;
-    else if(!isWeekend(c)) break;
+    else break;
     c=addDays(c,-1);
   }
   return n;
@@ -909,7 +1112,7 @@ function bestStreak(sessions,today){
   const end=dateKey(today);
   for(let i=0;i<5000;i++){
     if(sessions[dateKey(c)]){run++; if(run>best) best=run;}
-    else if(!isWeekend(c)) run=0;
+    else run=0;
     if(dateKey(c)>=end) break;
     c=addDays(c,1);
   }
@@ -917,6 +1120,748 @@ function bestStreak(sessions,today){
 }
 function fmt(sec){sec=Math.max(0,Math.round(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
 if(typeof module!=='undefined') module.exports={VOICES,CLIP,timeCalls,fadeFor,EX,ORDER,PARTS,exSeconds,phrases,buildTimeline,totalSeconds,workSeconds,frameFor,dateKey,addDays,currentStreak,bestStreak,fmt};
+</script>
+<script id="music">
+/* Music: Spotify under the stretching coach.
+   Plain ES5-style script, no build step. Implements window.Music as set out in CONTRACT.md.
+
+   How it plays:
+   1. First choice: Spotify's Web Playback SDK, which plays inside this page, so the music and
+      the coach voice share one audio session and never interrupt each other.
+   2. Fallback: Spotify Connect. The Web API tells a running Spotify app (on this phone or a
+      speaker or computer) to play, pause and resume.
+   On iPhone neither route can change the music volume from code (Apple keeps volume under the
+   hardware buttons), so duck(), setVolume() and the fade in stop() only take effect on devices
+   that allow it. Everything fails soft: errors become a plain sentence in onChange, never a throw. */
+(function () {
+  'use strict';
+
+  var ACCOUNTS = 'https://accounts.spotify.com';
+  var API = 'https://api.spotify.com/v1';
+  var SDK_URL = 'https://sdk.scdn.co/spotify-player.js';
+  var PLAYER_NAME = 'Morning Stretch';
+  var SCOPES = [
+    'streaming',                    /* Web Playback SDK */
+    'user-read-email',              /* long listed alongside streaming for the SDK */
+    'user-read-private',            /* /me product field, to check for Premium */
+    'user-read-playback-state',     /* list devices, read what is playing */
+    'user-modify-playback-state',   /* play, pause, shuffle, volume, transfer */
+    'playlist-read-private',
+    'playlist-read-collaborative',
+    'user-library-read'             /* Liked Songs */
+  ];
+  var KEY = {
+    client: 'mbs.spotify.client', choice: 'mbs.spotify.choice', vol: 'mbs.spotify.vol',
+    tokens: 'mbs.spotify.tokens', pkce: 'mbs.spotify.pkce', where: 'mbs.spotify.where'
+  };
+  var REFRESH_MARGIN = 120000;  /* refresh the access token when less than 2 minutes remain */
+  var DUCK = 0.35;              /* while the coach talks, music drops to 35% of its set level */
+  var DUCK_DOWN_MS = 250, DUCK_UP_MS = 800, FADE_MS = 1500;
+  var CONNECT_VOL_GAP = 1000;   /* at most one remote volume call per second */
+  var SDK_READY_MS = 8000;
+
+  /* Everything the user might read. Plain British English, no dashes. */
+  var MSG = {
+    NOT_SUPPORTED: 'Music works in the Stretch app on your phone, not here.',
+    NO_CLIENT: 'Add your Spotify Client ID in the music settings first.',
+    CANCELLED: 'Spotify sign-in was cancelled.',
+    WRONG_WINDOW: 'Spotify sign-in finished in a different window, so it could not be completed. Open Stretch from your home screen and tap Connect again.',
+    SIGNIN_FAILED: 'Spotify sign-in did not complete. Please tap Connect to try again.',
+    NOT_ALLOWLISTED: 'This Spotify account is not on the app’s user list. Add it under User Management in the Spotify developer dashboard, then tap Connect again.',
+    PREMIUM: 'Spotify Premium is needed for music in the app.',
+    SIGNED_OUT: 'Spotify has signed the app out. Tap Connect to sign in again.',
+    OFFLINE: 'Could not reach Spotify. Check your connection. Your routine will carry on without music.',
+    NO_DEVICE: 'Music could not start. Open Spotify, play a song, come back, then tap Pause and Resume.',
+    AUTOPLAY: 'Your phone stopped the music starting by itself. Tap Pause and then Resume to start it.',
+    PLAYLIST: 'That playlist could not be played. Please choose another one.',
+    BUSY: 'Spotify is busy just now. Please try again in a minute.',
+    GENERIC: 'The music could not start this time. Your routine will carry on without it.'
+  };
+
+  /* ---------- small helpers ---------- */
+  var clock = function () { return Date.now(); };
+  function now() { return clock(); }
+  function E(code, detail) { var e = new Error(code); e.code = code; e.detail = detail; return e; }
+  function clamp(v) { v = +v; return isNaN(v) ? 0.5 : Math.max(0, Math.min(1, v)); }
+  function resolved(v) { return Promise.resolve(v); }
+
+  var store = {
+    get: function (k) { try { var s = window.localStorage.getItem(k); return s === null ? null : JSON.parse(s); } catch (e) { return null; } },
+    set: function (k, v) { try { window.localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} },
+    del: function (k) { try { window.localStorage.removeItem(k); } catch (e) {} }
+  };
+
+  function isIOS() {
+    var n = window.navigator || {};
+    var ua = n.userAgent || '';
+    return /iPad|iPhone|iPod/.test(ua) || (n.platform === 'MacIntel' && n.maxTouchPoints > 1);
+  }
+
+  function form(obj) {
+    return Object.keys(obj).map(function (k) { return encodeURIComponent(k) + '=' + encodeURIComponent(obj[k]); }).join('&');
+  }
+
+  /* ---------- PKCE ---------- */
+  var VERIFIER_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+  function randomString(len) {
+    var a = new Uint8Array(len), out = '';
+    window.crypto.getRandomValues(a);
+    /* 66 allowed characters; reject bytes >= 198 so every character is equally likely */
+    for (var i = 0; i < len; i++) {
+      var b = a[i];
+      while (b >= 198) { var r = new Uint8Array(1); window.crypto.getRandomValues(r); b = r[0]; }
+      out += VERIFIER_CHARS.charAt(b % 66);
+    }
+    return out;
+  }
+  function base64url(buf) {
+    var bytes = new Uint8Array(buf), bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return window.btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function challengeFor(verifier) {
+    var data = new Uint8Array(verifier.length);
+    for (var i = 0; i < verifier.length; i++) data[i] = verifier.charCodeAt(i);
+    return window.crypto.subtle.digest('SHA-256', data).then(base64url);
+  }
+  function authorizeUrl(clientId, redirect, challenge, state) {
+    return ACCOUNTS + '/authorize?' + form({
+      client_id: clientId, response_type: 'code', redirect_uri: redirect,
+      code_challenge_method: 'S256', code_challenge: challenge, state: state, scope: SCOPES.join(' ')
+    });
+  }
+
+  /* ---------- state and listeners ---------- */
+  var S = {
+    connected: false, ready: false, playing: false, track: null, error: null,
+    mode: null,            /* 'sdk' (in this page) or 'connect' (a Spotify app elsewhere) */
+    volumeControl: false,  /* false on iPhone: duck and fades cannot change anything */
+    device: null           /* name of the device playing */
+  };
+  var listeners = [];
+  function snapshot() {
+    return { connected: S.connected, ready: S.ready, playing: S.playing, track: S.track, error: S.error,
+      mode: S.mode, volumeControl: S.volumeControl, device: S.device };
+  }
+  function emit() {
+    var snap = snapshot();
+    listeners.slice().forEach(function (cb) { try { cb(snap); } catch (e) {} });
+  }
+  function setError(code) { S.error = code ? (MSG[code] || MSG.GENERIC) : null; emit(); }
+  /* The universal catch: turn anything into a friendly message and carry on. */
+  function fail(err) {
+    var code = (err && err.code) || (err instanceof TypeError ? 'OFFLINE' : 'GENERIC');
+    if (!MSG[code]) code = 'GENERIC';
+    setError(code);
+    return null;
+  }
+
+  /* ---------- tokens ---------- */
+  var tokens = store.get(KEY.tokens);   /* {access, refresh, expiresAt} */
+  var refreshing = null;
+  var profile = null;                   /* {id, product} */
+  S.connected = !!(tokens && tokens.refresh);
+
+  function saveTokens(data) {
+    tokens = {
+      access: data.access_token,
+      refresh: data.refresh_token || (tokens && tokens.refresh),  /* Spotify may not send a new one */
+      expiresAt: now() + (data.expires_in || 3600) * 1000
+    };
+    store.set(KEY.tokens, tokens);
+    S.connected = true;
+  }
+  function forgetTokens() {
+    tokens = null; profile = null; store.del(KEY.tokens);
+    S.connected = false; S.ready = false; S.playing = false; S.track = null;
+  }
+  function tokenRequest(params) {
+    return fetch(ACCOUNTS + '/api/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form(params)
+    }).then(function (res) {
+      return res.text().then(function (t) {
+        var j = {}; try { j = t ? JSON.parse(t) : {}; } catch (e) {}
+        return { status: res.status, data: j, raw: t || '' };
+      });
+    });
+  }
+  function refresh() {
+    if (refreshing) return refreshing;
+    if (!tokens || !tokens.refresh) return Promise.reject(E('SIGNED_OUT'));
+    refreshing = tokenRequest({ grant_type: 'refresh_token', refresh_token: tokens.refresh, client_id: clientId() })
+      .then(function (r) {
+        if (r.status === 200 && r.data.access_token) { saveTokens(r.data); return tokens.access; }
+        if (r.status === 400 || r.status === 401) { forgetTokens(); throw E('SIGNED_OUT'); }
+        throw E(r.status === 429 ? 'BUSY' : 'GENERIC');
+      });
+    refreshing.then(function () { refreshing = null; }, function () { refreshing = null; });
+    return refreshing;
+  }
+  function getToken() {
+    if (!tokens || !tokens.access) return Promise.reject(E('SIGNED_OUT'));
+    if (tokens.expiresAt - now() > REFRESH_MARGIN) return resolved(tokens.access);
+    return refresh();
+  }
+
+  /* Web API call. Retries once after a 401 with a fresh token. Resolves {status, data}. */
+  function api(method, path, body, retried) {
+    return getToken().then(function (tok) {
+      var opt = { method: method, headers: { Authorization: 'Bearer ' + tok } };
+      if (body !== undefined) { opt.headers['Content-Type'] = 'application/json'; opt.body = JSON.stringify(body); }
+      return fetch(API + path, opt);
+    }).then(function (res) {
+      if (res.status === 401 && !retried) return refresh().then(function () { return api(method, path, body, true); });
+      return res.text().then(function (t) {
+        var j = null; try { j = t ? JSON.parse(t) : null; } catch (e) {}
+        return { status: res.status, data: j, raw: t || '' };
+      });
+    });
+  }
+  /* Map a failed Web API response to one of our messages. */
+  function apiError(r) {
+    var err = (r.data && r.data.error) || {};
+    var text = String(err.message || '') + ' ' + String(err.reason || '') + ' ' + String(r.raw || '');
+    if (r.status === 403 && /not\s+(be\s+)?registered|developer\.spotify\.com\/dashboard|developer dashboard/i.test(text)) return E('NOT_ALLOWLISTED');
+    if (r.status === 403 && /premium/i.test(text)) return E('PREMIUM');
+    if (r.status === 404 && /device/i.test(text)) return E('NO_DEVICE');
+    if (r.status === 401) return E('SIGNED_OUT');
+    if (r.status === 429) return E('BUSY');
+    return E('GENERIC', r.status + ' ' + text);
+  }
+  function ensureProfile() {
+    if (profile) return resolved(profile);
+    return api('GET', '/me').then(function (r) {
+      if (r.status !== 200 || !r.data) throw apiError(r);
+      profile = { id: r.data.id, product: r.data.product };
+      return profile;
+    });
+  }
+
+  /* ---------- configuration ---------- */
+  function clientId() { return String(store.get(KEY.client) || '').trim(); }
+  function supported() {
+    try {
+      if (window.claude) return false;  /* claude.ai artifact sandbox: no redirects there */
+      return !!(window.fetch && window.Promise && window.crypto && window.crypto.subtle &&
+        window.crypto.getRandomValues && window.localStorage && window.history && window.history.replaceState);
+    } catch (e) { return false; }
+  }
+  function redirectUri() {
+    var l = window.location, path = l.pathname || '/';
+    if (/\/[^\/]*\.[^\/]*$/.test(path)) path = path.replace(/[^\/]*$/, '');  /* drop index.html etc. */
+    else if (path.charAt(path.length - 1) !== '/') path += '/';
+    return l.origin + path;
+  }
+
+  /* ---------- login: start, finish, clean the URL ---------- */
+  function connect() {
+    if (!supported()) { setError('NOT_SUPPORTED'); return resolved(false); }
+    if (!clientId()) { setError('NO_CLIENT'); return resolved(false); }
+    var verifier = randomString(64), state = randomString(16), redirect = redirectUri();
+    return challengeFor(verifier).then(function (challenge) {
+      /* localStorage, not sessionStorage: iOS home-screen apps reload in a fresh page after the
+         Spotify sign-in, and only localStorage reliably survives that. */
+      store.set(KEY.pkce, { v: verifier, s: state, r: redirect, t: now() });
+      window.location.assign(authorizeUrl(clientId(), redirect, challenge, state));
+      return true;
+    }).catch(function (e) { fail(e); return false; });
+  }
+
+  function cleanUrl(params) {
+    try {
+      ['code', 'state', 'error'].forEach(function (k) { params.delete(k); });
+      var q = params.toString(), l = window.location;
+      window.history.replaceState(window.history.state, '', l.pathname + (q ? '?' + q : '') + l.hash);
+    } catch (e) {}
+  }
+
+  function finishLogin(params) {
+    var code = params.get('code'), err = params.get('error'), state = params.get('state');
+    cleanUrl(params);   /* first, so a reload never replays a used code */
+    var p = store.get(KEY.pkce);
+    store.del(KEY.pkce);
+    if (err) return Promise.reject(E(err === 'access_denied' ? 'CANCELLED' : 'SIGNIN_FAILED', err));
+    if (!p || !p.v) return Promise.reject(E('WRONG_WINDOW'));
+    if (p.s !== state) return Promise.reject(E('SIGNIN_FAILED', 'state mismatch'));
+    if (!clientId()) return Promise.reject(E('NO_CLIENT'));
+    return tokenRequest({
+      grant_type: 'authorization_code', code: code, redirect_uri: p.r || redirectUri(),
+      client_id: clientId(), code_verifier: p.v
+    }).then(function (r) {
+      if (r.status !== 200 || !r.data.access_token) throw E('SIGNIN_FAILED', r.status + ' ' + (r.data.error || ''));
+      saveTokens(r.data);
+      return ensureProfile();
+    }).then(function (me) {
+      if (me.product && me.product !== 'premium') throw E('PREMIUM');
+    });
+  }
+
+  function init() {
+    if (!supported()) { S.connected = false; emit(); return resolved(snapshot()); }
+    var params;
+    try { params = new URLSearchParams(window.location.search); } catch (e) { params = null; }
+    S.connected = !!(tokens && tokens.refresh);
+    var p = resolved();
+    if (params && (params.has('code') || params.has('error'))) {
+      p = finishLogin(params).then(function () { S.error = null; });
+    }
+    return p.catch(function (e) {
+      if (e && (e.code === 'NOT_ALLOWLISTED' || e.code === 'PREMIUM')) S.connected = !!tokens;
+      fail(e);
+    }).then(function () {
+      /* preload Spotify's player only when music is switched on in the page */
+      if (S.connected && chosen() && wantSdk() && musicWanted()) loadSdk().catch(function () {});
+      emit();
+      return snapshot();
+    });
+  }
+
+  function disconnect() {
+    stopTimers();
+    if (player) { try { player.disconnect(); } catch (e) {} }
+    player = null; sdkDevice = null; sdkBroken = false; sdkWaiters = [];
+    forgetTokens();
+    store.del(KEY.choice); store.del(KEY.pkce);
+    S.mode = null; S.device = null; S.volumeControl = false; S.error = null;
+    restoreSession();
+    emit();
+  }
+
+  /* ---------- playlists ---------- */
+  function getPlaylists() {
+    if (!S.connected) return resolved([]);
+    var list = [];
+    return api('GET', '/me/playlists?limit=50').then(function (r) {
+      if (r.status !== 200 || !r.data) throw apiError(r);
+      (r.data.items || []).forEach(function (pl) {
+        if (!pl || !pl.uri) return;
+        var count = (pl.items && pl.items.total) || (pl.tracks && pl.tracks.total) || 0;  /* 'tracks' renamed 'items' in 2026 */
+        list.push({ uri: pl.uri, name: pl.name || 'Untitled', image: (pl.images && pl.images[0] && pl.images[0].url) || null, tracks: count });
+      });
+      /* Liked Songs, best effort */
+      return ensureProfile().then(function (me) {
+        return api('GET', '/me/tracks?limit=1').then(function (t) {
+          if (t.status === 200 && t.data && t.data.total) {
+            list.unshift({ uri: 'spotify:user:' + me.id + ':collection', name: 'Liked Songs', image: null, tracks: t.data.total, liked: true });
+          }
+        });
+      }).catch(function () {});
+    }).then(function () {
+      /* image links expire within a day, so refresh the saved choice's picture */
+      var c = chosen();
+      if (c) list.forEach(function (it) { if (it.uri === c.uri && it.image !== c.image) store.set(KEY.choice, merge(c, { image: it.image })); });
+      if (S.error) setError(null);
+      if (chosen() && wantSdk()) loadSdk().catch(function () {});
+      return list;
+    }).catch(function (e) { fail(e); return list; });
+  }
+  function merge(a, b) { var o = {}, k; for (k in a) o[k] = a[k]; for (k in b) o[k] = b[k]; return o; }
+
+  function choose(item) {
+    if (!item) { store.del(KEY.choice); return; }
+    store.set(KEY.choice, { uri: item.uri, name: item.name || '', image: item.image || null, tracks: item.tracks || 0, liked: !!item.liked });
+    if (S.connected && wantSdk()) loadSdk().catch(function () {});
+  }
+  function chosen() {
+    var c = store.get(KEY.choice);
+    return c && c.uri ? c : null;
+  }
+
+  /* ---------- volume arithmetic ---------- */
+  function volume() { var v = store.get(KEY.vol); return v === null ? 0.5 : clamp(v); }
+  var ducked = false, fading = 1;
+  function levelFor(vol, isDucked, fade) {
+    return Math.round(clamp(vol) * (isDucked ? DUCK : 1) * (fade === undefined ? 1 : fade) * 1000) / 1000;
+  }
+  function targetLevel() { return levelFor(volume(), ducked, fading); }
+
+  /* ---------- Web Playback SDK (plays in this page) ---------- */
+  var sdkLoading = null, player = null, sdkDevice = null, sdkBroken = false, sdkWaiters = [];
+  var curLevel = null, rampTimer = null;
+
+  function where() { return store.get(KEY.where) === 'app' ? 'app' : 'auto'; }
+  function musicWanted() { try { return JSON.parse(localStorage.getItem('mbs.music.on')) === true; } catch (e) { return false; } }
+  function wantSdk() { return where() === 'auto' && !sdkBroken; }
+
+  function loadSdk() {
+    if (window.Spotify && window.Spotify.Player) return resolved();
+    if (sdkLoading) return sdkLoading;
+    sdkLoading = new Promise(function (res, rej) {
+      var prev = window.onSpotifyWebPlaybackSDKReady;
+      var t = setTimeout(function () { rej(E('OFFLINE', 'sdk timeout')); }, 15000);
+      window.onSpotifyWebPlaybackSDKReady = function () {
+        clearTimeout(t);
+        if (typeof prev === 'function') { try { prev(); } catch (e) {} }
+        res();
+      };
+      var s = document.createElement('script');
+      s.src = SDK_URL; s.async = true;
+      s.onerror = function () { clearTimeout(t); rej(E('OFFLINE', 'sdk load')); };
+      document.head.appendChild(s);
+    });
+    sdkLoading.catch(function () { sdkLoading = null; });
+    return sdkLoading;
+  }
+
+  /* Must run synchronously inside a tap on iOS (constructing the player there is what
+     developers found makes Safari allow playback). */
+  function createPlayer() {
+    if (player || !(window.Spotify && window.Spotify.Player)) return;
+    curLevel = targetLevel();
+    player = new window.Spotify.Player({
+      name: PLAYER_NAME,
+      getOAuthToken: function (cb) { getToken().then(cb, function (e) { fail(e); }); },
+      volume: curLevel || 0.01
+    });
+    player.addListener('ready', function (d) {
+      sdkDevice = d.device_id; S.ready = true; emit();
+      var w = sdkWaiters; sdkWaiters = []; w.forEach(function (f) { f.res(sdkDevice); });
+    });
+    player.addListener('not_ready', function () { sdkDevice = null; S.ready = false; emit(); });
+    var broken = function (code) {
+      return function () {
+        sdkBroken = code !== 'PREMIUM';
+        var w = sdkWaiters; sdkWaiters = []; w.forEach(function (f) { f.rej(E(code)); });
+        if (code === 'PREMIUM') setError('PREMIUM');
+      };
+    };
+    player.addListener('initialization_error', broken('GENERIC'));   /* e.g. no EME in this browser */
+    player.addListener('account_error', broken('PREMIUM'));
+    player.addListener('authentication_error', function () { refresh().catch(function (e) { fail(e); }); });
+    player.addListener('playback_error', function () { if (S.mode === 'sdk') setError('GENERIC'); });
+    player.addListener('autoplay_failed', function () { if (S.mode === 'sdk') { S.playing = false; setError('AUTOPLAY'); } });
+    player.addListener('player_state_changed', function (st) {
+      if (S.mode !== 'sdk' || !st) return;
+      var t = st.track_window && st.track_window.current_track;
+      S.track = t ? { name: t.name, artist: (t.artists || []).map(function (a) { return a.name; }).join(', '),
+        image: (t.album && t.album.images && t.album.images[0] && t.album.images[0].url) || null } : null;
+      S.playing = !st.paused;
+      if (S.playing && S.error === MSG.AUTOPLAY) S.error = null;
+      emit();
+    });
+    try { player.activateElement(); } catch (e) {}
+    player.connect().then(function (ok) { if (!ok) broken('GENERIC')(); }, broken('GENERIC'));
+  }
+
+  function waitSdkDevice(ms) {
+    if (sdkBroken) return Promise.reject(E('GENERIC', 'sdk broken'));
+    if (sdkDevice) return resolved(sdkDevice);
+    return new Promise(function (res, rej) {
+      var w = { res: res, rej: rej };
+      sdkWaiters.push(w);
+      setTimeout(function () {
+        var i = sdkWaiters.indexOf(w);
+        if (i >= 0) { sdkWaiters.splice(i, 1); rej(E('GENERIC', 'sdk not ready')); }
+      }, ms);
+      /* the script had not loaded by the tap: try anyway (iOS may then block autoplay) */
+      if (!player) loadSdk().then(createPlayer).catch(function (e) { w.rej(e); });
+    });
+  }
+
+  function sdkSetVolume(v) {
+    curLevel = v;
+    if (player && S.volumeControl) { try { player.setVolume(Math.max(0, v)); } catch (e) {} }
+  }
+  /* Smooth local volume change for the SDK player, in 50 ms steps. */
+  function rampTo(target, ms, done) {
+    if (rampTimer) { clearTimeout(rampTimer); rampTimer = null; }
+    var from = curLevel === null ? target : curLevel;
+    var steps = Math.max(1, Math.round(ms / 50)), i = 0;
+    (function step() {
+      i++;
+      sdkSetVolume(Math.round((from + (target - from) * i / steps) * 1000) / 1000);
+      if (i < steps) rampTimer = setTimeout(step, 50);
+      else { rampTimer = null; if (done) done(); }
+    })();
+  }
+
+  /* ---------- Spotify Connect (a Spotify app elsewhere plays) ---------- */
+  var connectDevice = null, deviceVolBefore = null;
+  var volTimer = null, volPending = null, volLastSent = 0;
+
+  function pickDevice(list) {
+    list = (list || []).filter(function (d) { return d && d.id && !d.is_restricted && d.id !== sdkDevice && d.name !== PLAYER_NAME; });
+    var pick = function (f) { for (var i = 0; i < list.length; i++) if (f(list[i])) return list[i]; return null; };
+    return pick(function (d) { return d.is_active; }) || pick(function (d) { return d.type === 'Smartphone'; }) || list[0] || null;
+  }
+  /* Throttled remote volume: coalesces rapid duck calls into one request a second. */
+  function connectSetVolume(level, immediate) {
+    if (!connectDevice || !S.volumeControl) return resolved();
+    volPending = Math.round(clamp(level) * 100);
+    if (volTimer) return resolved();
+    var wait = immediate ? 0 : Math.max(0, volLastSent + CONNECT_VOL_GAP - now());
+    return new Promise(function (res) {
+      volTimer = setTimeout(function () {
+        volTimer = null;
+        var pct = volPending; volPending = null; volLastSent = now();
+        if (pct === null || !connectDevice) return res();
+        api('PUT', '/me/player/volume?volume_percent=' + pct + '&device_id=' + encodeURIComponent(connectDevice.id)).then(function (r) {
+          if (r.status === 403) { S.volumeControl = false; emit(); }  /* VOLUME_CONTROL_DISALLOW, e.g. iPhone */
+        }, function () {}).then(res);
+      }, wait);
+    });
+  }
+
+  /* With Connect on this iPhone, the coach voice must not take over the audio session, or iOS
+     pauses the Spotify app. 'ambient' mixes with it (but obeys the silent switch). */
+  var sessionChanged = false;
+  function sessionType() {
+    return (S.mode === 'connect' && connectDevice && connectDevice.type === 'Smartphone' && isIOS()) ? 'ambient' : 'playback';
+  }
+  function applySession() {
+    try { if (navigator.audioSession) { navigator.audioSession.type = sessionType(); sessionChanged = true; } } catch (e) {}
+  }
+  function restoreSession() {
+    if (!sessionChanged) return;
+    try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+    sessionChanged = false;
+  }
+
+  /* ---------- playback ---------- */
+  var wantPlaying = false, startGen = 0, trackTimer = null;
+
+  function playBody(c) {
+    if (c.liked) return { context_uri: c.uri };
+    var b = { context_uri: c.uri };
+    if (c.tracks > 1) b.offset = { position: Math.floor(Math.random() * c.tracks) };  /* random start */
+    return b;
+  }
+  function playOn(deviceId, c) {
+    var q = '?device_id=' + encodeURIComponent(deviceId);
+    return api('PUT', '/me/player/play' + q, playBody(c)).then(function (r) {
+      if (r.status === 202 || r.status === 204 || r.status === 200) return;
+      if (r.status === 400 || (r.status === 404 && !/device/i.test(JSON.stringify(r.data || '')))) {
+        /* Liked Songs as a context is not supported everywhere: play a shuffled batch instead.
+           A bad random offset: start from the top. */
+        var retry = c.liked ? likedUris().then(function (uris) {
+          if (!uris.length) throw E('PLAYLIST');
+          return api('PUT', '/me/player/play' + q, { uris: uris });
+        }) : api('PUT', '/me/player/play' + q, { context_uri: c.uri });
+        return retry.then(function (r2) {
+          if (r2.status === 202 || r2.status === 204 || r2.status === 200) return;
+          throw (r2.status === 400 || (r2.status === 404 && !/device/i.test(JSON.stringify(r2.data || '')))) ? E('PLAYLIST') : apiError(r2);
+        });
+      }
+      throw apiError(r);
+    }).then(function () {
+      api('PUT', '/me/player/shuffle?state=true' + '&device_id=' + encodeURIComponent(deviceId)).catch(function () {});
+    });
+  }
+  function likedUris() {
+    return api('GET', '/me/tracks?limit=50').then(function (r) {
+      var uris = ((r.data && r.data.items) || []).map(function (it) { return it && it.track && it.track.uri; }).filter(Boolean);
+      for (var i = uris.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)), t = uris[i]; uris[i] = uris[j]; uris[j] = t; }
+      return uris;
+    });
+  }
+
+  function startConnect(c) {
+    return api('GET', '/me/player/devices').then(function (r) {
+      if (r.status !== 200) throw apiError(r);
+      var d = pickDevice(r.data && r.data.devices);
+      if (!d) throw E('NO_DEVICE');
+      connectDevice = d; deviceVolBefore = typeof d.volume_percent === 'number' ? d.volume_percent : null;
+      S.mode = 'connect'; S.device = d.name || 'Spotify'; S.volumeControl = !!d.supports_volume;
+      applySession();
+      return playOn(d.id, c).then(function () {
+        volLastSent = 0;
+        return connectSetVolume(targetLevel(), true);
+      });
+    });
+  }
+  function startSdk(c) {
+    return waitSdkDevice(SDK_READY_MS).then(function (id) {
+      S.mode = 'sdk'; S.device = PLAYER_NAME; S.volumeControl = !isIOS();
+      connectDevice = null;
+      sdkSetVolume(targetLevel());
+      return playOn(id, c);
+    });
+  }
+
+  function prepare() {
+    try {
+      if (!supported() || !S.connected || !chosen()) return resolved();
+      if (wantSdk()) {
+        if (player) { try { player.activateElement(); } catch (e) {} }
+        else if (window.Spotify && window.Spotify.Player) createPlayer();
+        else return loadSdk().catch(function () {});
+      }
+    } catch (e) {}
+    return resolved();
+  }
+
+  function start() {
+    var c = chosen();
+    if (!supported() || !S.connected || !c) return resolved();
+    var gen = ++startGen;
+    wantPlaying = true; ducked = false; fading = 1;
+    return ensureProfile().then(function (me) {
+      if (me.product && me.product !== 'premium') throw E('PREMIUM');
+      if (!wantSdk()) return startConnect(c);
+      return startSdk(c).catch(function (e) {
+        if (e && /^(PREMIUM|SIGNED_OUT|PLAYLIST|NOT_ALLOWLISTED|BUSY)$/.test(e.code)) throw e;
+        return startConnect(c);   /* in-page player failed: try the Spotify app instead */
+      });
+    }).then(function () {
+      if (gen !== startGen) return;
+      if (!wantPlaying) return pause();   /* paused or stopped while we were starting */
+      S.playing = true; S.error = null; emit();
+      watchTrack();
+    }).catch(function (e) { if (gen === startGen) { S.playing = false; fail(e); } });
+  }
+
+  function pause() {
+    wantPlaying = false;
+    if (!S.mode) return resolved();
+    var p;
+    if (S.mode === 'sdk' && player) p = player.pause();
+    else if (connectDevice) p = api('PUT', '/me/player/pause?device_id=' + encodeURIComponent(connectDevice.id));
+    S.playing = false; emit();
+    return resolved(p).then(function () {}, function () {});
+  }
+
+  function resume() {
+    if (!S.connected || !chosen()) return resolved();
+    if (!S.mode) return start();       /* never started (e.g. it failed earlier): try now */
+    wantPlaying = true;
+    var p;
+    if (S.mode === 'sdk' && player) {
+      try { player.activateElement(); } catch (e) {}
+      p = player.resume();
+    } else if (connectDevice) {
+      p = api('PUT', '/me/player/play?device_id=' + encodeURIComponent(connectDevice.id)).then(function (r) {
+        if (r.status >= 300) throw apiError(r);
+      });
+    }
+    return resolved(p).then(function () {
+      S.playing = true; if (S.error === MSG.AUTOPLAY) S.error = null; emit(); watchTrack();
+    }).catch(fail);
+  }
+
+  function stop() {
+    wantPlaying = false; startGen++;
+    stopTimers();
+    if (!S.mode) return resolved();
+    var mode = S.mode;
+    fading = 0;   /* blocks duck() and setVolume() during the fade */
+    var fade = new Promise(function (res) {
+      if (!S.playing || !S.volumeControl) return res();
+      if (mode === 'sdk') return rampTo(0, FADE_MS, res);
+      /* Connect: three remote steps; each is a network call so keep them few */
+      var steps = [0.6, 0.3, 0], i = 0;
+      (function next() {
+        if (i >= steps.length || !connectDevice) return res();
+        var pct = Math.round(levelFor(volume(), false, steps[i++]) * 100);
+        api('PUT', '/me/player/volume?volume_percent=' + pct + '&device_id=' + encodeURIComponent(connectDevice.id))
+          .then(function () {}, function () {}).then(function () { setTimeout(next, FADE_MS / 3); });
+      })();
+    });
+    return fade.then(function () { return pause(); }).then(function () {
+      ducked = false; fading = 1;
+      if (mode === 'sdk') sdkSetVolume(targetLevel());   /* ready for next time */
+      else if (connectDevice && S.volumeControl && deviceVolBefore !== null) {
+        api('PUT', '/me/player/volume?volume_percent=' + deviceVolBefore + '&device_id=' + encodeURIComponent(connectDevice.id)).catch(function () {});
+      }
+      restoreSession();
+      S.playing = false; emit();
+    }).catch(function () {});
+  }
+
+  function stopTimers() {
+    if (rampTimer) { clearTimeout(rampTimer); rampTimer = null; }
+    if (volTimer) { clearTimeout(volTimer); volTimer = null; volPending = null; }
+    if (trackTimer) { clearInterval(trackTimer); trackTimer = null; }
+  }
+
+  /* Connect mode has no events, so look up the track now and then while playing. */
+  function watchTrack() {
+    if (S.mode !== 'connect') return;
+    var look = function () {
+      if (!S.playing) return;
+      api('GET', '/me/player/currently-playing').then(function (r) {
+        var t = r.status === 200 && r.data && r.data.item;
+        if (!t) return;
+        S.track = { name: t.name, artist: (t.artists || []).map(function (a) { return a.name; }).join(', '),
+          image: (t.album && t.album.images && t.album.images[0] && t.album.images[0].url) || null };
+        emit();
+      }, function () {});
+    };
+    setTimeout(look, 1500);
+    if (!trackTimer) trackTimer = setInterval(look, 30000);
+  }
+
+  /* ---------- ducking and volume ---------- */
+  function duck(on) {
+    on = !!on;
+    if (on === ducked) return;          /* cheap when called repeatedly */
+    ducked = on;
+    if (!S.playing || !S.volumeControl || fading < 1) return;   /* fading < 1: stop() is fading out */   /* iPhone: nothing can be done from code */
+    if (S.mode === 'sdk') rampTo(targetLevel(), on ? DUCK_DOWN_MS : DUCK_UP_MS);
+    else if (S.mode === 'connect') connectSetVolume(targetLevel());
+  }
+  function setVolume(v) {
+    store.set(KEY.vol, clamp(v));
+    if (!S.playing || !S.volumeControl || fading < 1) return;
+    if (S.mode === 'sdk') rampTo(targetLevel(), 200);
+    else if (S.mode === 'connect') connectSetVolume(targetLevel());
+  }
+
+  function onChange(cb) {
+    if (typeof cb !== 'function') return;
+    listeners.push(cb);
+    try { cb(snapshot()); } catch (e) {}
+  }
+
+  window.Music = {
+    supported: supported,
+    configured: function () { return !!clientId(); },
+    setClientId: function (id) {
+      var v = String(id || '').trim();
+      if (v !== clientId()) { forgetTokens(); store.del(KEY.pkce); }
+      if (v) store.set(KEY.client, v); else store.del(KEY.client);
+      emit();
+    },
+    clientId: clientId,
+    redirectUri: redirectUri,
+    init: init,
+    isConnected: function () { return S.connected; },
+    connect: connect,
+    disconnect: disconnect,
+    getPlaylists: getPlaylists,
+    choose: choose,
+    chosen: function () { var c = chosen(); return c ? { uri: c.uri, name: c.name, image: c.image } : null; },
+    prepare: prepare,
+    start: start,
+    pause: pause,
+    resume: resume,
+    stop: stop,
+    duck: duck,
+    setVolume: setVolume,
+    volume: volume,
+    onChange: onChange,
+
+    /* Extras beyond CONTRACT.md (optional for the page): */
+    /* 'auto' = in-page player first, Spotify app as fallback; 'app' = always the Spotify app */
+    setPlayer: function (w) { store.set(KEY.where, w === 'app' ? 'app' : 'auto'); sdkBroken = false; },
+    player: where,
+    /* the navigator.audioSession type the page should use for the coach voice right now */
+    sessionType: sessionType,
+    /* true on iPhone and iPad, where Spotify's volume cannot be changed from code */
+    isIOS: isIOS,
+
+    /* Test hooks, not for the page. */
+    __test: {
+      randomString: randomString, base64url: base64url, challengeFor: challengeFor, authorizeUrl: authorizeUrl,
+      levelFor: levelFor, pickDevice: pickDevice, scopes: SCOPES, msg: MSG, duckRatio: DUCK,
+      setClock: function (f) { clock = f || function () { return Date.now(); }; },
+      getToken: getToken, tokens: function () { return tokens; }, isIOS: isIOS,
+      internals: function () { return { ducked: ducked, curLevel: curLevel, mode: S.mode, sdkDevice: sdkDevice, connectDevice: connectDevice }; }
+    }
+  };
+})();
+
 </script>
 
 <script>
@@ -991,7 +1936,7 @@ function voiceNote(ok){
 }
 function audioOn(){
   try{
-    if(navigator.audioSession) navigator.audioSession.type='playback';
+    if(navigator.audioSession) navigator.audioSession.type=(window.Music&&Music.sessionType)?Music.sessionType():'playback';
   }catch(e){}
   try{
     if(!actx){const C=window.AudioContext||window.webkitAudioContext; if(C) actx=new C();}
@@ -1026,10 +1971,38 @@ function synthSay(text){
     if(ss.speaking||ss.pending){ss.cancel(); setTimeout(function(){try{ss.speak(u);}catch(e){}},90);} else ss.speak(u);
   }catch(e){}
 }
-function stopVoice(){
+/* ---------- music hooks: every call is guarded so a missing or failing Music never touches the routine ---------- */
+let musicOn=store.get('mbs.music.on',false)===true, musicGen=0, musicRunning=false;
+function musicOK(){try{return !!(window.Music&&Music.supported());}catch(e){return false;}}
+function mcall(name,arg){
+  if(!musicOK()) return Promise.resolve();
+  try{const p=Music[name](arg); return Promise.resolve(p).catch(function(){});}catch(e){return Promise.resolve();}
+}
+function musicWanted(){
+  if(!musicOn||!musicOK()) return false;
+  try{return Music.isConnected()&&!!Music.chosen();}catch(e){return false;}
+}
+/* ducking: one timer, cleared and reset by every new chain of clips, so the music never stays lowered */
+let duckTimer=null, ducked=false, duckEnd=0;
+const DUCK_TAIL=500;
+function duckSet(on){ducked=on; if(!musicOK()) return; try{Music.duck(on);}catch(e){}}
+function duckUntil(endMs,extend){
+  if(!musicRunning||!musicWanted()) return;
+  if(extend&&duckTimer) endMs=Math.max(endMs,duckEnd);
+  if(!extend||!ducked) duckSet(true);
+  duckEnd=endMs;
+  clearTimeout(duckTimer);
+  duckTimer=setTimeout(function(){duckTimer=null; duckSet(false);},Math.max(0,endMs-performance.now())+DUCK_TAIL);
+}
+function unduck(){
+  if(duckTimer){clearTimeout(duckTimer); duckTimer=null;}
+  if(ducked) duckSet(false);
+}
+function stopVoice(keepDuck){
   voiceToken++; busyUntil=0;
   voiceSrcs.forEach(function(s){try{s.stop();}catch(e){}}); voiceSrcs=[];
   if(hasSpeech){try{speechSynthesis.cancel();}catch(e){}}
+  if(!keepDuck) unduck();
 }
 /* polite = stay silent if something is already being said; delay = seconds to wait (lets a beep finish) */
 function speak(keys,polite,delay,force){
@@ -1037,17 +2010,24 @@ function speak(keys,polite,delay,force){
   if(!keys.length||(!settings.voice&&!force)) return;
   const now=performance.now();
   if(polite&&now<busyUntil) return;
-  stopVoice();
+  stopVoice(true);
   const token=++voiceToken, GAP=0.3;
   const words=function(){return keys.map(function(k){return P[k];}).join(' ');};
   busyUntil=now+((delay||0)+keys.reduce(function(a,k){return a+(CLIP[k]||1.5)+GAP;},-GAP))*1000;
+  duckUntil(busyUntil);
   if(!actx){synthSay(words()); return;}
-  Promise.all(keys.map(getBuf)).then(function(bs){
+  let woke=Promise.resolve();
+  if(actx.state!=='running'){try{woke=Promise.race([Promise.resolve(actx.resume()).catch(function(){}),new Promise(function(r){setTimeout(r,400);})]);}catch(e){}}
+  Promise.all([woke].concat(keys.map(getBuf))).then(function(all){
+    const bs=all.slice(1);
     if(token!==voiceToken||(!settings.voice&&!force)) return;
+    if(actx.state!=='running'){synthSay(words()); return;}
     let at=actx.currentTime+(delay||0);
     voiceSrcs=bs.map(function(buf){
       const s=actx.createBufferSource(); s.buffer=buf; s.connect(actx.destination); s.start(at); at+=buf.duration+GAP; return s;
     });
+    /* if the clips were slow to load, keep the music lowered until they have actually played */
+    duckUntil(performance.now()+(at-GAP-actx.currentTime)*1000,true);
     voiceNote(true);
   }).catch(function(){ voiceNote(false); if(token===voiceToken) synthSay(words()); });
 }
@@ -1137,7 +2117,7 @@ function renderCal(){
   for(let i=0;i<(calMonth.getDay()+6)%7;i++) h+='<span class="gap"></span>';
   for(let n=1;n<=days;n++){
     const d=new Date(y,m,n), dk=dateKey(d), r=sessions[dk];
-    let c='day'; if(isWeekend(d)) c+=' we'; if(dk===k) c+=' today'; if(dk>k) c+=' future'; if(r) c+=' done';
+    let c='day'; if(dk===k) c+=' today'; if(dk>k) c+=' future'; if(r) c+=' done';
     const label=n+' '+MON[m]+(r?', done'+(r.score!=null?', back score '+r.score:''):'');
     h+='<span class="'+c+'" title="'+label+'" aria-label="'+label+'"><small>'+n+'</small>'+(r?'<b>'+(r.score!=null?r.score:'\u2713')+'</b>':'')+'</span>';
   }
@@ -1324,6 +2304,8 @@ $('libList').addEventListener('click',function(ev){
   const b=ev.target.closest('button[data-ex]'); if(b) openHow(b.dataset.ex);
 });
 $('libClose').addEventListener('click',function(){$('library').hidden=true;});
+$('helpBtn').addEventListener('click',function(){$('help').hidden=false; $('help').scrollTop=0;});
+$('helpClose').addEventListener('click',function(){$('help').hidden=true;});
 (function initHome(){
   const t=today();
   $('todayDate').textContent=DOW[t.getDay()]+' '+t.getDate()+' '+MON[t.getMonth()];
@@ -1339,15 +2321,15 @@ $('bkToggle').addEventListener('click',function(){const p=$('bkPanel'); p.hidden
 if(navigator.share) $('bkShare').hidden=false;
 $('bkCopy').addEventListener('click',function(){
   const n=Object.keys(sessions).length, t=backupText();
-  if(!n){bkMsg('Nothing to back up yet.'); return;}
+  if(!n&&!RT.own.length&&!Object.keys(RT.edits).length){bkMsg('Nothing to back up yet.'); return;}
   const boxed=function(){$('bkText').value=t; $('bkText').focus(); $('bkText').select(); bkMsg('Copying was blocked here. The backup is in the box: copy all of it and keep it somewhere safe.');};
   if(!navigator.clipboard||!navigator.clipboard.writeText){boxed(); return;}
-  navigator.clipboard.writeText(t).then(function(){bkMsg('Copied '+dayCount(n)+'. Paste it into a note or an email to yourself.');}).catch(boxed);
+  navigator.clipboard.writeText(t).then(function(){bkMsg((n?'Copied '+dayCount(n):'Copied your routines')+'. Paste it into a note or an email to yourself.');}).catch(boxed);
 });
 $('bkShare').addEventListener('click',function(){
   const n=Object.keys(sessions).length;
-  if(!n){bkMsg('Nothing to back up yet.'); return;}
-  navigator.share({title:'Morning Stretch backup',text:backupText()}).then(function(){bkMsg('Sent '+dayCount(n)+'.');}).catch(function(){bkMsg('Sending did not go through. Use Copy backup.');});
+  if(!n&&!RT.own.length&&!Object.keys(RT.edits).length){bkMsg('Nothing to back up yet.'); return;}
+  navigator.share({title:'Morning Stretch backup',text:backupText()}).then(function(){bkMsg(n?'Sent '+dayCount(n)+'.':'Sent your routines.');}).catch(function(){bkMsg('Sending did not go through. Use Copy backup.');});
 });
 $('bkRestore').addEventListener('click',function(){
   let d=null;
@@ -1427,6 +2409,7 @@ function warm(i){
 function startSession(){
   audioOn();
   const r=currentRoutine(); if(!r.list.length) return;
+  musicStart();
   S.list=r.list.slice(); S.segs=timelineOf(r); S.total=totalSeconds(S.segs); S.mins=Math.max(1,Math.round(S.total/60));
   S.open=true; S.running=true; S.last=performance.now(); S.figEx=null;
   show('session'); $('exitSheet').hidden=true;
@@ -1455,8 +2438,8 @@ function renderSeg(){
   for(let j=S.i+1;j<S.segs.length;j++){
     const n=S.segs[j];
     if(n.phase==='ready') continue;
-    if(n.ex!==g.ex){nx='Next: '+EX[n.ex].name; break;}
-    if(g.phase!=='ready'){nx='Next: '+n.side.toLowerCase(); break;}
+    if(n.ei!==g.ei){nx='Next: '+EX[n.ex].name; break;}
+    if(g.phase!=='ready'&&n.side){nx='Next: '+n.side.toLowerCase(); break;}
   }
   $('sNext').textContent=nx||(S.i>=S.segs.length-2?'Last one.':'');
   $('sStep').textContent=(g.ei+1)+' of '+S.list.length;
@@ -1520,15 +2503,15 @@ function back(){
   resumeIfPaused();
   if(S.i===f&&S.t<3&&g.ei>0) enter(firstSegOf(g.ei-1)); else enter(f);
 }
-function resumeIfPaused(){ if(!S.running){audioOn(); S.running=true; S.last=performance.now(); wakeOn();} }
-function pause(){ if(!S.running) return; S.running=false; stopVoice(); renderSeg(); }
+function resumeIfPaused(){ if(!S.running){audioOn(); S.running=true; S.last=performance.now(); wakeOn(); musicResume();} }
+function pause(){ if(!S.running) return; S.running=false; stopVoice(); renderSeg(); musicPause(); }
 function resume(){
   if(S.running) return;
-  audioOn(); S.running=true; S.last=performance.now(); wakeOn();
+  audioOn(); S.running=true; S.last=performance.now(); wakeOn(); musicResume();
   /* a get-ready step starts again so the instruction is heard in full */
   if(S.segs[S.i].phase==='ready') enter(S.i); else {speak('carry'); renderSeg();}
 }
-function closeSession(){ S.open=false; S.running=false; clearInterval(S.timer); stopVoice(); wakeOff(); }
+function closeSession(){ S.open=false; S.running=false; clearInterval(S.timer); stopVoice(); wakeOff(); musicStop(); }
 function finish(){
   closeSession();
   const k=dateKey(today()), prev=sessions[k];
@@ -1557,6 +2540,168 @@ document.addEventListener('keydown',function(ev){
   if(!S.open||!$('how').hidden||ev.target.closest('button')) return;
   if(ev.code==='Space'){ev.preventDefault(); S.running?pause():resume();}
 });
+/* ---------- music during a session ---------- */
+function musicStart(){
+  if(!musicWanted()) return;
+  const gen=++musicGen; musicRunning=true;
+  let p; try{p=Music.prepare();}catch(e){}      /* inside the Start tap, so the phone lets the player make sound */
+  Promise.resolve(p).catch(function(){}).then(function(){
+    if(gen!==musicGen) return;
+    return mcall('start').then(function(){
+      if(gen!==musicGen){ if(!musicRunning) mcall('stop'); return; }
+      if(!S.running) return mcall('pause');
+      if(ducked) duckSet(true);
+    });
+  });
+}
+function musicPause(){ if(musicRunning) mcall('pause'); }
+function musicResume(){ if(musicRunning) mcall('resume'); }
+function musicStop(){ if(!musicRunning) return; musicRunning=false; musicGen++; mcall('stop'); }
+
+/* ---------- music settings in the Sound panel ---------- */
+const MU={state:null,list:null,loading:false,listErr:false,open:false,idEdit:false,busy:false,note:''};
+function mget(name,d){if(!musicOK()) return d; try{const v=Music[name](); return v==null?d:v;}catch(e){return d;}}
+function muMode(){
+  if(!window.Music) return 'missing';
+  if(!musicOK()) return 'unsupported';
+  if(!mget('configured',false)||MU.idEdit) return 'setup';
+  return mget('isConnected',false)?'linked':'connect';
+}
+function safeImg(u){return typeof u==='string'&&/^(https:|data:image\/)/.test(u)?u:'';}
+function cover(u){u=safeImg(u); return u?'<img class="mu-cv" src="'+esc(u)+'" alt="">':'<span class="mu-cv none" aria-hidden="true"></span>';}
+function renderMusic(){
+  const m=muMode();
+  $('musicBlock').hidden=m==='missing';
+  if(m==='missing') return;
+  $('muNo').hidden=m!=='unsupported';
+  $('muYes').hidden=m==='unsupported';
+  if(m==='unsupported'){$('muErr').textContent=''; return;}
+  $('muOn').checked=musicOn;
+  $('muSetup').hidden=!musicOn||m!=='setup';
+  $('muConnect').hidden=!musicOn||m!=='connect';
+  $('muLinked').hidden=!musicOn||m!=='linked';
+  if(musicOn&&m==='setup'){
+    $('muUri').textContent=mget('redirectUri','');
+    if(!$('muId').value) $('muId').value=mget('clientId','');
+  }
+  if(musicOn&&m==='connect'){
+    $('muConnectBtn').disabled=MU.busy; $('muConnectBtn').textContent=MU.busy?'Opening Spotify':'Connect Spotify';
+  }
+  if(musicOn&&m==='linked') renderChoice();
+  const err=(MU.state&&MU.state.error)||MU.note||'';
+  $('muErr').textContent=musicOn?err:'';
+}
+function renderChoice(){
+  const c=mget('chosen',null);
+  $('muChoice').innerHTML=c
+    ?cover(c.image)+'<span><span class="mu-nm">'+esc(c.name||'Playlist')+'</span><span class="mu-dt">Plays on shuffle</span></span><button class="ghost" id="muChange" aria-expanded="'+MU.open+'" aria-controls="muList">'+(MU.open?'Close':'Change')+'</button>'
+    :cover('')+'<span><span class="mu-nm">No playlist chosen</span><span class="mu-dt">Choose one to play</span></span><button class="ghost" id="muChange" aria-expanded="'+MU.open+'" aria-controls="muList">'+(MU.open?'Close':'Choose')+'</button>';
+  const L=$('muList');
+  L.hidden=!MU.open;
+  if(MU.open){
+    let h='';
+    if(MU.loading) h='<p class="small">Loading your playlists.</p>';
+    else if(MU.listErr) h='<p class="small">Your playlists could not load. Check your connection and try again.</p><div class="mu-row"><button class="ghost" data-retry="1">Try again</button></div>';
+    else if(!MU.list||!MU.list.length) h='<p class="small">No playlists found in your Spotify account.</p>';
+    else MU.list.forEach(function(p,i){
+      const n=Number(p.tracks);
+      h+='<button data-pl="'+i+'" aria-pressed="'+(!!c&&c.uri===p.uri)+'">'+cover(p.image)+'<span><span class="mu-nm">'+esc(p.name||'Playlist')+'</span>'+
+         (p.tracks!=null&&isFinite(n)&&n>0?'<span class="mu-dt">'+n+(n===1?' song':' songs')+'</span>':'')+'</span></button>';
+    });
+    L.innerHTML=h;
+  }
+  const v=$('muVol');
+  v.closest('label').hidden=!!mget('isIOS',false);
+  if(document.activeElement!==v){const n=Math.round(Number(mget('volume',0.5))*100); v.value=isFinite(n)?n:50;}
+  $('muVolOut').textContent=v.value+'%';
+}
+function loadPlaylists(){
+  if(MU.loading) return;
+  MU.loading=true; MU.listErr=false; renderMusic();
+  let p; try{p=Music.getPlaylists();}catch(e){p=Promise.reject(e);}
+  Promise.resolve(p).then(function(l){MU.list=Array.isArray(l)?l:[];},function(){MU.listErr=true;})
+    .then(function(){MU.loading=false; renderMusic();});
+}
+function openPicker(){MU.open=true; if(!MU.list) loadPlaylists(); renderMusic();}
+function renderNow(){
+  const st=MU.state, t=st&&st.track, on=!!(st&&st.playing&&t&&(t.name||t.artist));
+  const err=!on&&st&&st.error&&S.open&&musicOn?st.error:'';
+  $('sNow').classList.toggle('err',!!err);
+  $('sNow').hidden=!on&&!err;
+  if(err){$('sNowImg').hidden=true; $('sNowTxt').textContent=err; $('sNow').setAttribute('aria-label',err); return;}
+  if(!on) return;
+  const img=safeImg(t.image);
+  $('sNowImg').hidden=!img; if(img&&$('sNowImg').getAttribute('src')!==img) $('sNowImg').src=img;
+  $('sNowTxt').innerHTML='<b>'+esc(t.name||'')+'</b>'+(t.artist?'<i> &middot; '+esc(t.artist)+'</i>':'');
+  $('sNow').setAttribute('aria-label','Playing '+(t.name||'')+(t.artist?' by '+t.artist:''));
+}
+$('muOn').addEventListener('change',function(){
+  musicOn=this.checked; store.set('mbs.music.on',musicOn); MU.note='';
+  if(!musicOn){MU.open=false; unduck();}
+  renderMusic();
+});
+$('muIdSave').addEventListener('click',function(){
+  const v=$('muId').value.trim();
+  if(!/^[A-Za-z0-9]{16,64}$/.test(v)){MU.note='That does not look like a Client ID. Copy it from your app’s page on the Spotify developer site.'; renderMusic(); return;}
+  try{Music.setClientId(v);}catch(e){}
+  MU.idEdit=false; MU.note=''; renderMusic();
+});
+$('muCopy').addEventListener('click',function(){
+  const b=this, uri=mget('redirectUri','');
+  const blocked=function(){
+    try{const r=document.createRange(); r.selectNodeContents($('muUri')); const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);}catch(e){}
+    MU.note='Copying was blocked here. The address is selected, so copy it from the box.'; renderMusic();
+  };
+  if(!navigator.clipboard||!navigator.clipboard.writeText){blocked(); return;}
+  navigator.clipboard.writeText(uri).then(function(){
+    MU.note=''; renderMusic(); b.textContent='Copied'; setTimeout(function(){b.textContent='Copy address';},2000);
+  }).catch(blocked);
+});
+$('muConnectBtn').addEventListener('click',function(){
+  if(MU.busy) return;
+  MU.busy=true; MU.note=''; renderMusic();
+  let p; try{p=Music.connect();}catch(e){p=Promise.reject(e);}
+  Promise.resolve(p).then(function(){MU.busy=false;},function(){
+    MU.busy=false;
+    if(!(MU.state&&MU.state.error)) MU.note='Spotify could not be reached. Check your connection and try again.';
+  }).then(renderMusic);
+});
+$('muChangeId').addEventListener('click',function(){MU.idEdit=true; MU.note=''; renderMusic(); $('muId').focus();});
+$('muChoice').addEventListener('click',function(ev){
+  if(!ev.target.closest('#muChange')) return;
+  if(MU.open){MU.open=false; renderMusic();} else openPicker();
+});
+$('muList').addEventListener('click',function(ev){
+  if(ev.target.closest('[data-retry]')){loadPlaylists(); return;}
+  const b=ev.target.closest('button[data-pl]'); if(!b||!MU.list) return;
+  const p=MU.list[Number(b.dataset.pl)]; if(!p) return;
+  try{Music.choose({uri:p.uri,name:p.name,image:p.image});}catch(e){}
+  MU.open=false; renderMusic();
+});
+$('muVol').addEventListener('input',function(){
+  $('muVolOut').textContent=this.value+'%';
+  try{Music.setVolume(Number(this.value)/100);}catch(e){}
+});
+$('muDisconnect').addEventListener('click',function(){
+  try{Music.disconnect();}catch(e){}
+  MU.list=null; MU.open=false; MU.note=''; renderMusic();
+});
+(function initMusic(){
+  const back=/[?&](code|error)=/.test(location.search);    /* coming back from the Spotify sign-in page */
+  if(window.Music&&musicOK()){
+    try{Music.onChange(function(st){MU.state=st||null; renderMusic(); renderNow();});}catch(e){}
+    let p; try{p=Music.init();}catch(e){}
+    Promise.resolve(p).catch(function(){}).then(function(){
+      if(back){
+        if(mget('isConnected',false)){musicOn=true; store.set('mbs.music.on',true); if(!mget('chosen',null)) openPicker();}
+        if($('soundPanel').hidden) $('soundBtn').click();
+        setTimeout(function(){try{$('musicBlock').scrollIntoView({block:'start'});}catch(e){}},60);
+      }
+      renderMusic();
+    });
+  }
+  renderMusic();
+})();
 })();
 </script>
 
