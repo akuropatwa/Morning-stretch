@@ -285,6 +285,14 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
 
 /* routines, editor and library */
 /* routine settings under the cards, and the routine builder */
+/* Put in the best order */
+.best{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.best .ghost:disabled{opacity:.45}
+.best-msg{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.best-msg p{font-size:15px;line-height:1.4;font-weight:600}
+.best-msg:empty{display:none}
+.bd-advise{width:100%;min-height:64px;border:0;border-radius:16px;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line);text-align:left;padding:12px 44px 12px 16px;position:relative;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.bd-advise::after{content:"\203A";position:absolute;right:16px;top:50%;transform:translateY(-52%);font-size:28px;color:var(--muted)}
 .lengths .sub.rx{margin-top:2px;font-weight:600}
 .rt-set{display:flex;flex-direction:column;gap:12px;background:var(--surface);box-shadow:var(--shadow);border-radius:20px;padding:14px 16px 16px}
 .rt-rows{margin:0;display:flex;flex-direction:column;gap:8px}
@@ -476,6 +484,28 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
 #how .care{font-size:15px;line-height:1.45;color:var(--warn);background:var(--warn-bg);border-radius:18px;padding:12px 16px}
 #how .care b{font-weight:800}
 
+/* physio: Help me choose */
+.adv-card{width:100%;min-height:72px;border:0;border-radius:20px;background:var(--surface);box-shadow:var(--shadow);text-align:left;padding:14px 16px;display:flex;align-items:center;gap:14px}
+.adv-ic{flex:none;width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--on-accent);font-weight:800;font-size:20px;display:flex;align-items:center;justify-content:center}
+.adv-tx{display:flex;flex-direction:column;gap:2px;min-width:0}
+.adv-tx .rn{font-weight:800;font-size:17px;line-height:1.2}
+.adv-tx .sub{font-size:14px;color:var(--muted);line-height:1.35}
+#advisor .in{min-height:100%}
+#advisor .bd-foot{margin-top:auto}
+.adv-stop{display:flex;flex-direction:column;gap:12px;background:var(--warn-bg);border-radius:18px;padding:16px;font-size:16px;line-height:1.45}
+.adv-call{display:flex;align-items:center;justify-content:center;min-height:52px;border-radius:999px;background:var(--warn);color:var(--bg);font-weight:800;font-size:18px;text-decoration:none}
+.adv-link{display:inline-flex;align-items:center;min-height:44px;color:var(--ink);font-weight:700}
+.adv-ul{list-style:disc;padding-left:22px;display:flex;flex-direction:column;gap:6px;font-size:15.5px;line-height:1.45}
+.adv-why{display:flex;flex-direction:column;gap:8px}
+.adv-why p{font-size:16.5px;line-height:1.45}
+.adv-why p.small{font-size:14.5px}
+.adv-why .adv-down{color:var(--warn);font-weight:600}
+.adv-left{display:flex;flex-direction:column;gap:8px;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:16px}
+.adv-guide{font-size:15px;line-height:1.45;background:var(--weak);border-radius:14px;padding:12px 14px}
+#advisor .ghost{align-self:flex-start}
+.adv-none{flex:none;width:100%}
+#advFoot[hidden]{display:none}
+
 /* comfortable tap targets for use lying down */
 .ghost{min-height:44px}
 .sec-head .ghost{padding:10px 18px}
@@ -644,6 +674,7 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
     <h2 id="lenLabel">Routine</h2>
     <div class="lengths" id="routineCards" role="group" aria-labelledby="lenLabel"></div>
     <div class="rt-set" id="rtSet"></div>
+    <button class="adv-card" id="advCard"></button>
   </section>
 
   <button class="start" id="startBtn">Start</button>
@@ -726,6 +757,22 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
   </div>
 </section>
 
+<section id="advisor" class="page" hidden aria-labelledby="advTitle">
+  <div class="in">
+    <div class="hd ed-hd">
+      <button class="ghost" id="advCancel">Cancel</button>
+      <h1 id="advTitle">Help me choose</h1>
+      <span class="bd-sp" aria-hidden="true"></span>
+    </div>
+    <div class="bd-head"><p class="eyebrow" id="advStep"></p><h2 id="advQ"></h2></div>
+    <div class="bd-body" id="advBody"></div>
+    <div class="bd-foot" id="advFoot">
+      <button class="bd-btn" id="advBack">Back</button>
+      <button class="bd-btn bd-next" id="advNext">Next</button>
+    </div>
+  </div>
+</section>
+
 <section id="builder" class="page" hidden aria-labelledby="bdTitle">
   <div class="in">
     <div class="hd ed-hd">
@@ -751,6 +798,7 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
     </div>
     <label class="field" id="edNameWrap"><span>Name</span><input id="edName" maxlength="30" autocomplete="off"></label>
     <p class="ed-sum" id="edSum"></p>
+    <div class="best" id="edOrder"><button class="ghost" id="edBest">Put in the best order</button><div class="best-msg" id="edOrdMsg" role="status"></div></div>
     <ol class="edlist" id="edList"></ol>
     <button class="addbtn" id="edAdd"><span class="plus" aria-hidden="true"></span>Add a stretch</button>
     <div class="ed-foot">
@@ -809,6 +857,15 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
           <li>Tap <b>Save</b>. The new total time shows at the top as you go.</li>
         </ol>
         <p><b>Reset to the original</b> puts the short or long routine back as it was. Each stretch keeps its own set length.</p>
+        <p><b>Best order</b></p>
+        <p>After you change the stretches, tap <b>Put in the best order</b>. It keeps the same stretches and only moves them. You see what changed, and <b>Undo</b> puts them back. The button only works when the order would change.</p>
+        <ul>
+          <li>You start lying on your back and work up to standing: side, front, hands and knees, kneeling, sitting, standing. You never go back down to the floor.</li>
+          <li>In each position, gentle movement comes first, then moving stretches and strength moves, then the longer holds.</li>
+          <li>Stretches for the same part of the body stay together, and both sides of a stretch stay together.</li>
+          <li>To look after your back, a stretch that bends your lower back forwards is not put first, or straight after another one, when a stretch in the same position can go between.</li>
+        </ul>
+        <p>The short and long routines keep their own order unless you tap the button on them.</p>
         <p><b>Change the voice or music</b></p>
         <ol>
           <li>Tap the routine's card.</li>
@@ -822,16 +879,25 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
       <details>
         <summary>Create your own routine</summary>
         <ol>
-          <li>Under <b>Routine</b>, tap <b>Create your own</b>. Each step has its own screen. Tap <b>Next</b> to go on and <b>Back</b> to go back.</li>
+          <li>Under <b>Routine</b>, tap <b>Create your own</b>. Each step has its own screen. Tap <b>Next</b> to go on and <b>Back</b> to go back. Not sure what you need? Tap <b>Help me choose</b> on the first screen.</li>
           <li><b>How long?</b> Pick 5, 10, 15, 20, 25 or 30 minutes.</li>
           <li><b>Anything to focus on?</b> Leave it on <b>All-round</b>, or pick one or more parts of the body, such as hamstrings or hips.</li>
-          <li><b>Your stretches.</b> The app picks a balanced set to fit your time. It shows the total and how far it is from what you picked. Tap any stretch to see how to do it. Tap <b>Change the stretches</b> to swap, add, remove or move them, then <b>Done</b>.</li>
+          <li><b>Your stretches.</b> The app picks a balanced set to fit your time. It shows the total and how far it is from what you picked. Tap any stretch to see how to do it. Tap <b>Change the stretches</b> to swap, add, remove or move them, then <b>Done</b>. If you moved them, <b>Put in the best order</b> sorts them again.</li>
           <li><b>Which voice?</b> Keep <b>Use my usual voice</b> or pick another. Tap <b>Play</b> to hear one.</li>
           <li><b>Music.</b> Pick what plays during this routine. For Spotify you can also pick a playlist.</li>
           <li><b>Name and save.</b> Give it a name, for example "Before golf", check the summary and tap <b>Save</b>.</li>
         </ol>
-        <p>Your new routine is chosen straight away, so just tap <b>Start</b>. The stretches are put in order from lying down to standing, so there is little getting up and down.</p>
+        <p>Your new routine is chosen straight away, so just tap <b>Start</b>. The stretches are already in the best order, from lying down to standing, so there is little getting up and down.</p>
         <p>To change its stretches, choose it and tap <b>Edit</b>. To change its length, voice or music, tap <b>Change length, voice or music</b>. To delete it, tap <b>Edit</b>, then <b>Delete routine</b>.</p>
+      </details>
+      <details>
+        <summary>Help me choose</summary>
+        <p>Not sure which stretches suit you today? Tap <b>Help me choose</b> under your routines and answer a few short questions: where you feel it, what it feels like, what makes it worse, how your back is today, what you would like it to help with and how long you have. The app suggests a routine, says why in plain words, and lists anything it left out on purpose. Save it with your routines, or save and start straight away.</p>
+        <ul>
+          <li>It starts with a safety check. If any of those signs apply, it does not suggest a routine and tells you who to contact instead.</li>
+          <li>Your answers are remembered, so <b>Check again</b> opens them ready to change, and updates the same routine. Your back scores from the record show whether things are getting better.</li>
+          <li>The advice follows NHS and NICE guidance on back pain and common physiotherapy practice. It is general guidance, not a diagnosis. If things get worse, or have not improved within a few weeks, see a physiotherapist or your GP.</li>
+        </ul>
       </details>
       <details>
         <summary>Stretch library</summary>
@@ -1324,15 +1390,185 @@ const EX = {
     labels:['Arm up','Lean']}
 
 };
-/* Starting position of each stretch, used to order a routine so there is little getting up and down:
-   back (lying on your back), side, fours (hands and knees), front (lying face down), kneel, sit, stand */
-const POSITIONS=['back','side','fours','front','kneel','sit','stand'];
+/* Starting position of each stretch, in the order a routine uses them so there is little getting up and down:
+   back (lying on your back), side, front (lying face down), fours (hands and knees), kneel, sit, stand.
+   This follows the NHS steps for getting up from the floor: roll to your side, then push up to hands and knees. */
+const POSITIONS=['back','side','front','fours','kneel','sit','stand'];
 /* Body parts for the stretch library, in the order they are listed */
 const PARTS=[['back','Lower back'],['ham','Hamstrings'],['hips','Hips and glutes'],['legs','Thighs and calves'],['upper','Upper back and sides'],['shoulders','Chest, shoulders and neck'],['core','Core and back strength']];
 const ORDER = {
   10:['tilt','kneeroll','ham','bridge','openbook','catcow','birddog','pressup','cobra','hipflexor'],
   15:['tilt','kneeroll','ham','activeham','fig4','bridge','openbook','sideplank','catcow','birddog','pressup','cobra','hipflexor','calf']
 };
+/* ---------- "Help me choose": the clinical rules, held as data ----------
+   General guidance only, not a diagnosis. Sources: NHS pages on back pain, sciatica, neck pain and cauda equina
+   syndrome (when to call 999, 111 or see a GP); NICE NG59 (stay active, exercise for low back pain); spinal red-flag
+   lists used in NHS MSK pathways; directional preference (Long, Donelson and Fung, Spine 2004); nerve sliders for
+   nerve-related leg pain (Basson et al 2017); ACSM flexibility guidance (older adults: holds of 30 to 60 seconds).
+   Red flags come first: if any is ticked, no routine is built. */
+const ADVICE={
+  /* level: '999' call 999 or go to A&E now, '111' get help today, 'gp' see a GP before starting */
+  flags:[
+    {id:'saddle', level:'999', text:'Numbness or tingling around your bottom or genitals'},
+    {id:'bladder', level:'999', text:'New trouble peeing or pooing, or not being able to control them'},
+    {id:'sex', level:'999', text:'New changes in how your genitals feel during sex, or new trouble with erections or orgasm'},
+    {id:'bothlegs', level:'999', text:'Pain, tingling, numbness or weakness in both legs'},
+    {id:'accident', level:'999', text:'The pain started after a bad fall or an accident'},
+    {id:'chest', level:'999', text:'Chest pain as well'},
+    {id:'weakleg', level:'111', text:'A leg or foot getting weaker, or a foot that catches or drags'},
+    {id:'hands', level:'111', text:'Clumsy or weak hands, or new trouble with balance or walking'},
+    {id:'unwell', level:'111', text:'Feeling hot, shivery or generally unwell'},
+    {id:'sudden', level:'111', text:'Severe pain that started suddenly or is getting worse quickly'},
+    {id:'cancer', level:'gp', text:'Cancer now or in the past, or losing weight without trying'},
+    {id:'night', level:'gp', text:'Pain that is worse at night or does not ease at all with rest'},
+    {id:'shape', level:'gp', text:'A lump or swelling in your back, or your back has changed shape'}
+  ],
+  levels:{
+    '999':{title:'Call 999 or go to A&E now', call:'999',
+      text:'This needs checking straight away. Do not drive yourself: ask someone to take you, or call 999.'},
+    '111':{title:'Get medical help today', call:'111',
+      text:'Call NHS 111 or ask your GP for an urgent appointment, and tell them what you ticked.'},
+    'gp':{title:'See your GP first',
+      text:'Book an appointment with your GP and tell them what you ticked. Until you have been checked, hold off starting a new routine.'}
+  },
+  /* questions: one per screen; the option ids are what is remembered (normRT checks them against these lists) */
+  Q:{
+    areas:{q:'Where do you feel it?', hint:'Pick all that apply.', none:'none', opts:[
+      {id:'lowback', label:'Lower back', parts:['back']},
+      {id:'midback', label:'Upper or middle back', parts:['upper']},
+      {id:'neck', label:'Neck', parts:['shoulders'], prefer:['sideneck','rolls','chintuck','uppback']},
+      {id:'shoulder', label:'Shoulders', parts:['shoulders'], prefer:['crossbody','rolls','armopen','elbowsback']},
+      {id:'hips', label:'Hips or buttocks', parts:['hips'], prefer:['fig4','kneecross','hipflexor']},
+      {id:'thigh', label:'Back of the thighs', parts:['ham']},
+      {id:'calves', label:'Calves or ankles', parts:['legs'], prefer:['calf','soleus']},
+      {id:'none', label:'Nowhere in particular', sub:'I just want to keep moving well', parts:[]}]},
+    feel:{q:'What does it feel like?', hint:'Pick all that apply.', none:'none', opts:[
+      {id:'stiff', label:'Stiff'},
+      {id:'ache', label:'Aching'},
+      {id:'tight', label:'Tight'},
+      {id:'sharp', label:'Sharp or catching'},
+      {id:'nerve', label:'Pins and needles, numbness or pain down a leg'},
+      {id:'arm', label:'Pins and needles or numbness down an arm'},
+      {id:'none', label:'No pain', sub:'I just want to stay supple'}]},
+    worse:{q:'What makes it worse?', hint:'Pick all that apply.', none:'none', opts:[
+      {id:'sit', label:'Sitting for a while'},
+      {id:'bend', label:'Bending forwards'},
+      {id:'stand', label:'Standing or walking for a while'},
+      {id:'arch', label:'Leaning or arching back'},
+      {id:'morning', label:'First thing in the morning'},
+      {id:'sport', label:'After sport or exercise'},
+      {id:'none', label:'Nothing in particular'}]},
+    goals:{q:'What would you like it to help with?', hint:'Pick all that apply.', none:'general', opts:[
+      {id:'golf', label:'Golf', parts:['hips','upper'], name:'Before golf'},
+      {id:'tennis', label:'Tennis', parts:['shoulders','upper'], name:'Before tennis'},
+      {id:'running', label:'Running', parts:['legs','hips'], name:'Before a run'},
+      {id:'desk', label:'Desk work', sub:'Sitting for long spells', parts:['upper','shoulders'], name:'Desk day stretch'},
+      {id:'general', label:'Moving well day to day', parts:[]}]}
+  },
+  share:1/3,      /* the usual cap on time spent in stretches with a caution note */
+  /* Rules, most important first. A rule applies when every clause in `all` matches (a clause matches when any of its
+     answers was picked), no clause in `none` matches, and the back score is at or below `maxScore` if given.
+     {areas:true} marks where the stretches suggested for the areas picked come in the order of preference.
+     avoid: never used. avoidIf: leave out every stretch with that level that also has a caution.
+     prefer: picked first when they fit. needs: the reason is only given if one of these made it into the routine. share: a lower caution cap. why: said in the summary. left: why it was left out. */
+  rules:[
+    {id:'nerve', all:[{feel:['nerve']}], avoid:['ham','legup','legswing','activeham','chintuck'], prefer:['glide'], needs:['glide'], share:0.25,
+      why:'Because you have symptoms down a leg, the straight-leg hamstring stretches are left out and a gentle nerve glide is in instead.',
+      left:'they stretch the sciatic nerve, which can stir up symptoms down a leg'},
+    {id:'arm', all:[{feel:['arm']}], avoid:['sideneck','chintuck'], prefer:['rolls','uppback'], needs:['rolls','uppback'],
+      why:'Because you have symptoms down an arm, the neck stretches are left out and gentle shoulder movement is in instead.',
+      left:'neck stretches can stir up symptoms down an arm'},
+    {id:'both', all:[{worse:['sit','bend']},{worse:['stand','arch']}], avoid:['kneehug','onekneechest','childpose','worlds','pressup','cobra'], prefer:['tilt','kneeroll','bridge','birddog','deadbug'],
+      why:'Because bending both forwards and backwards bothers it, this routine keeps your back in a comfortable middle position, with gentle movement and strength work.',
+      left:'they bend the back forwards or arch it, and you said both make it worse'},
+    {id:'flex', all:[{worse:['sit','bend']}], none:[{worse:['stand','arch']}], avoid:['kneehug','onekneechest','childpose','worlds'], prefer:['pressup','tilt','cobra','hipflexor'], needs:['pressup'],
+      why:'Because sitting or bending forwards makes it worse, this routine leaves out forward bends and includes gentle back arches (press-ups with your hips down).',
+      left:'they bend the lower back forwards, which you said makes it worse'},
+    {id:'ext', all:[{worse:['stand','arch']}], none:[{worse:['sit','bend']}], avoid:['pressup','cobra'], prefer:['onekneechest','tilt','kneehug','bridge'], needs:['onekneechest','kneehug'],
+      why:'Because standing, walking or arching back makes it worse, this routine leaves out back arches and includes a gentle knee-to-chest stretch.',
+      left:'they arch the lower back, which you said makes it worse'},
+    {id:'sharp', all:[{feel:['sharp']}], avoidIf:{level:'moderate'}, share:0.25,
+      why:'Because the pain is sharp, it keeps mostly to the gentler stretches. Move slowly and stop short of the sharp pain.',
+      left:'they go further into a stretch than suits sharp pain'},
+    {id:'sore', all:[], maxScore:2, avoidIf:{level:'moderate'}, share:0.25,
+      why:'On a sore day, gentle movement helps more than rest, so most of the stronger stretches are left out.',
+      left:'they are stronger stretches, better saved for a day when your back feels better'},
+    {id:'areas', areas:true},     /* here: the stretches suggested for the areas picked, ahead of the general ones below */
+    {id:'stiff', all:[{feel:['stiff'],worse:['morning']}], prefer:['tilt','kneeroll','catcow','openbook','rolls','hipcircle'],
+      why:'Because you feel stiff, it starts with easy movements that loosen you up before the longer holds.'},
+    {id:'sport', all:[{worse:['sport']}], prefer:['calf','fig4','hipflexor','soleus'],
+      why:'Because it is worse after sport, it includes longer holds for the muscles you use most.'},
+    {id:'golf', all:[{goals:['golf']}], prefer:['openbook','midback','hipcircle','kneecross','hydrant','sidebend'],
+      why:'For golf, it includes turning stretches for your upper back and hips.'},
+    {id:'tennis', all:[{goals:['tennis']}], prefer:['armopen','crossbody','elbowcircle','strapopen','reachup','sideraise'],
+      why:'For tennis, it includes stretches and warm-ups for your shoulders and sides.'},
+    {id:'running', all:[{goals:['running']}], prefer:['calf','hipflexor','soleus','calfraise','sideraise','legbridge'],
+      why:'For running, it includes your calves, the fronts of your hips and some leg strength.'},
+    {id:'desk', all:[{goals:['desk']}], prefer:['chairbend','rolls','uppback','elbowsback','standhip'],
+      why:'For desk work, it includes stretches you can also do sitting or standing at your desk.'}
+  ]
+};
+function adviceLevel(flags){
+  const rank={'999':3,'111':2,'gp':1}; let best=null;
+  (flags||[]).forEach(function(id){const f=ADVICE.flags.filter(function(x){return x.id===id;})[0]; if(f&&(!best||rank[f.level]>rank[best])) best=f.level;});
+  return best;
+}
+/* answers: {areas, feel, worse, score, goals, mins}  ->  what to build and why */
+function advisePlan(ans){
+  const A={areas:ans.areas||[],feel:ans.feel||[],worse:ans.worse||[],goals:ans.goals||[]};
+  const has=function(k,ids){return ids.some(function(id){return A[k].indexOf(id)>=0;});};
+  const clause=function(c){return Object.keys(c).some(function(k){return has(k,c[k]);});};
+  const opt=function(k,id){return ADVICE.Q[k].opts.filter(function(o){return o.id===id;})[0];};
+  const avoid=[], prefer=[], left=[], why=[];
+  let share=ADVICE.share;
+  /* the body parts to focus on: where it is felt, or else the goals; at most three */
+  let focus=[];
+  A.areas.forEach(function(id){const o=opt('areas',id); if(o) (o.parts||[]).forEach(function(p){if(focus.indexOf(p)<0) focus.push(p);});});
+  if(!focus.length) A.goals.forEach(function(id){const o=opt('goals',id); if(o) (o.parts||[]).forEach(function(p){if(focus.indexOf(p)<0) focus.push(p);});});
+  focus=focus.slice(0,3);
+  const ruleOn=function(r){
+    if(r.areas) return false;
+    if(!(r.all||[]).every(clause)) return false;
+    if(r.none&&r.none.some(clause)) return false;
+    if(r.maxScore!=null&&!(ans.score!=null&&ans.score<=r.maxScore)) return false;
+    return true;
+  };
+  ADVICE.rules.forEach(function(r){
+    if(r.areas) A.areas.forEach(function(id){const o=opt('areas',id); if(o&&o.prefer) o.prefer.forEach(function(x){if(EX[x]&&prefer.indexOf(x)<0) prefer.push(x);});});
+    if(!ruleOn(r)) return;
+    let out=(r.avoid||[]).slice();
+    /* a general rule (sharp pain, a sore day) does not take out what an earlier, more specific rule chose to include */
+    if(r.avoidIf) Object.keys(EX).forEach(function(id){const e=EX[id]; if(e.level===r.avoidIf.level&&e.caution&&out.indexOf(id)<0&&prefer.indexOf(id)<0) out.push(id);});
+    out=out.filter(function(id){return EX[id]&&avoid.indexOf(id)<0;});
+    out.forEach(function(id){avoid.push(id);});
+    if(out.length&&r.left) left.push({ids:out,reason:r.left});
+    (r.prefer||[]).forEach(function(id){if(EX[id]&&prefer.indexOf(id)<0) prefer.push(id);});
+    if(r.share!=null) share=Math.min(share,r.share);
+    if(r.why) why.push({text:r.why,needs:r.needs||null});
+  });
+  const pref=prefer.filter(function(id){return avoid.indexOf(id)<0;});
+  /* a suggested name */
+  let name='My stretch plan';
+  const a0=A.areas.filter(function(id){return id!=='none';})[0], g0=A.goals.filter(function(id){return id!=='general';})[0];
+  if(a0) name='For my '+opt('areas',a0).label.toLowerCase();
+  else if(g0) name=opt('goals',g0).name;
+  return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30)};
+}
+/* back scores from the record: the last two weeks against the two weeks before (at least three scores in each) */
+function scoreTrend(sessions,today){
+  const avg=function(from,to){
+    const v=[]; for(let i=from;i<to;i++){const r=sessions[dateKey(addDays(today,-i))]; if(r&&r.score>=1&&r.score<=5) v.push(r.score);}
+    return v.length>=3?v.reduce(function(a,b){return a+b;},0)/v.length:null;
+  };
+  const now=avg(0,14), before=avg(14,28);
+  if(now===null) return null;
+  const f=function(x){return (Math.round(x*10)/10).toFixed(1);};
+  if(before===null) return {dir:'none',text:'Your back scores over the last two weeks average '+f(now)+' out of 5.'};
+  const d=now-before;
+  if(d>=0.5) return {dir:'up',text:'Your back scores have improved: an average of '+f(now)+' over the last two weeks, up from '+f(before)+' the two weeks before.'};
+  if(d<=-0.5) return {dir:'down',text:'Your back scores have dropped: an average of '+f(now)+' over the last two weeks, down from '+f(before)+'. If it keeps getting worse, see a physiotherapist or your GP.'};
+  return {dir:'same',text:'Your back scores have been steady, averaging '+f(now)+' over the last two weeks.'};
+}
 const NUM=['one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve'];
 
 const SECW={10:'Ten',15:'Fifteen',20:'Twenty',25:'Twenty-five',30:'Thirty',40:'Forty',45:'Forty-five'};
@@ -1464,7 +1700,82 @@ function bestStreak(sessions,today){
   return best;
 }
 function fmt(sec){sec=Math.max(0,Math.round(sec));return Math.floor(sec/60)+':'+String(sec%60).padStart(2,'0');}
-if(typeof module!=='undefined') module.exports={VOICES,CLIP,timeCalls,fadeFor,EX,ORDER,PARTS,POSITIONS,exSeconds,phrases,buildTimeline,totalSeconds,workSeconds,frameFor,dateKey,addDays,currentStreak,bestStreak,fmt};
+/* ---------- the best order for a routine ----------
+   The method, held as data so the app keeps it (sources in the program agent's round 2 report):
+   1. Positions go one way, from lying on your back to standing. The NHS steps for getting up from the floor are:
+      roll onto your side, push up onto hands and knees, then stand slowly with support. Lying on your front is our
+      own addition, placed after your side because you can push up to hands and knees from it; then kneel, sit and
+      stand. Each position is used once, so there are as few changes as the stretches allow and you never go back down.
+   2. Within each position: gentle rhythmic movement first, then moving stretches, then strength moves, then the
+      longer holds, and a calm or standing finish. Dynamic movement before static holds, and holds on warm muscles.
+   3. Stretches for the same body part sit together, gentle before moderate. Both sides of a stretch stay together.
+   4. Disc care: a stretch that bends the lower back forwards is not put first, or straight after another one,
+      when a neutral or arching stretch in the same position can go between. */
+const SEQUENCE={
+  positions:POSITIONS,
+  phases:['warm','mobility','activation','hold','finish'],
+  phase:{
+    tilt:'warm', kneeroll:'warm', catcow:'warm', rolls:'warm', elbowcircle:'warm',
+    activeham:'mobility', openbook:'mobility', pressup:'mobility', worlds:'mobility', hydrant:'mobility', hipcircle:'mobility',
+    legswing:'mobility', glide:'mobility', strapopen:'mobility', armopen:'mobility',
+    bridge:'activation', legbridge:'activation', deadbug:'activation', birddog:'activation', sideplank:'activation',
+    cobra:'activation', sideraise:'activation', squat:'activation', calfraise:'activation',
+    ham:'hold', fig4:'hold', hipflexor:'hold', calf:'hold', kneehug:'hold', onekneechest:'hold', legup:'hold', kneecross:'hold',
+    standhip:'hold', sidequad:'hold', soleus:'hold', uppback:'hold', midback:'hold', sidebend:'hold', elbowsback:'hold',
+    crossbody:'hold', sideneck:'hold', chintuck:'hold', groin:'hold', chairbend:'hold',
+    childpose:'finish', reachup:'finish'
+  },
+  /* stretches that bend the lower back forwards */
+  flexion:['kneehug','onekneechest','childpose']
+};
+/* every stretch carries its phase; one that is not listed yet counts as a moving stretch if it has reps, a hold if not */
+Object.keys(EX).forEach(function(id){EX[id].phase=SEQUENCE.phase[id]||(EX[id].reps?'mobility':'hold');});
+function seqPos(id){const i=SEQUENCE.positions.indexOf(EX[id]&&EX[id].pos); return i<0?99:i;}
+function seqStats(list){
+  const fl=function(id){return SEQUENCE.flexion.indexOf(id)>=0;};
+  let changes=0, downs=0, phaseBad=0, finishBad=0, flexBad=list.length&&fl(list[0])?1:0;
+  for(let i=1;i<list.length;i++){
+    if(EX[list[i]].pos!==EX[list[i-1]].pos) changes++;
+    else{
+      const p0=EX[list[i-1]].phase, p1=EX[list[i]].phase, P=SEQUENCE.phases;
+      if(P.indexOf(p1)<P.indexOf(p0)){ if(p0==='finish') finishBad++; else phaseBad++; }
+    }
+    if(seqPos(list[i])<seqPos(list[i-1])) downs++;
+    if(fl(list[i])&&fl(list[i-1])) flexBad++;
+  }
+  const ph=list.length?EX[list[0]].phase:'';
+  return {changes:changes, downs:downs, phaseBad:phaseBad, finishBad:finishBad, flexBad:flexBad, warmFirst:ph==='warm'||ph==='mobility'};
+}
+/* The same stretches, in the best order, and a short note of what got better ('' when nothing moves). */
+function optimiseOrder(list){
+  list=(list||[]).filter(function(id){return !!EX[id];});
+  const P=SEQUENCE.phases, partIx=function(id){const i=PARTS.findIndex(function(p){return p[0]===EX[id].part;}); return i<0?99:i;};
+  const lv=function(id){return EX[id].level==='gentle'?0:EX[id].level==='moderate'?1:1;};
+  const fl=function(id){return SEQUENCE.flexion.indexOf(id)>=0;};
+  const out=list.map(function(id,i){return {id:id,i:i};}).sort(function(a,b){
+    return seqPos(a.id)-seqPos(b.id)||P.indexOf(EX[a.id].phase)-P.indexOf(EX[b.id].phase)||partIx(a.id)-partIx(b.id)||lv(a.id)-lv(b.id)||a.i-b.i;
+  }).map(function(x){return x.id;});
+  /* disc care: bring a neutral stretch from later in the same position in front of a forward bend that opens the routine or follows another */
+  for(let k=0;k<out.length;k++){
+    if(!fl(out[k])||(k>0&&!fl(out[k-1]))) continue;
+    let j=-1;
+    for(let m=k+1;m<out.length&&EX[out[m]].pos===EX[out[k]].pos;m++){ if(!fl(out[m])){j=m; break;} }
+    if(j>0) out.splice(k,0,out.splice(j,1)[0]);
+  }
+  if(out.every(function(id,i){return id===list[i];})) return {list:out, changes:''};
+  const a=seqStats(list), b=seqStats(out), notes=[];
+  const n=function(x,one,many){return x+' '+(x===1?one:many);};
+  if(a.changes>b.changes) notes.push(n(a.changes-b.changes,'fewer change of position','fewer changes of position'));
+  if(a.downs>b.downs) notes.push(b.downs?'less getting back down to the floor':'no getting back down once you are up');
+  if(!a.warmFirst&&b.warmFirst) notes.push('gentle movement moved to the start');
+  if(a.flexBad>b.flexBad) notes.push('forward bends spaced out');
+  if(a.phaseBad>b.phaseBad) notes.push('moving and strength moves before the longer holds');
+  if(a.finishBad>b.finishBad) notes.push('a calm finish at the end');
+  if(!notes.length) notes.push('stretches grouped by body part');
+  const t=notes.join('; ');
+  return {list:out, changes:t.charAt(0).toUpperCase()+t.slice(1)+'.'};
+}
+if(typeof module!=='undefined') module.exports={VOICES,CLIP,timeCalls,fadeFor,EX,ORDER,PARTS,POSITIONS,SEQUENCE,optimiseOrder,seqStats,exSeconds,phrases,buildTimeline,totalSeconds,workSeconds,frameFor,dateKey,addDays,currentStreak,bestStreak,fmt,ADVICE,adviceLevel,advisePlan,scoreTrend};
 </script>
 <script id="music">
 /* Music: Spotify under the stretching coach.
@@ -2277,7 +2588,7 @@ function voiceOK(id){return typeof id==='string'&&VOICES.some(function(v){return
 /* The phone app's service worker keeps voice files by their full address, saved copy first. The page itself is always
    the newest, so each voice file is asked for with a version that changes whenever its clip layout changes (and with
    every phone app build), so a new page never reads clips from an old file. */
-const BUILD=/*BUILD*/"v11";
+const BUILD=/*BUILD*/"v12";
 function packVer(id){
   const v=VOICES.filter(function(x){return x.id===id;})[0];
   let end=0, h=5381;
@@ -2567,7 +2878,7 @@ function persist(key){
       if(!snap.metadata.fromCache&&!pushed){pushed=true; localOnly.forEach(persist);}
       const rd=snap.docs.filter(function(d){return d.id==='routines';})[0], rv=rd&&rd.data();
       if(rv&&typeof rv.at==='string'){
-        if(rv.at>(RT.at||'')){try{RT=normRT(JSON.parse(rv.routines)); RT.at=rv.at; store.set('mbs.routines',RT); if(!routineById(settings.routine)) settings.routine='r10'; renderRoutines(); prepAudio();}catch(e){}}
+        if(rv.at>(RT.at||'')){try{RT=normRT(JSON.parse(rv.routines)); RT.at=rv.at; store.set('mbs.routines',RT); if(!routineById(settings.routine)) settings.routine='r10'; renderRoutines(); prepAudio(); if(typeof renderAdvCard==='function') renderAdvCard();}catch(e){}}
       }else if(!snap.metadata.fromCache&&RT.at&&!pushedRT){pushedRT=true; saveRT();}
       setSync('account'); renderRecord();
     },function(){col=null; setSync('device');});
@@ -2644,8 +2955,30 @@ function cleanMusic(m){
   return o;
 }
 function cleanFocus(f){return (Array.isArray(f)?f:[]).filter(function(p,i,a){return PARTS.some(function(x){return x[0]===p;})&&a.indexOf(p)===i;});}
+/* The advice questionnaire's answers, RT.advice (agreed with the physio agent): null or {at, answers, routine}.
+   answers = {areas:[], feel:[], worse:[], score, goals:[], mins}. The lists keep only ids offered in ADVICE.Q[key].opts
+   (the physio agent's questions), or short lower-case words if ADVICE is not in this version. Red flags are never stored. */
+function cleanAdvice(a){
+  if(!a||typeof a!=='object'||Array.isArray(a)) return null;
+  const ans=a.answers&&typeof a.answers==='object'&&!Array.isArray(a.answers)?a.answers:{};
+  const list=function(key){
+    const v=Array.isArray(ans[key])?ans[key]:[];
+    let ok=function(x){return /^[a-z]{2,12}$/.test(x);};
+    try{
+      if(typeof ADVICE!=='undefined'&&ADVICE&&ADVICE.Q&&ADVICE.Q[key]&&Array.isArray(ADVICE.Q[key].opts)){
+        const ids=ADVICE.Q[key].opts.map(function(o){return o&&o.id;}); ok=function(x){return ids.indexOf(x)>=0;};
+      }
+    }catch(e){}
+    return v.filter(function(x,i){return typeof x==='string'&&ok(x)&&v.indexOf(x)===i;}).slice(0,12);
+  };
+  const sc=Number(ans.score);
+  return {at:typeof a.at==='string'?a.at.slice(0,30):'',
+          answers:{areas:list('areas'),feel:list('feel'),worse:list('worse'),score:ans.score!=null&&ans.score!==''&&Number.isInteger(sc)&&sc>=1&&sc<=5?sc:null,
+                   goals:list('goals'),mins:cleanMins(ans.mins)},
+          routine:typeof a.routine==='string'&&/^u[\w-]{1,40}$/.test(a.routine)?a.routine:''};
+}
 function normRT(x){
-  const o={edits:{},own:[],prefs:{},at:''};
+  const o={edits:{},own:[],prefs:{},at:'',advice:null};
   if(!x||typeof x!=='object') return o;
   if(x.edits&&typeof x.edits==='object') Object.keys(BUILTIN).forEach(function(k){const l=cleanList(x.edits[k]); if(l.length) o.edits[k]=l;});
   if(x.prefs&&typeof x.prefs==='object') Object.keys(BUILTIN).forEach(function(k){
@@ -2661,6 +2994,7 @@ function normRT(x){
                 mins:cleanMins(r.mins),focus:cleanFocus(r.focus),voice:cleanVoice(r.voice),music:cleanMusic(r.music)});
   });
   o.at=typeof x.at==='string'?x.at.slice(0,30):'';
+  o.advice=cleanAdvice(x.advice);
   return o;
 }
 let RT=normRT(store.get('mbs.routines',null));
@@ -2759,6 +3093,12 @@ function renderEditor(flash){
        '<button data-act="swap" data-i="'+i+'">Swap</button></div></li>';
   });
   $('edList').innerHTML=h;
+  /* Put in the best order: on only when it would change something; after a tap, what changed and Undo until the next edit */
+  if(ED.undo&&!sameList(ED.list,ED.undoAfter)) ED.undo=null;
+  const best=ED.list.length>1?optimiseOrder(ED.list):{changes:''};
+  $('edOrder').hidden=ED.list.length<2;
+  $('edBest').disabled=!best.changes;
+  $('edOrdMsg').innerHTML=ED.undo?'<p>'+esc(ED.undoMsg)+'</p><button class="ghost" id="edUndo">Undo</button>':best.changes?'':'<p>Already in the best order.</p>';
   $('edSave').disabled=!ED.list.length;
   if(ED.builtin) $('edReset').disabled=sameList(ED.list,ORDER[ED.tag]);
 }
@@ -2772,6 +3112,15 @@ $('edList').addEventListener('click',function(ev){
   else if(b.dataset.act==='swap') openLibrary('swap',i);
 });
 $('edAdd').addEventListener('click',function(){openLibrary('add');});
+$('edBest').addEventListener('click',function(){
+  if(!ED) return;
+  const r=optimiseOrder(ED.list); if(!r.changes) return;
+  ED.undo=ED.list.slice(); ED.list=r.list; ED.undoAfter=r.list.slice(); ED.undoMsg=r.changes; renderEditor();
+});
+$('edOrdMsg').addEventListener('click',function(ev){
+  if(!ED||!ev.target.closest('#edUndo')||!ED.undo) return;
+  ED.list=ED.undo; ED.undo=null; renderEditor();
+});
 $('edCancel').addEventListener('click',function(){ED=null; $('editor').hidden=true;});
 $('edReset').addEventListener('click',function(){if(ED&&ED.builtin){ED.list=ORDER[ED.tag].slice(); renderEditor();}});
 $('edName').addEventListener('input',function(){if(ED) ED.name=this.value;});
@@ -2885,21 +3234,21 @@ function aimText(tot,mins){
    each part offers its stretches in order of preference, no stretch twice. Stretches with a caution note
    are kept to about a third of the time (unless hamstrings are the only focus, for the hamstring ones), are never added
    just to hit the time, and at most one stretch that bends the lower back forwards goes in up to 15 minutes, two above.
-   The list is then put in order of
-   starting position (lying on your back first, standing last) with the gentle ones first in each position. */
+   The list is then put in the best order by optimiseOrder (see SEQUENCE in the core script), as the
+   "Put in the best order" button does.
+   opts (all optional, for the advice questionnaire): avoid:[ids] never used; prefer:[ids] picked first when they fit
+   and kept; cautionShare: a lower cap on cautioned stretches (0 to 1), which then applies to every focus. */
 function lvl(e){return e.level==='gentle'?0:e.level==='moderate'?1:e.level?2:1;}
 function stepCost(id){const e=EX[id]; return (e.sides?e.sides.length:1)*(e.rounds||1)*TRANS+exSeconds(id);}
-function sortRoutine(list){
-  const ids=Object.keys(EX), pi=function(id){const i=PARTS.findIndex(function(p){return p[0]===EX[id].part;}); return i<0?99:i;};
-  const ps=function(id){const i=POSITIONS.indexOf(EX[id].pos); return i<0?99:i;};
-  return list.slice().sort(function(a,b){
-    return ps(a)-ps(b)||lvl(EX[a])-lvl(EX[b])||pi(a)-pi(b)||ids.indexOf(a)-ids.indexOf(b);
-  });
-}
 const BACKX=['bridge','birddog','deadbug'];   /* neutral and back-strengthening: count as lower back work for a lower back focus */
 function realTotal(list,tag){return list.length?totalSeconds(buildTimeline(list,tag)):0;}
-function autoRoutine(mins,focus){
-  const T=mins*60, F=cleanFocus(focus), ids=Object.keys(EX);
+function autoRoutine(mins,focus,opts){
+  opts=opts&&typeof opts==='object'?opts:{};
+  const avoid=(Array.isArray(opts.avoid)?opts.avoid:[]).filter(function(id){return !!EX[id];});
+  const prefer=(Array.isArray(opts.prefer)?opts.prefer:[]).filter(function(id,i,a){return !!EX[id]&&avoid.indexOf(id)<0&&a.indexOf(id)===i;});
+  const cs=typeof opts.cautionShare==='number'&&isFinite(opts.cautionShare)?Math.max(0,Math.min(1,opts.cautionShare)):null;
+  const capShare=cs===null?1/3:Math.min(1/3,cs);
+  const T=mins*60, F=cleanFocus(focus), ids=Object.keys(EX).filter(function(id){return avoid.indexOf(id)<0;});
   const allRound=!F.length||F.length===PARTS.length;
   const w={};
   PARTS.forEach(function(p){
@@ -2910,12 +3259,13 @@ function autoRoutine(mins,focus){
   const order=F.concat(PARTS.map(function(p){return p[0];}).filter(function(k){return F.indexOf(k)<0;}));
   const fav=(ORDER[15]||[]).concat(ORDER[10]||[]);
   const pref=function(a,b){
+    const pa=prefer.indexOf(a)<0?99:prefer.indexOf(a), pb=prefer.indexOf(b)<0?99:prefer.indexOf(b);
     const fa=fav.indexOf(a)<0?1:0, fb=fav.indexOf(b)<0?1:0;
-    return fa-fb||lvl(EX[a])-lvl(EX[b])||(EX[a].caution?1:0)-(EX[b].caution?1:0)||ids.indexOf(a)-ids.indexOf(b);
+    return pa-pb||fa-fb||lvl(EX[a])-lvl(EX[b])||(EX[a].caution?1:0)-(EX[b].caution?1:0)||ids.indexOf(a)-ids.indexOf(b);
   };
   /* the one-third caution cap is lifted only when hamstrings are the only focus, for the hamstring stretches */
   const hamOnly=F.length===1&&F[0]==='ham';
-  const free=function(id){return hamOnly&&EX[id].part==='ham';};
+  const free=function(id){return cs===null&&hamOnly&&EX[id].part==='ham';};
   /* stretches that bend the lower back forwards: at most one up to 15 minutes, two above */
   const FLEX=['kneehug','onekneechest','childpose'], flexMax=T<=900?1:2;
   const flexN=function(list,but){return list.filter(function(x){return x!==but&&FLEX.indexOf(x)>=0;}).length;};
@@ -2934,7 +3284,7 @@ function autoRoutine(mins,focus){
     if(tot+c>T) return false;
     if(FLEX.indexOf(id)>=0&&flexN(chosen)>=flexMax) return false;
     if(strict&&c>Math.max((F.indexOf(grp[id])>=0?0.7:0.4)*T,90)) return false;   /* no one stretch takes over a short routine */
-    if(strict&&EX[id].caution&&!free(id)&&cau+c>T/3) return false;
+    if((strict||cs!==null)&&EX[id].caution&&!free(id)&&cau+c>T*capShare) return false;
     return true;
   }
   function add(id){chosen.push(id); tot+=cost[id]; used[grp[id]]+=cost[id]; if(EX[id].caution&&!free(id)) cau+=cost[id];
@@ -2943,6 +3293,7 @@ function autoRoutine(mins,focus){
      (all-round: the hamstrings, so the strap stretch is in whenever it fits) */
   const warm=(pool.back||[]).filter(function(x){return EX[x].part==='back';}).filter(function(x){return (!EX[x].level||lvl(EX[x])===0)&&!EX[x].caution&&fits(x,true);})[0]||null;
   if(warm) add(warm);
+  prefer.forEach(function(id){if(chosen.indexOf(id)<0&&fits(id,true)) add(id);});
   (allRound?['ham']:F).forEach(function(k){const id=pool[k].filter(function(x){return fits(x,true);})[0]; if(id) add(id);});
   [true,false].forEach(function(strict){
     for(;;){
@@ -2966,13 +3317,13 @@ function autoRoutine(mins,focus){
   });
   if(best) add(best.id);
   /* then swap a stretch for another from the same part (or a focus part) when that lands closer */
-  const mustHave=function(list,k,x){return x===warm||allRound&&(k==='back'||k==='ham')&&list.filter(function(x){return grp[x]===k;}).length<=1;};
+  const mustHave=function(list,k,x){return x===warm||prefer.indexOf(x)>=0||allRound&&(k==='back'||k==='ham')&&list.filter(function(x){return grp[x]===k;}).length<=1;};
   for(let n=0;n<12;n++){
     let mv=null, now=Math.abs(tot-T);
     rest=ids.filter(function(id){return chosen.indexOf(id)<0;});
     chosen.forEach(function(x){
       rest.forEach(function(y){
-        if(x===warm||(grp[y]!==grp[x]&&!(F.indexOf(grp[y])>=0))) return;
+        if(x===warm||prefer.indexOf(x)>=0||(grp[y]!==grp[x]&&!(F.indexOf(grp[y])>=0))) return;
         if(EX[y].caution&&!free(y)) return;                                  /* never a cautioned stretch just to hit the time */
         if(FLEX.indexOf(y)>=0&&flexN(chosen,x)>=flexMax) return;
         const d=Math.abs(tot-cost[x]+cost[y]-T);
@@ -2985,8 +3336,9 @@ function autoRoutine(mins,focus){
     pool[grp[x]].push(x);
     if(mv.y) add(mv.y);
   }
-  return sortRoutine(chosen);
+  return optimiseOrder(chosen).list;
 }
+window.__program={autoRoutine:autoRoutine, normRT:normRT, routineById:routineById};   /* for tests */
 
 /* the routine's length, voice and music, shown under the routine cards so it is clear what Start will do */
 function renderRoutineSet(cur){
@@ -3070,6 +3422,9 @@ function renderBuilder(){
     h='<div class="bd-lens" role="group" aria-label="Length">';
     LENGTHS.forEach(function(m){h+='<button data-mins="'+m+'" aria-pressed="'+((B.mins||B.near)===m)+'"><b>'+m+'</b><span>minutes</span></button>';});
     h+='</div><p class="small">The app picks stretches to come as close to this as it can. You can change them on the next screens.</p>';
+    /* the advice questionnaire, when it is in this version of the app */
+    if(B.mode==='new'&&typeof openAdvisor==='function')
+      h+='<button class="bd-advise" id="bdAdvise"><span class="bd-t">Not sure? Help me choose</span><span class="bd-s">Answer a few questions and the app suggests a routine</span></button>';
   }else if(st==='focus'){
     h='<p class="small">Pick as many as you like, or leave it on all-round.</p><div class="bd-opts">'+
       pickBtn('data-focus="all"',!B.focus.length,'All-round','A bit of everything, always with your lower back and hamstrings');
@@ -3079,8 +3434,13 @@ function renderBuilder(){
     const segs=B.list.length?buildTimeline(B.list):[], tot=totalSeconds(segs);
     h='<div class="bd-tot"><p><b>'+fmt(tot)+'</b> in total &middot; '+B.list.length+(B.list.length===1?' stretch':' stretches')+'</p>'+
       '<p class="bd-aim" id="bdAim">'+(B.mins?esc(aimText(tot,B.mins)):'')+'</p>'+
-      '<p class="small">'+esc(focusText(B.focus))+'. Tap a stretch to see how to do it.</p>'+focusShort(segs)+'</div>'+
-      '<ol class="routine bd-list" id="bdList">';
+      '<p class="small">'+esc(focusText(B.focus))+'. Tap a stretch to see how to do it.</p>'+focusShort(segs)+'</div>';
+    /* Put in the best order: only when it would change something, or just after it did (with Undo) */
+    if(B.undo&&!sameList(B.list,B.undoAfter)) B.undo=null;
+    const best=B.list.length>1?optimiseOrder(B.list):{changes:''};
+    if(B.undo) h+='<div class="best"><div class="best-msg" id="bdOrdMsg" role="status"><p>'+esc(B.undoMsg)+'</p><button class="ghost" id="bdUndo">Undo</button></div></div>';
+    else if(best.changes) h+='<div class="best"><button class="ghost" id="bdBest">Put in the best order</button></div>';
+    h+='<ol class="routine bd-list" id="bdList">';
     B.list.forEach(function(id,i){
       const e=EX[id];
       h+='<li><button data-ex="'+id+'" aria-label="How to do '+esc(e.name)+'"><span class="num">'+(i+1)+'</span>'+media(id,false,thumbFrame(e))+
@@ -3186,6 +3546,9 @@ $('bdBody').addEventListener('click',function(ev){
   if(q('#bdEdit')){openEditor(null,{name:B.name,list:B.list,mins:B.mins}); return;}
   if(q('#bdOld')){B.list=B.old.slice(); B.old=null; renderBuilder(); return;}
   if(q('#bdAuto')){B.list=B.auto.slice(); renderBuilder(); return;}
+  if(q('#bdBest')){const r=optimiseOrder(B.list); if(r.changes){B.undo=B.list.slice(); B.list=r.list; B.undoAfter=r.list.slice(); B.undoMsg=r.changes;} renderBuilder(); return;}
+  if(q('#bdUndo')){if(B.undo){B.list=B.undo; B.undo=null;} renderBuilder(); return;}
+  if(q('#bdAdvise')){closeBuilder(); try{if(typeof openAdvisor==='function') openAdvisor();}catch(e){} return;}
   if((b=q('[data-play]'))){try{if(typeof previewVoice==='function') previewVoice(b.dataset.play);}catch(e){} return;}
   if((b=q('[data-voice]'))){B.voice=b.dataset.voice; renderBuilder(); return;}
   if((b=q('[data-mu]'))){if(b.disabled) return; B.music={mode:b.dataset.mu,spotify:b.dataset.mu==='spotify'?B.music.spotify:null}; renderBuilder(); return;}
@@ -3199,6 +3562,191 @@ $('bdBody').addEventListener('click',function(ev){
     B.ret=true; B.step=i; if(B.steps[i]==='list') ensureList(); renderBuilder(); $('builder').scrollTop=0;
   }
 });
+/* ---------- physio: "Help me choose": a safety check, six short questions, then a suggested routine ----------
+   The clinical rules are in ADVICE (core script). Uses the routine builder's autoRoutine and optimiseOrder when they
+   take options; before that, builds as usual and takes out what to avoid. Red-flag answers are never stored. */
+let AD=null;
+const AD_STEPS=['flags','areas','feel','worse','score','goals','mins','result'];
+function advSaved(){
+  const a=(RT&&RT.advice&&typeof RT.advice==='object')?RT.advice:store.get('mbs.advice',null);
+  return a&&typeof a==='object'&&a.answers&&typeof a.answers==='object'?a:null;
+}
+function advDate(iso){const d=new Date(iso); return isNaN(d)?'':d.getDate()+' '+MON[d.getMonth()];}
+function advList(v,k){const ok=ADVICE.Q[k].opts.map(function(o){return o.id;}); return (Array.isArray(v)?v:[]).filter(function(x,i,a){return ok.indexOf(x)>=0&&a.indexOf(x)===i;});}
+function openAdvisor(){
+  if(typeof B!=='undefined'&&B&&typeof closeBuilder==='function') closeBuilder();
+  const s=advSaved(), a=s?s.answers:{}, cs=currentScore();
+  const sc=cs!=null?cs:(a.score>=1&&a.score<=5?Math.round(a.score):null);
+  AD={step:0, stop:null, prev:s, plan:null, list:null, name:'',
+      ans:{flags:[], areas:advList(a.areas,'areas'), feel:advList(a.feel,'feel'), worse:advList(a.worse,'worse'), score:sc, goals:advList(a.goals,'goals'), mins:cleanMins(a.mins)||10}};
+  renderAdvisor(); $('advisor').hidden=false; $('advisor').scrollTop=0;
+}
+function closeAdvisor(){AD=null; $('advisor').hidden=true;}
+function advPrevRoutine(){const id=AD&&AD.prev&&AD.prev.routine; return id?RT.own.filter(function(r){return r.id===id;})[0]||null:null;}
+function advBuild(){
+  const p=advisePlan(AD.ans), mins=AD.ans.mins||10, T=mins*60;
+  const out=function(id){return p.avoid.indexOf(id)>=0;};
+  let list=[];
+  try{
+    if(autoRoutine.length>=3) list=autoRoutine(mins,p.focus,{avoid:p.avoid.slice(),prefer:p.prefer.slice(),cautionShare:p.cautionShare});
+    else{
+      /* the builder does not take options yet: the first few preferred ones, then the usual choice without what to avoid */
+      const FB=['kneehug','onekneechest','childpose'], fbMax=T<=900?1:2;
+      const cauT=function(l){return l.filter(function(x){return EX[x].caution;}).reduce(function(s,x){return s+exSeconds(x);},0);};
+      const add=function(id){
+        if(list.indexOf(id)>=0||out(id)||realTotal(list.concat([id]))>T+20) return;
+        if(FB.indexOf(id)>=0&&list.filter(function(x){return FB.indexOf(x)>=0;}).length>=fbMax) return;
+        if(EX[id].caution&&cauT(list)+exSeconds(id)>p.cautionShare*T) return;
+        list.push(id);
+      };
+      p.prefer.slice(0,4).forEach(add);
+      autoRoutine(mins,p.focus).forEach(add);
+      p.prefer.slice(4).forEach(add);
+    }
+  }catch(e){list=[];}
+  list=(list||[]).filter(function(id){return EX[id]&&!out(id);});      /* never anything left out on purpose */
+  try{if(typeof optimiseOrder==='function') list=optimiseOrder(list).list; else if(typeof sortRoutine==='function') list=sortRoutine(list);}catch(e){}
+  AD.plan=p; AD.list=list;
+  if(!AD.name){const pr=advPrevRoutine(); AD.name=pr?pr.name:p.name;}
+}
+function advToggle(k,id){
+  const l=AD.ans[k], none=ADVICE.Q[k].none;
+  if(id===none){AD.ans[k]=l.indexOf(none)>=0?[]:[none]; return;}
+  const i=l.indexOf(id); if(i>=0) l.splice(i,1); else l.push(id);
+  const j=l.indexOf(none); if(j>=0) l.splice(j,1);
+}
+function renderAdvisor(){
+  const st=AD.stop?'stop':AD_STEPS[AD.step];
+  let eb='', q='', h='';
+  if(st==='flags'){
+    eb='First, a safety check'; q='Do any of these apply to you now?';
+    h='<p class="small">'+(AD.prev?'Your answers from '+esc(advDate(AD.prev.at))+' are filled in on the next screens. Change anything that is different today.'
+       :'A few quick questions, then a routine to suit how you feel. This is general guidance, not a diagnosis.')+
+      ' Tick any of these that are true. If none are, tap <b>None of these</b> at the end.</p><div class="bd-opts">';
+    ADVICE.flags.forEach(function(f){h+=pickBtn('data-flag="'+f.id+'"',AD.ans.flags.indexOf(f.id)>=0,f.text,'');});
+    h+='</div>';
+    /* "None of these" sits after the last sign, so every sign is passed on the way to it */
+    if(!AD.ans.flags.length) h+='<button class="bd-btn bd-next adv-none" id="advNone">None of these</button>';
+  }else if(st==='stop'){
+    const L=ADVICE.levels[AD.stop];
+    eb='Please do not start a routine yet'; q=L.title;
+    h='<div class="adv-stop"><p>'+esc(L.text)+'</p>'+
+      (L.call?'<a class="adv-call" href="tel:'+L.call+'">Call '+L.call+'</a>':'')+
+      (AD.stop==='111'?'<a class="adv-link" href="https://111.nhs.uk" target="_blank" rel="noopener">NHS 111 online</a>':'')+'</div>'+
+      '<h3 class="bd-h3">You ticked</h3><ul class="adv-ul">'+ADVICE.flags.filter(function(f){return AD.ans.flags.indexOf(f.id)>=0;}).map(function(f){return '<li>'+esc(f.text)+'</li>';}).join('')+'</ul>'+
+      '<p class="small">The app does not suggest a routine when any of these apply. If you ticked one by mistake, tap Back and change it. Outside the UK, use your local emergency number.</p>';
+  }else if(ADVICE.Q[st]){
+    const o=ADVICE.Q[st];
+    eb='Question '+AD.step+' of 6'; q=o.q;
+    h='<p class="small">'+esc(o.hint)+'</p><div class="bd-opts">';
+    o.opts.forEach(function(x){h+=pickBtn('data-q="'+st+'" data-id="'+x.id+'"',AD.ans[st].indexOf(x.id)>=0,x.label,x.sub||'');});
+    h+='</div>';
+  }else if(st==='score'){
+    eb='Question '+AD.step+' of 6'; q='How is your back today?';
+    h='<div class="scores" role="group" aria-label="Back score">';
+    for(let i=1;i<=5;i++) h+='<button data-ascore="'+i+'" aria-pressed="'+(AD.ans.score===i)+'" aria-label="Back score '+i+' out of 5">'+i+'</button>';
+    h+='</div><div class="ends"><span>1 = sore</span><span>5 = great</span></div><p class="small">Leave it blank if you would rather not say.</p>';
+  }else if(st==='mins'){
+    eb='Question '+AD.step+' of 6'; q='How long have you got?';
+    h='<div class="bd-lens" role="group" aria-label="Length">';
+    LENGTHS.forEach(function(m){h+='<button data-amins="'+m+'" aria-pressed="'+(AD.ans.mins===m)+'"><b>'+m+'</b><span>minutes</span></button>';});
+    h+='</div>';
+  }else{
+    const p=AD.plan, segs=AD.list.length?buildTimeline(AD.list):[], tot=totalSeconds(segs);
+    const why=p.why.filter(function(w){return !w.needs||w.needs.some(function(id){return AD.list.indexOf(id)>=0;});}).map(function(w){return w.text;});
+    const fs=p.focus.length?'It concentrates on your '+listText(p.focus.map(function(x){return partName(x).toLowerCase();}))+'.':'It is an all-round routine.';
+    const tr=scoreTrend(sessions,today());
+    eb='Your suggested routine'; q=fmt(tot)+' · '+AD.list.length+(AD.list.length===1?' stretch':' stretches');
+    h='<div class="adv-why"><p>'+esc([fs].concat(why.slice(0,2)).join(' '))+'</p>'+
+      (why.length>2?'<p class="small">'+esc(why.slice(2).join(' '))+'</p>':'')+
+      (tr?'<p class="small'+(tr.dir==='down'?' adv-down':'')+'">'+esc(tr.text)+'</p>':'')+'</div>';
+    if(!AD.list.length) h+='<p class="adv-guide">No stretches fit those answers. Go back and change them, or see a physiotherapist for a plan made for you.</p>';
+    h+='<ol class="routine bd-list" id="advList">';
+    AD.list.forEach(function(id,i){
+      const e=EX[id];
+      h+='<li><button data-ex="'+id+'" aria-label="How to do '+esc(e.name)+'"><span class="num">'+(i+1)+'</span>'+media(id,false,thumbFrame(e))+
+         '<span><span class="nm">'+e.name+'</span><span class="dt">'+e.detail+'</span>'+(e.caution?'<span class="cau">'+esc(e.caution)+'</span>':'')+'</span>'+
+         '<span class="tm">'+fmt(workSeconds(segs,i))+'</span></button></li>';
+    });
+    h+='</ol>';
+    if(p.left.length){
+      h+='<div class="adv-left"><h3>Left out on purpose</h3><ul class="adv-ul">';
+      p.left.forEach(function(g){
+        const nm=g.ids.map(function(id){return EX[id].name;});
+        h+='<li><b>'+esc(nm.some(function(x){return x.indexOf(',')>=0;})?nm.join('; '):listText(nm))+'</b>: '+esc(g.reason)+'.</li>';
+      });
+      h+='</ul></div>';
+    }
+    h+='<p class="adv-guide">This is general guidance, not a diagnosis. Stop any stretch that hurts or sends pain, tingling or numbness down an arm or leg. If things get worse, or have not improved within a few weeks, see a physiotherapist or your GP.</p>';
+    const pr=advPrevRoutine();
+    h+='<label class="field"><span>Name</span><input id="advName" maxlength="30" autocomplete="off" value="'+esc(AD.name)+'"></label>'+
+      (pr?'<p class="small">Saving updates your routine “'+esc(pr.name)+'”. Its voice and music stay as they are.</p>':'<p class="small">It is saved with your routines. Voice and music are as set in Sound.</p>')+
+      '<button class="ghost" id="advRedo">Change my answers</button>';
+  }
+  $('advStep').textContent=eb; $('advQ').textContent=q; $('advBody').innerHTML=h;
+  const back=$('advBack'), next=$('advNext');
+  back.hidden=st==='flags'; next.disabled=false;
+  next.hidden=st==='flags'&&!AD.ans.flags.length;
+  $('advFoot').hidden=back.hidden&&next.hidden;
+  back.textContent=st==='result'?'Save':'Back';
+  next.textContent=st==='flags'?'Next':st==='stop'?'Close':st==='mins'?'Show my routine':st==='result'?'Save and start':'Next';
+  if(st==='result'){back.disabled=next.disabled=!AD.list.length;} else back.disabled=false;
+}
+function advSave(start){
+  if(!AD||!AD.list||!AD.list.length) return;
+  const pr=advPrevRoutine(), id=pr?pr.id:'u'+Date.now().toString(36);
+  const name=(AD.name||'').trim().slice(0,30)||AD.plan.name;
+  const rec={id:id,name:name,list:AD.list.slice(),mins:cleanMins(AD.ans.mins),focus:cleanFocus(AD.plan.focus),
+             voice:pr?pr.voice:'',music:pr?pr.music:{mode:'usual',spotify:null}};
+  if(pr) Object.assign(pr,rec); else RT.own.push(rec);
+  const a=AD.ans;
+  RT.advice={at:new Date().toISOString(),answers:{areas:a.areas.slice(),feel:a.feel.slice(),worse:a.worse.slice(),score:a.score,goals:a.goals.slice(),mins:cleanMins(a.mins)},routine:id};
+  store.set('mbs.advice',RT.advice);
+  saveRT(); settings.routine=id; store.set('mbs.routine',id);
+  closeAdvisor(); renderRoutines(); renderAdvCard(); prepAudio();
+  if(start) startSession();
+}
+function advGo(dir){
+  const st=AD.stop?'stop':AD_STEPS[AD.step];
+  if(dir>0){
+    if(st==='stop'){closeAdvisor(); return;}
+    if(st==='result'){advSave(true); return;}
+    if(st==='flags'){const lv=adviceLevel(AD.ans.flags); if(lv){AD.stop=lv; renderAdvisor(); $('advisor').scrollTop=0; return;}}
+    AD.step++;
+    if(AD_STEPS[AD.step]==='result') advBuild();
+  }else{
+    if(st==='result'){advSave(false); return;}
+    if(st==='stop') AD.stop=null; else AD.step=Math.max(0,AD.step-1);
+  }
+  renderAdvisor(); $('advisor').scrollTop=0;
+}
+function renderAdvCard(){
+  const c=$('advCard'); if(!c) return;
+  const s=advSaved();
+  c.innerHTML='<span class="adv-ic" aria-hidden="true">?</span><span class="adv-tx"><span class="rn">'+(s?'Check again':'Help me choose')+'</span><span class="sub">'+
+    (s&&advDate(s.at)?'Last checked '+esc(advDate(s.at))+'. Answer again to update your routine.':'Answer a few questions and get a routine for how you feel today.')+'</span></span>';
+}
+$('advCard').addEventListener('click',openAdvisor);
+$('advCancel').addEventListener('click',closeAdvisor);
+$('advNext').addEventListener('click',function(){if(AD) advGo(1);});
+$('advBack').addEventListener('click',function(){if(AD) advGo(-1);});
+$('advBody').addEventListener('input',function(ev){if(AD&&ev.target.id==='advName') AD.name=ev.target.value;});
+$('advBody').addEventListener('click',function(ev){
+  if(!AD) return;
+  const q=function(s){return ev.target.closest(s);};
+  let b;
+  if((b=q('[data-flag]'))){const l=AD.ans.flags, i=l.indexOf(b.dataset.flag); if(i>=0) l.splice(i,1); else l.push(b.dataset.flag); renderAdvisor(); return;}
+  if((b=q('[data-q]'))){advToggle(b.dataset.q,b.dataset.id); renderAdvisor(); return;}
+  if((b=q('[data-ascore]'))){const n=Number(b.dataset.ascore); AD.ans.score=AD.ans.score===n?null:n; renderAdvisor(); return;}
+  if((b=q('[data-amins]'))){AD.ans.mins=Number(b.dataset.amins); renderAdvisor(); return;}
+  if((b=q('[data-ex]'))){openHow(b.dataset.ex); return;}
+  if(q('#advRedo')){AD.step=1; renderAdvisor(); $('advisor').scrollTop=0; return;}
+  if(q('#advNone')){AD.ans.flags=[]; advGo(1);}
+});
+renderAdvCard();
+/* the routine cards are redrawn after a restore or an account sync: keep "Check again" in step with them */
+try{new MutationObserver(function(){renderAdvCard();}).observe($('routineCards'),{childList:true});}catch(e){}
+if(typeof window!=='undefined') window.__physio={openAdvisor:openAdvisor,advisePlan:advisePlan};
 (function initHome(){
   const t=today();
   $('todayDate').textContent=DOW[t.getDay()]+' '+t.getDate()+' '+MON[t.getMonth()];
@@ -3214,14 +3762,14 @@ $('bkToggle').addEventListener('click',function(){const p=$('bkPanel'); p.hidden
 if(navigator.share) $('bkShare').hidden=false;
 $('bkCopy').addEventListener('click',function(){
   const n=Object.keys(sessions).length, t=backupText();
-  if(!n&&!RT.own.length&&!Object.keys(RT.edits).length&&!Object.keys(RT.prefs).length){bkMsg('Nothing to back up yet.'); return;}
+  if(!n&&!RT.own.length&&!Object.keys(RT.edits).length&&!Object.keys(RT.prefs).length&&!RT.advice){bkMsg('Nothing to back up yet.'); return;}
   const boxed=function(){$('bkText').value=t; $('bkText').focus(); $('bkText').select(); bkMsg('Copying was blocked here. The backup is in the box: copy all of it and keep it somewhere safe.');};
   if(!navigator.clipboard||!navigator.clipboard.writeText){boxed(); return;}
   navigator.clipboard.writeText(t).then(function(){bkMsg((n?'Copied '+dayCount(n):'Copied your routines')+'. Paste it into a note or an email to yourself.');}).catch(boxed);
 });
 $('bkShare').addEventListener('click',function(){
   const n=Object.keys(sessions).length;
-  if(!n&&!RT.own.length&&!Object.keys(RT.edits).length&&!Object.keys(RT.prefs).length){bkMsg('Nothing to back up yet.'); return;}
+  if(!n&&!RT.own.length&&!Object.keys(RT.edits).length&&!Object.keys(RT.prefs).length&&!RT.advice){bkMsg('Nothing to back up yet.'); return;}
   navigator.share({title:'Morning Stretch backup',text:backupText()}).then(function(){bkMsg(n?'Sent '+dayCount(n)+'.':'Sent your routines.');}).catch(function(){bkMsg('Sending did not go through. Use Copy backup.');});
 });
 $('bkRestore').addEventListener('click',function(){
@@ -3239,17 +3787,19 @@ $('bkRestore').addEventListener('click',function(){
   });
   store.set('mbs.sessions',sessions); renderRecord(); $('bkText').value='';
   /* routines: add any of the user's own that are missing, and edits to the built-in ones not already edited here */
-  let rAdded=0, pAdded=0;
+  let rAdded=0, pAdded=0, aAdded=0;
   if(d.routines){
     const inc=normRT(d.routines);
     inc.own.forEach(function(r){if(!RT.own.some(function(x){return x.id===r.id;})){RT.own.push(r); rAdded++;}});
     Object.keys(inc.edits).forEach(function(k){if(!RT.edits[k]){RT.edits[k]=inc.edits[k]; rAdded++;}});
     /* voice and music for the short and long routines, where none is set here */
     Object.keys(inc.prefs).forEach(function(k){if(!RT.prefs[k]){RT.prefs[k]=inc.prefs[k]; pAdded++;}});
-    if(rAdded||pAdded){saveRT(); renderRoutines(); prepAudio();}
+    /* the advice answers: the newer of the two is kept */
+    if(inc.advice&&(!RT.advice||(inc.advice.at||'')>(RT.advice.at||''))){RT.advice=inc.advice; aAdded=1;}
+    if(rAdded||pAdded||aAdded){saveRT(); renderRoutines(); prepAudio(); if(aAdded&&typeof renderAdvCard==='function') renderAdvCard();}
   }
-  const rTxt=(rAdded?' '+rAdded+(rAdded===1?' routine':' routines')+' added.':'')+(pAdded?' Voice and music choices added.':'');
-  rAdded+=pAdded;
+  const rTxt=(rAdded?' '+rAdded+(rAdded===1?' routine':' routines')+' added.':'')+(pAdded?' Voice and music choices added.':'')+(aAdded?' Your Help me choose answers added.':'');
+  rAdded+=pAdded+aAdded;
   bkMsg(added?'Restored '+dayCount(added)+'. Days already in your record were left as they were.'+rTxt:rAdded?'Your record was already up to date.'+rTxt:'Nothing new to restore. Everything in that backup is already here.');
 });
 $('calPrev').addEventListener('click',function(){calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1); renderCal();});
