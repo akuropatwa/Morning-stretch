@@ -149,7 +149,7 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
 .stats .n{font-weight:800;font-size:32px;line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
 .stats .k{font-size:12.5px;color:var(--muted);line-height:1.3}
 .calbox{display:flex;flex-direction:column;gap:12px}
-.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .cal .dow{font-size:12px;font-weight:700;color:var(--muted);text-align:center}
 .cal-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .cal-head span{font-weight:800;font-size:18px;letter-spacing:-.01em}
@@ -284,6 +284,22 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
 #done .eyebrow{color:var(--accent-text);font-weight:700}
 
 /* routines, editor and library */
+/* calendar days you can tap, and the day sheet */
+.cal-hint{margin-top:-4px}
+.cal button.day{display:block;width:100%;min-width:0;border:0;padding:0;margin:0;font:inherit;text-align:left;-webkit-appearance:none;appearance:none}
+.cal button.day:active{filter:brightness(.94)}
+.day-sheet{z-index:9}
+.day-sheet > div{--surface:#2A2E31;--ink:#F1F2EF;--on-ink:#0D0F10;--muted:#B5BBBE;--shadow:none}
+.day-sheet h2{font-size:22px;padding-inline:4px}
+.day-sheet p{font-weight:500}
+.day-sheet .scores button{height:56px;min-height:44px;background:var(--surface);color:#F1F2EF}
+.day-sheet .scores button[aria-pressed="true"]{background:var(--accent);color:#0D0F10}
+.day-sheet .ends{color:var(--muted)}
+.day-sheet #dsScoreBox{display:flex;flex-direction:column;gap:10px}
+.day-sheet #dsScoreBox[hidden]{display:none}
+.day-sheet .two.one{grid-template-columns:1fr}
+.day-sheet button:disabled{opacity:.4}
+.day-sheet button[hidden]{display:none}
 /* routine settings under the cards, and the routine builder */
 /* Put in the best order */
 .best{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
@@ -771,6 +787,18 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
       <button class="ghost" id="calNext" aria-label="Next month">&#8250;</button>
     </div>
     <div class="cal" id="cal"></div>
+    <p class="small cal-hint">Tap a day to change its back score.</p>
+    <div class="sheet day-sheet" id="daySheet" hidden>
+      <div role="dialog" aria-modal="true" aria-labelledby="dsTitle" aria-describedby="dsNote">
+        <h2 id="dsTitle"></h2>
+        <p id="dsNote"></p>
+        <div id="dsScoreBox">
+          <div class="scores" id="dsScores" role="group" aria-label="Back score for this day"></div>
+          <div class="ends"><span>1 = sore</span><span>5 = great</span></div>
+        </div>
+        <div class="two" id="dsBtns"><button id="dsClear">Clear score</button><button id="dsDone" class="main">Done</button></div>
+      </div>
+    </div>
     <div class="backup">
       <button class="ghost" id="bkToggle" aria-expanded="false" aria-controls="bkPanel">Back up or restore</button>
       <div id="bkPanel" hidden>
@@ -955,6 +983,7 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
           <ul>
             <li>Every day you finish a routine counts, weekends too. Your streak is the number of days in a row.</li>
             <li>The calendar shows your back score for each day, or a tick if you did not give one. Use the arrows to look back at earlier months.</li>
+            <li>Tap a day to change its back score, add one if you missed it, or clear it. Your streak stays the same.</li>
           </ul>
         </div>
       </details>
@@ -2704,7 +2733,7 @@ function voiceOK(id){return typeof id==='string'&&VOICES.some(function(v){return
 /* The phone app's service worker keeps voice files by their full address, saved copy first. The page itself is always
    the newest, so each voice file is asked for with a version that changes whenever its clip layout changes (and with
    every phone app build), so a new page never reads clips from an old file. */
-const BUILD=/*BUILD*/"v13";
+const BUILD=/*BUILD*/"v14";
 function packVer(id){
   const v=VOICES.filter(function(x){return x.id===id;})[0];
   let end=0, h=5381;
@@ -3032,6 +3061,7 @@ function renderRecord(){
   else st.textContent = cs>0 ? 'Not done yet today. '+cs+' day streak to keep going.' : 'Not done yet today.';
   renderCal();
   renderScores();
+  if(daySel) renderDaySheet();      /* an open day sheet follows a sync or a restore */
 }
 let calMonth=null;                 /* first day of the month on show */
 function renderCal(){
@@ -3046,11 +3076,67 @@ function renderCal(){
   for(let n=1;n<=days;n++){
     const d=new Date(y,m,n), dk=dateKey(d), r=sessions[dk];
     let c='day'; if(dk===k) c+=' today'; if(dk>k) c+=' future'; if(r) c+=' done';
-    const label=n+' '+MON[m]+(r?', done'+(r.score!=null?', back score '+r.score:''):'');
-    h+='<span class="'+c+'" title="'+label+'" aria-label="'+label+'"><small>'+n+'</small>'+(r?'<b>'+(r.score!=null?r.score:'\u2713')+'</b>':'')+'</span>';
+    const inner='<small>'+n+'</small>'+(r?'<b>'+(r.score!=null?r.score:'\u2713')+'</b>':'');
+    /* past days and today open the day sheet, to change or add the back score; future days are not tappable */
+    if(dk>k){h+='<span class="'+c+'" aria-label="'+n+' '+MON[m]+'">'+inner+'</span>'; continue;}
+    const label=n+' '+MON[m]+(dk===k?', today':'')+(r?', done, '+(r.score!=null?'back score '+r.score+'. Tap to change':'no back score. Tap to add one'):', nothing recorded');
+    h+='<button type="button" class="'+c+'" data-day="'+dk+'" title="'+label+'" aria-label="'+label+'">'+inner+'</button>';
   }
   $('cal').innerHTML=h;
 }
+/* ---------- day sheet: change, add or clear the back score of a day already in the record ----------
+   It never creates or deletes a day, so streaks and totals do not change. */
+let daySel=null;
+function dayWords(dk){const p=dk.split('-').map(Number), d=new Date(p[0],p[1]-1,p[2]); return DOW[d.getDay()]+' '+p[2]+' '+MON[p[1]-1];}
+function renderDaySheet(){
+  if(!daySel) return;
+  const r=sessions[daySel], isToday=daySel===dateKey(today());
+  $('dsTitle').textContent=(isToday?'Today, ':'')+dayWords(daySel);
+  $('dsScoreBox').hidden=!r; $('dsClear').hidden=!r;
+  $('dsDone').textContent=r?'Done':'Close';
+  $('dsBtns').classList.toggle('one',!r);
+  if(!r){$('dsNote').textContent=isToday?'Not done yet today. Your back score from the front page is saved when you finish your routine.'
+    :'Nothing recorded on this day. A back score can be added to a day when you finished a routine.'; return;}
+  const mins=Number(r.minutes);
+  $('dsNote').textContent=(mins>0?mins+' minute routine done. ':'Routine done. ')+(r.score!=null?'How your back felt:':'No back score yet. How did your back feel?');
+  const box=$('dsScores');
+  if(!box.children.length) for(let i=1;i<=5;i++){const b=document.createElement('button'); b.type='button'; b.textContent=i; b.dataset.ds=i; b.setAttribute('aria-label','Back score '+i+' out of 5'); box.appendChild(b);}
+  Array.prototype.forEach.call(box.children,function(b){b.setAttribute('aria-pressed',String(Number(b.dataset.ds)===r.score));});
+  $('dsClear').disabled=r.score==null;
+}
+function setDayScore(n){
+  const k=daySel; if(!k||!sessions[k]) return;
+  sessions[k]=Object.assign({},sessions[k],{score:n});
+  if(k===dateKey(today())) pendingScore=n;
+  persist(k);                 /* saves on this phone and, in the Claude version, to the account */
+  renderRecord(); renderDaySheet();
+}
+function openDay(dk,from){
+  daySel=dk; daySheetFrom=from||null; renderDaySheet();
+  $('daySheet').hidden=false;
+  const sel=$('dsScores').querySelector('[aria-pressed="true"]');
+  setTimeout(function(){try{(sessions[dk]?(sel||$('dsScores').firstElementChild):$('dsDone')).focus();}catch(e){}},0);
+}
+let daySheetFrom=null;
+function closeDay(){
+  const k=daySel; daySel=null; $('daySheet').hidden=true;
+  const b=k&&$('cal').querySelector('[data-day="'+k+'"]');
+  try{(b||daySheetFrom||$('cal')).focus();}catch(e){}
+}
+$('cal').addEventListener('click',function(ev){const b=ev.target.closest('button[data-day]'); if(b) openDay(b.dataset.day,b);});
+$('dsScores').addEventListener('click',function(ev){const b=ev.target.closest('button[data-ds]'); if(b) setDayScore(Number(b.dataset.ds));});
+$('dsClear').addEventListener('click',function(){setDayScore(null);});
+$('dsDone').addEventListener('click',closeDay);
+$('daySheet').addEventListener('click',function(ev){if(ev.target===this) closeDay();});
+$('daySheet').addEventListener('keydown',function(ev){
+  if(ev.key==='Escape'){ev.preventDefault(); closeDay(); return;}
+  if(ev.key==='Tab'){   /* keep the keyboard inside the sheet while it is open */
+    const f=[].filter.call(this.querySelectorAll('button'),function(b){return !b.disabled&&b.offsetParent;});
+    if(!f.length) return;
+    if(ev.shiftKey&&document.activeElement===f[0]){ev.preventDefault(); f[f.length-1].focus();}
+    else if(!ev.shiftKey&&document.activeElement===f[f.length-1]){ev.preventDefault(); f[0].focus();}
+  }
+});
 function thumbFrame(e){return e.photos>1?(e.holdFrame==null?1:e.holdFrame):0;}
 /* ---------- routines: the two built-in ones (which can be edited) and the user's own ---------- */
 const BUILTIN={r10:{name:'Short routine',tag:10,img:'img/len10.jpg'},r15:{name:'Long routine',tag:15,img:'img/len15.jpg'}};
@@ -3896,11 +3982,13 @@ $('bkRestore').addEventListener('click',function(){
   let d=null;
   try{d=JSON.parse($('bkText').value.trim());}catch(e){}
   if(!d||d.app!=='morning-stretch'||!d.sessions||typeof d.sessions!=='object'){bkMsg('That does not look like a Morning Stretch backup. Paste the whole backup text and try again.'); return;}
-  let added=0;
+  let added=0, changed=0;
   Object.keys(d.sessions).forEach(function(k){
     const r=d.sessions[k];
-    if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!r||sessions[k]) return;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!r) return;
     const sc=Number(r.score);
+    /* a day already here keeps its own score; count the ones where the backup says something different */
+    if(sessions[k]){const bs=(r.score!=null&&sc>=1&&sc<=5)?Math.round(sc):null; if(bs!==(sessions[k].score==null?null:sessions[k].score)) changed++; return;}
     const mn=Math.round(Number(r.minutes));
     sessions[k]={minutes:mn>=1&&mn<=120?mn:10, score:(r.score!=null&&sc>=1&&sc<=5)?Math.round(sc):null, at:typeof r.at==='string'?r.at.slice(0,30):k};
     persist(k); added++;
@@ -3920,7 +4008,11 @@ $('bkRestore').addEventListener('click',function(){
   }
   const rTxt=(rAdded?' '+rAdded+(rAdded===1?' routine':' routines')+' added.':'')+(pAdded?' Voice and music choices added.':'')+(aAdded?' Your Help me choose answers added.':'');
   rAdded+=pAdded+aAdded;
-  bkMsg(added?'Restored '+dayCount(added)+'. Days already in your record were left as they were.'+rTxt:rAdded?'Your record was already up to date.'+rTxt:'Nothing new to restore. Everything in that backup is already here.');
+  const kept=changed?' '+dayCount(changed)+' with a different back score here '+(changed===1?'was':'were')+' kept.':'';
+  bkMsg(added?'Restored '+dayCount(added)+'. Days already in your record were left as they were.'+kept+rTxt
+    :rAdded?'Your record was already up to date.'+kept+rTxt
+    :changed?'Your record already has these days. '+changed+(changed===1?' of them has':' of them have')+' a different back score here, which was kept. Tap a day to change it.'
+    :'Nothing new to restore. Everything in that backup is already here.');
 });
 $('calPrev').addEventListener('click',function(){calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()-1,1); renderCal();});
 $('calNext').addEventListener('click',function(){calMonth=new Date(calMonth.getFullYear(),calMonth.getMonth()+1,1); renderCal();});
