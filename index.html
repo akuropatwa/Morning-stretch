@@ -1774,23 +1774,30 @@ function timeCalls(dur){
   const a=[]; for(let c=15;c<dur;c+=15) a.push(c); return a;
 }
 /* ---------- when the coach speaks during a stretch (the words are in EX[id].coach and COACH_COMMON) ----------
-   All in seconds. Quiet time matters: she is lying down concentrating, so the lines are spaced well apart. */
+   All in seconds. Quiet time matters: she is lying down concentrating, so the lines are spaced well apart.
+   Lines come early in each hold or rep set, soon after the instructions, never late on. */
 const COACH_RULES={
   start:4,          /* nothing in the first 4 seconds, and nothing until the instructions have finished plus 1 second */
+  settle:1.5,       /* in holds, a further 1.5 seconds after the instructions so the line follows them naturally, */
+  settleGivesWay:true, /* but left out (back to 1 second, or half a second) when keeping it would push the first line
+                       past a time call into a later window, or leave no room for a line at all */
+  latest:0.6,       /* no line starts after 60% of the hold or rep set, nor after "Ten seconds left" or the last time
+                       call in that hold: a line that cannot fit in that early part is left out */
   clear:4,          /* a line starts at least 4 seconds from a time call, "Ten seconds left" or the end of the hold */
   gapAfter:0.5,     /* and ends at least half a second before the next one starts */
-  spacing:12,       /* at least 12 seconds between two coaching lines */
-  perSeconds:20,    /* at most one line per 20 seconds of hold (20 s and 30 s: 1, 40 s and 45 s: 2), at least one */
+  spacing:8,        /* at least 8 seconds between two coaching lines */
+  perSeconds:20,    /* at most one line per 20 seconds of hold (20 s and 30 s: 1, 40 s and 45 s: 2), at least one; the
+                       first goes as soon as it fits, the second as soon after that as the rules allow */
   repeatMax:1,      /* the second side and second round of a stretch get at most one line each */
   repEvery:4,       /* rep sets: a line takes the place of one middle count when reps are at least 4 seconds apart; */
   repSpan:2,        /* closer reps (3 seconds): one line takes the place of two middle counts (the screen keeps counting) */
   repPerSeconds:25, /* at most one line per 25 seconds of reps, */
-  repMinDur:20,     /* but a rep set of 20 seconds or more always gets one */
+  repMinDur:20,     /* but a rep set of 20 seconds or more always gets one, on the earliest middle rep that fits */
   repRoom:0.3,      /* the line must end this long before the next spoken count */
   shortHold:20,     /* holds this short may start a line half a second after the instructions finish (not 1 second), */
   shortAfter:0.5,   /* and use the shortest of the stretch's lines if the next one does not fit */
   giveWay:4,        /* in those short holds, when the instructions finish within 4 seconds of the halfway call (or after
-                       it), the coaching line is said in place of that call, not as well as it */
+                       it), the coaching line is said in place of that call, not as well as it, as soon as it can */
   tenLeft:{min:30, near:5}   /* "Ten seconds left." in holds of 30 seconds or more, unless a time call is within 5 seconds of it */
 };
 /* Spoken between stretches, at most one per changeover. at: seconds from the start (negative: from the end), 'half' or
@@ -1900,7 +1907,9 @@ function buildTimeline(arg,tag,turn){
   return segs;
 }
 /* Inside each hold: the time calls, "Ten seconds left." and the coaching lines, as g.calls and g.coach [{at, key}].
-   Inside each rep set: g.coach [{at, rep, key}], each taking the place of that rep's count. Uses COACH_RULES. */
+   Inside each rep set: g.coach [{at, rep, key}], each taking the place of that rep's count. Uses COACH_RULES.
+   Lines come early: the first as soon as it fits after the instructions, any second one as soon after that as the
+   rules allow, and none after 60% of the hold or set, after "Ten seconds left" or after the last time call. */
 /* turn: a number that changes from day to day (the app passes the days in the record), so a stretch with one slot
    starts on a different one of its own lines each day */
 function scheduleCoach(segs,P,turn){
@@ -1912,7 +1921,13 @@ function scheduleCoach(segs,P,turn){
     const prev=segs[i-1];
     /* how long the instructions spoken in the changeover run on into this stretch */
     const spill=prev&&prev.phase==='ready'?Math.max(0,prev.clips.reduce(function(a,k){return a+len(k)+0.3;},0.1)-prev.dur):0;
-    const lo=Math.max(R.start,spill+(g.phase==='hold'&&g.dur<=R.shortHold?R.shortAfter:1));
+    /* the earliest a line can start: 4 seconds in, and 1 second (short holds half a second) after the instructions;
+       holds also settle for R.settle more when there is room, so the line follows the instructions naturally */
+    const after=g.phase==='hold'&&g.dur<=R.shortHold?R.shortAfter:1;
+    const lo0=Math.max(R.start,spill+after), loS=g.phase==='hold'?Math.max(R.start,spill+after+R.settle):lo0;
+    let lo=loS;
+    const latest=R.latest*g.dur;   /* and the latest */
+    const at10=function(x){return Math.ceil(x*10-1e-6)/10;};
     const pool=coachKeys(g.ex);
     if(!(g.ex in ptr)) ptr[g.ex]=null;   /* set below, from the lines that fit this stretch's first hold or rep set */
     const own=pool.filter(function(k){return /^co-/.test(k);}), common=pool.filter(function(k){return /^cc-/.test(k);});
@@ -1956,50 +1971,62 @@ function scheduleCoach(segs,P,turn){
       if(g.dur>=R.tenLeft.min&&!calls.some(function(c){return Math.abs(c.at-tl)<=R.tenLeft.near;})) calls.push({at:tl,key:'ten-left'});
       calls.sort(function(a,b){return a.at-b.at;});
       g.calls=calls;
-      /* a short hold that is nearly all instructions: one line instead of the halfway call, at its time or as soon
-         as the instructions finish, still ending 4 seconds before the end */
-      if(g.dur<=R.shortHold&&calls.length===1&&lo>calls[0].at-R.giveWay&&pool.length){
-        const t=Math.ceil(Math.max(calls[0].at,lo)*10-1e-6)/10, room=function(L){return t+L<=g.dur-R.clear;};
+      /* a short hold that is nearly all instructions: one line instead of the halfway call, as soon as the
+         instructions finish, still starting by 60% of the hold and ending 4 seconds before the end */
+      if(g.dur<=R.shortHold&&calls.length===1&&lo0>calls[0].at-R.giveWay&&pool.length){
+        const roomAt=function(t){return function(L){return t<=latest+1e-9&&t+L<=g.dur-R.clear;};};
+        let t=at10(loS);
+        if(!pool.some(function(k){return roomAt(t)(len(k));})) t=at10(lo0);   /* no room to settle */
+        const room=roomAt(t);
         startOn(room);
         const k=next(room);
         if(k){g.coach=[{at:t,key:k,replaces:calls[0].key}]; g.calls=[]; g.clips=[k]; return;}
       }
-      /* free stretches of time where a line of length L can start */
+      /* free stretches of time where a line of length L can start: only before the last time call (or "Ten seconds
+         left") and no later than 60% of the hold */
       const windows=function(L){
         const w=[]; let a=lo;
-        calls.concat([{at:g.dur,key:null}]).forEach(function(c){
-          const b=c.key?Math.min(c.at-R.clear,c.at-R.gapAfter-L):g.dur-R.clear-L;
+        (calls.length?calls:[{at:g.dur,key:null}]).forEach(function(c){
+          const b=Math.min(c.key?Math.min(c.at-R.clear,c.at-R.gapAfter-L):g.dur-R.clear-L,latest);
           if(b>=a) w.push([a,b]);
           if(c.key) a=Math.max(a,c.at+Math.max(R.clear,len(c.key)+R.gapAfter));
         });
         return w;
+      };
+      /* the earliest start at or after `from` where a line of length L fits */
+      const earliest=function(L,from){
+        const w=windows(L);
+        for(let n=0;n<w.length;n++){const t=at10(Math.max(w[n][0],from)); if(t<=w[n][1]+1e-9) return t;}
+        return null;
       };
       const maxN=g.first?Math.max(1,Math.floor(g.dur/R.perSeconds)):Math.min(R.repeatMax,Math.max(1,Math.floor(g.dur/R.perSeconds)));
       /* places are chosen for the next of the stretch's own lines that fits somewhere in this hold (taking turns from
          day to day among those that fit); only if none of its own lines fits, the next shared line that does */
       let typical=0;
       const firstFit=function(list,from){for(let n=0;n<list.length;n++){const k=list[(from+n)%list.length]; if(windows(len(k)).length) return k;} return null;};
+      if(!pool.some(function(k){return windows(len(k)).length;})) lo=lo0;   /* no room to settle */
+      if(R.settleGivesWay&&lo!==lo0){
+        /* the earliest any line fits, and how many calls come before it */
+        const firstAt=function(){let b=null; pool.forEach(function(k){const t=earliest(len(k),lo); if(t!==null&&(b===null||t<b)) b=t;}); return b;};
+        const callsBefore=function(t){return calls.filter(function(c){return c.at<t;}).length;};
+        const tS=firstAt(); lo=lo0; const t0=firstAt();
+        if(!(t0!==null&&(tS===null||callsBefore(t0)<callsBefore(tS)))) lo=loS;   /* settling keeps it in the same window */
+      }
       startOn(function(L){return windows(L).length>0;});
       const cfit=common.filter(function(k){return windows(len(k)).length;});
       const tk=firstFit(own,ptr[g.ex])||(cfit.length?cfit[ccN%cfit.length]:null);
       if(tk) typical=len(tk);
-      const picks=[];
       if(tk&&maxN>0){
-        /* one line in the middle of each free stretch, roomiest first, kept at least R.spacing apart */
-        windows(typical).sort(function(x,y){return (y[1]-y[0])-(x[1]-x[0]);}).forEach(function(w){
-          if(picks.length>=maxN) return;
-          let t=(w[0]+w[1])/2;
-          const near=picks.filter(function(p){return Math.abs(p-t)<R.spacing;});
-          if(near.length){   /* slide within the window, away from the line already chosen */
-            const p=near[0], t2=p<t?Math.min(w[1],p+R.spacing):Math.max(w[0],p-R.spacing);
-            if(Math.abs(t2-p)<R.spacing-1e-9) return; t=t2;
-          }
-          picks.push(Math.round(t*10)/10);
-        });
-        picks.sort(function(a,b){return a-b;}).forEach(function(t){
+        /* the first line as soon as it fits after the instructions; any second one as soon after that as the rules
+           allow, at least R.spacing later */
+        let from=lo;
+        for(let n=0;n<maxN;n++){
+          const t=earliest(typical,from);
+          if(t===null) break;
           const k=next(function(L){return windows(L).some(function(w){return t>=w[0]-1e-9&&t<=w[1]+1e-9;});});
-          if(k) g.coach.push({at:t,key:k});
-        });
+          if(!k) break;
+          g.coach.push({at:t,key:k}); from=t+R.spacing;
+        }
       }
       g.clips=calls.map(function(c){return c.key;}).concat(g.coach.map(function(c){return c.key;}));
     }else if(g.phase==='reps'&&pool.length){
@@ -2009,15 +2036,18 @@ function scheduleCoach(segs,P,turn){
       let maxN=Math.floor(g.dur/R.repPerSeconds);
       if(g.dur>=R.repMinDur) maxN=Math.max(1,maxN);
       if(!g.first) maxN=Math.min(R.repeatMax,maxN);
-      const ok=function(r){const at=g.lead+(r-1)*g.every; return r>1&&r+span-1<g.reps&&at>=lo&&at+R.clear<=g.dur;};
-      const want=[];
-      for(let n=1;n<=maxN;n++) want.push(Math.round(g.reps*n/(maxN+1)+0.5));
-      want.forEach(function(r){
-        while(r<g.reps&&!ok(r)) r++;
-        if(!ok(r)||g.coach.some(function(c){return Math.abs(c.rep-r)*g.every<R.spacing;})) return;
+      /* a middle rep, after the instructions, starting by 60% of the set and at least 4 seconds before its end */
+      const ok=function(r){const at=g.lead+(r-1)*g.every; return r>1&&r+span-1<g.reps&&at>=lo&&at<=latest+1e-9&&at+R.clear<=g.dur;};
+      /* the first line on the earliest middle rep that fits, any second one as soon after that as the rules allow */
+      let r=2;
+      for(let n=0;n<maxN;n++){
+        const p=g.coach[g.coach.length-1];
+        while(r<g.reps&&!(ok(r)&&(!p||(r>=p.rep+span&&(r-p.rep)*g.every>=R.spacing)))) r++;
+        if(r>=g.reps) break;
         const k=next(function(L){return L<=span*g.every-R.repRoom;});
-        if(k) g.coach.push(span>1?{at:g.lead+(r-1)*g.every,rep:r,span:span,key:k}:{at:g.lead+(r-1)*g.every,rep:r,key:k});
-      });
+        if(!k) break;
+        g.coach.push(span>1?{at:g.lead+(r-1)*g.every,rep:r,span:span,key:k}:{at:g.lead+(r-1)*g.every,rep:r,key:k});
+      }
       g.clips=g.coach.map(function(c){return c.key;});
     }
   });
@@ -2967,7 +2997,7 @@ function voiceOK(id){return typeof id==='string'&&VOICES.some(function(v){return
 /* The phone app's service worker keeps voice files by their full address, saved copy first. The page itself is always
    the newest, so each voice file is asked for with a version that changes whenever its clip layout changes (and with
    every phone app build), so a new page never reads clips from an old file. */
-const BUILD=/*BUILD*/"v15";
+const BUILD=/*BUILD*/"v16";
 function packVer(id){
   const v=VOICES.filter(function(x){return x.id===id;})[0];
   let end=0, h=5381;
