@@ -2592,9 +2592,27 @@ function advSingle(k){
 /* A gap line ("There is no standing hamstring hold. Leg swings are the nearest...") may only point to a stretch that is
    actually in the routine. If none it names is in the list, it becomes a plain line about that part: nothing suits
    (the named stretches are left out by her answers), or they did not fit in the time. Lines that name no stretch stay. */
-function gapNote(text,list,avoid,mins){
+/* the notes after gapNote: a rewritten line goes when another line already says the same part has nothing */
+function gapNotes(notes,list,avoid,mins,focus){
+  const out=[];
+  (notes||[]).forEach(function(t){
+    const g=gapNote(t,list,avoid,mins,focus);
+    if(!g||out.indexOf(g)>=0) return;
+    if(g!==t){
+      const pt=PARTS.filter(function(x){return g.toLowerCase().indexOf(x[1].toLowerCase())>=0;})[0];
+      const same=pt&&(notes||[]).some(function(o){return o!==t&&/^(none of|nothing for|the only)/i.test(o)&&o.toLowerCase().indexOf(pt[1].toLowerCase())>=0;});
+      if(same) return;
+    }
+    out.push(g);
+  });
+  return out;
+}
+function gapNote(text,list,avoid,mins,focus){
   text=String(text||''); if(!text) return text;
   const t=text.toLowerCase();
+  /* a line about a part she did not ask for (all-round, or another focus) is general advice: left as written */
+  const pt0=PARTS.filter(function(x){return t.indexOf(x[1].toLowerCase().split(/[ ,]/)[0].replace(/s$/,''))>=0;})[0];
+  if(Array.isArray(focus)&&(!pt0||focus.indexOf(pt0[0])<0)) return text;
   const names=Object.keys(EX).filter(function(id){
     const n=EX[id].name.toLowerCase(), m=n.replace(/^(standing|seated) /,'');
     return t.indexOf(n)>=0||(m!==n&&t.indexOf(m)>=0);
@@ -2767,7 +2785,13 @@ function advisePlan(ans){
     const n=EX[id].name.toLowerCase(), m=n.replace(/^(standing|seated) /,'');
     return t.indexOf(n)>=0||(m!==n&&t.indexOf(m)>=0);});};
   const gapPick={};
-  stretchOpts.forEach(function(o){
+  const wanted=stretchOpts.slice();
+  /* a pain area's part counts too when no stretch option covers it */
+  A.areas.forEach(function(id){const o=opt('areas',id); if(o&&L(o.parts).length&&!wanted.some(function(w){return L(w.parts).join()===L(o.parts).join();})){
+    const usual=Object.keys(EX).filter(function(x){return L(o.parts).indexOf(EX[x].part)>=0;});
+    wanted.push({parts:o.parts,prefer:L(o.prefer).length?o.prefer:usual});
+  }});
+  wanted.forEach(function(o){
     const usual=L(o.prefer).filter(function(id){return !!EX[id];});
     if(!usual.length||usual.some(function(id){return avoid.indexOf(id)<0;})) return;
     L(o.parts).forEach(function(pt){
@@ -2775,10 +2799,13 @@ function advisePlan(ans){
       L(o.ids).forEach(function(id){uniq(pool,id);});
       AREAS.forEach(function(a){if(a&&L(a.parts).length===1&&a.parts[0]===pt) L(a.ids).forEach(function(id){uniq(pool,id);});});
       Object.keys(EX).forEach(function(id){if(EX[id].part===pt) uniq(pool,id);});
-      /* the ones the option's gap line names go first (it says they are the nearest) */
+      /* the limit's own picks for this part go first, in order (physio's preferFor), then those its gap line names */
+      const pf=W&&W.preferFor&&typeof W.preferFor==='object'?L(W.preferFor[pt]):[];
       const line=W&&W.gaps&&W.gaps[pt]||W&&W.note||'';
-      const first=named(line);
-      const ok=pool.filter(function(id){return EX[id]&&avoid.indexOf(id)<0;}).sort(function(a,b){return (first.indexOf(a)<0?1:0)-(first.indexOf(b)<0?1:0);});
+      const first=pf.concat(named(line).filter(function(id){return pf.indexOf(id)<0;}));
+      pf.forEach(function(id){uniq(pool,id);});
+      const rank=function(id){const i=first.indexOf(id); return i<0?99:i;};
+      const ok=pool.filter(function(id){return EX[id]&&avoid.indexOf(id)<0;}).sort(function(a,b){return rank(a)-rank(b);});
       if(ok.length) gapPick[pt]=ok;
       ok.slice().reverse().forEach(function(id){const i=prefer.indexOf(id); if(i>=0) prefer.splice(i,1); prefer.unshift(id);});
     });
@@ -3148,7 +3175,7 @@ function briefPlan(interp){
     const o=add(c.avoid);
     if(o.length) left.push({ids:o,reason:c.left||'they need extra care with what you told me, so they are left out to be safe'});
     if(typeof c.share==='number') shares.push(c.share);
-    if(c.text) P.care.push(String(c.text));
+    if(c.briefText||c.text) P.care.push(String(c.briefText||c.text));
     arr(c.prefer).forEach(function(x){if(EX[x]) carePrefer.push({id:x,when:arr(c.preferWhen)});});
   });
   const safe=avoid.slice();
@@ -3277,7 +3304,7 @@ function briefPlan(interp){
   if(!base) base=mins+' minute stretch';
   base=String(base).slice(0,30);
   try{P.name=typeof BRIEF_USE.uniqueName==='function'?BRIEF_USE.uniqueName(base):base;}catch(e){P.name=base;}
-  P.notes=P.notes.map(function(t){return gapNote(t,list,avoid,mins);}).filter(function(t,i,a){return t&&a.indexOf(t)===i;});
+  P.notes=gapNotes(P.notes,list,avoid,mins,focus);
   P.focus=focus; P.list=list; P.why=why; P.left=left; P.avoid=avoid; P.prefer=prefer; P.cautionShare=cs;
   return P;
 }
@@ -5757,7 +5784,7 @@ function advBuild(){
     p.notes.push(have<T?'Only about '+mw(hv)+' of stretches '+(hv===1?'suits':'suit')+' your answers, so this routine comes to about '+mw(a)+', not '+mins+'.'
       :'This routine comes to about '+mw(a)+', not '+mins+'. Stretches that need care are kept to a small share of the time, and nothing else that suits your answers would fit.');
   }
-  p.notes=p.notes.map(function(t){return gapNote(t,list,p.avoid,mins);}).filter(function(t,i,a){return t&&a.indexOf(t)===i;});
+  p.notes=gapNotes(p.notes,list,p.avoid,mins,p.focus);
   AD.plan=p; AD.list=list;
   if(!AD.name){const pr=advPrevRoutine(); AD.name=pr?pr.name:uniqueName(p.name);}
 }
