@@ -2595,8 +2595,12 @@ function advisePlan(ans){
       /* what she wants to stretch, then where it hurts, ahead of the goals */
       stretchOpts.forEach(function(o){L(o.prefer).forEach(function(x){if(EX[x]) uniq(prefer,x);});});
       A.areas.forEach(function(id){const o=opt('areas',id); if(o&&o.prefer) o.prefer.forEach(function(x){if(EX[x]&&prefer.indexOf(x)<0) prefer.push(x);});});
-      /* no strap but hamstrings wanted: the hamstring stretches that need no strap (if the safety rules allow them) */
-      if(strapNo&&focus.indexOf('ham')>=0) ['legup','activeham'].forEach(function(x){if(EX[x]&&avoid.indexOf(x)<0) uniq(prefer,x);});
+      /* no strap but hamstrings wanted: the hamstring stretches that need no strap (the safety rules below still take
+         them out where they apply, for example with symptoms down a leg) */
+      if(strapNo&&focus.indexOf('ham')>=0){
+        const no=opt('strap','no'), np=no&&Array.isArray(no.prefer)?no.prefer:['legup','activeham'];
+        np.forEach(function(x){if(EX[x]) uniq(prefer,x);});
+      }
     }
     if(!ruleOn(r)) return;
     let out=(r.avoid||[]).slice();
@@ -2619,8 +2623,8 @@ function advisePlan(ans){
   };
   if(strapNo){
     const sq=ADVICE.Q.strap||{}, no=opt('strap','no')||{};
-    takeOut(advStrapIds(),no.left||sq.left||'they need the strap, and you have not got it with you');
-    limits.push(no.limit||'No strap');
+    takeOut(advStrapIds(),no.left||sq.left||'they need the strap');
+    limits.push(no.short||no.limit||'No strap');
   }
   const W=ans.where?opt('where',ans.where):null;
   if(W){
@@ -2634,11 +2638,23 @@ function advisePlan(ans){
     const named=out.filter(function(id){return prefer.indexOf(id)>=0&&avoid.indexOf(id)<0;});
     takeOut(named,W.left||'they do not suit where you will stretch ('+lc(W.label)+')');
     takeOut(out,'');
-    if(only||not.length) limits.push(W.limit||W.label||'');
+    if(only||not.length) limits.push(W.short||W.limit||W.label||'');
   }
-  /* any other answer whose option carries rules (a later question, such as how hard): applied like a rule */
+  /* care (a disc problem, a hip replacement, pregnancy...): each option names a BRIEF.care entry, applied exactly as
+     Describe applies it: its stretches left out with its reason, its caution cap, and its text shown with the routine */
+  const care=[], cq=ADVICE.Q.care, cNone=cq&&cq.none||'none';
+  let CARE=[]; try{if(typeof BRIEF!=='undefined'&&BRIEF&&Array.isArray(BRIEF.care)) CARE=BRIEF.care;}catch(e){}
+  L(ans.care).forEach(function(id){
+    if(id===cNone) return;
+    const o=opt('care',id); if(!o) return;
+    const c=CARE.filter(function(x){return x&&x.id===(o.care||o.id);})[0]; if(!c) return;
+    takeOut(c.avoid,c.left||'they need extra care with what you told me, so they are left out to be safe');
+    if(typeof c.share==='number'&&isFinite(c.share)) share=Math.min(share,Math.max(0,c.share));
+    if(c.text&&care.indexOf(String(c.text))<0) care.push(String(c.text));
+  });
+  /* any other answer whose option carries rules (a later question): applied like a rule */
   Object.keys(ADVICE.Q).forEach(function(k){
-    if(['areas','feel','worse','goals','stretch','strap','where'].indexOf(k)>=0) return;
+    if(['areas','feel','worse','goals','stretch','strap','where','care'].indexOf(k)>=0) return;
     const v=ans[k], ids=Array.isArray(v)?v:(typeof v==='string'?[v]:[]);
     ids.forEach(function(id){
       const o=opt(k,id); if(!o) return;
@@ -2651,29 +2667,32 @@ function advisePlan(ans){
       if(o.limit) limits.push(o.limit);
     });
   });
-  /* where she stretches can leave a gap in a part she wants (all-round always wants the hamstrings and lower back):
-     the option's own note says so; a part left with nothing at all is named */
+  /* where she stretches can leave a part she wants with nothing (all-round always wants the lower back and hamstrings):
+     that part's own line from the option's gaps, else the option's note once if a wanted part is left short.
+     Never two lines about the same thing. A part with nothing at all and no line of its own is named plainly. */
+  const hasPart=function(pt){return Object.keys(EX).some(function(id){return EX[id].part===pt&&avoid.indexOf(id)<0;});};
+  const want=focus.length?focus:['back','ham'];
   if(W){
-    const want=focus.length?focus:['back','ham'];
-    const whereOut=avoid.filter(function(id){const pos=EX[id].pos; return (Array.isArray(W.only)&&W.only.length&&W.only.indexOf(pos)<0)||L(W.not).indexOf(pos)>=0;});
-    /* the note is for a real gap: a part she wants that loses at least half its stretches this way */
-    /* a note that names a body part ("no standing hamstring hold") is about that part only */
-    const nl=String(W.note||'').toLowerCase();
-    const about=PARTS.filter(function(x){return nl.indexOf(x[1].toLowerCase().split(/[ ,]/)[0].replace(/s$/,''))>=0;}).map(function(x){return x[0];});
-    const gap=want.filter(function(pt){return !about.length||about.indexOf(pt)>=0;}).some(function(pt){
-      const all=Object.keys(EX).filter(function(id){return EX[id].part===pt;});
-      return all.length&&all.filter(function(id){return whereOut.indexOf(id)>=0;}).length*2>=all.length;
-    });
-    if(W.note&&gap) notes.push(String(W.note));
+    const gaps=W.gaps&&typeof W.gaps==='object'?W.gaps:{};
+    want.forEach(function(pt){if(!hasPart(pt)&&gaps[pt]) uniq(notes,String(gaps[pt]));});
+    if(!notes.length&&W.note){
+      const whereOut=avoid.filter(function(id){const pos=EX[id].pos; return (Array.isArray(W.only)&&W.only.length&&W.only.indexOf(pos)<0)||L(W.not).indexOf(pos)>=0;});
+      const nl=String(W.note).toLowerCase();
+      const about=PARTS.filter(function(x){return nl.indexOf(x[1].toLowerCase().split(/[ ,]/)[0].replace(/s$/,''))>=0;}).map(function(x){return x[0];});
+      const gap=want.filter(function(pt){return !about.length||about.indexOf(pt)>=0;}).some(function(pt){
+        const all=Object.keys(EX).filter(function(id){return EX[id].part===pt;});
+        return all.length&&all.filter(function(id){return whereOut.indexOf(id)>=0;}).length*2>=all.length;
+      });
+      if(gap) notes.push(String(W.note));
+    }
   }
-  /* a part left with nothing at all, unless the note above already speaks of it */
   const said=notes.join(' ').toLowerCase();
-  const short=focus.filter(function(p){
-    if(Object.keys(EX).some(function(id){return EX[id].part===p&&avoid.indexOf(id)<0;})) return false;
-    const nm=PARTS.filter(function(x){return x[0]===p;})[0][1].toLowerCase();
-    return said.indexOf(nm.slice(0,Math.max(5,nm.length-2)))<0;
+  const short=focus.filter(function(pt){
+    if(hasPart(pt)) return false;
+    const nm=PARTS.filter(function(x){return x[0]===pt;})[0][1].toLowerCase();
+    return said.indexOf(nm.split(/[ ,]/)[0].replace(/s$/,''))<0;
   });
-  if(short.length) notes.push('Nothing for your '+short.map(function(p){return lc(PARTS.filter(function(x){return x[0]===p;})[0][1]);}).join(' or ')+' suits your answers, so this routine leaves '+(short.length===1?'it':'them')+' out.');
+  if(short.length) notes.push('Nothing for your '+short.map(function(pt){return lc(PARTS.filter(function(x){return x[0]===pt;})[0][1]);}).join(' or ')+' suits your answers, so this routine leaves '+(short.length===1?'it':'them')+' out.');
   const pref=prefer.filter(function(id){return avoid.indexOf(id)<0;});
   /* a suggested name: where it hurts, else what she wants to stretch, else the goal */
   let name='My stretch plan';
@@ -2684,7 +2703,7 @@ function advisePlan(ans){
   else if(g0&&g0.name) name=g0.name;
   const lim=limits.filter(Boolean);
   const limitText=lim.length?lim.map(function(t,i){return i?lc(t):t;}).join(', ')+'.':'';
-  return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30), notes:notes, limits:lim, limitText:limitText};
+  return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30), notes:notes, limits:lim, limitText:limitText, care:care};
 }
 /* ---------- "Describe a routine": reading a brief typed in her own words ----------
    The words and what they mean are data, in BRIEF (the physio agent's block above). This code finds them, works out
@@ -5540,7 +5559,7 @@ $('bdBody').addEventListener('click',function(ev){
 let AD=null;
 /* The screens, in order. A question in ADVICE.Q only gets a screen when it is in this version's data, so the count
    ("Question 3 of 9") always matches what she sees; a further question physio adds goes before the length. */
-const AD_ORDER=['flags','areas','feel','worse','score','stretch','goals','where','strap','mins','result'];
+const AD_ORDER=['flags','areas','feel','worse','score','stretch','goals','where','strap','care','mins','result'];
 let AD_STEPS=advSteps();
 function advSteps(){
   const fixed={flags:1,score:1,mins:1,result:1};
@@ -5731,6 +5750,9 @@ function renderAdvisor(){
       (why.length>2?'<p class="small">'+esc(why.slice(2).join(' '))+'</p>':'')+
       (tr?'<p class="small'+(tr.dir==='down'?' adv-down':'')+'">'+esc(tr.text)+'</p>':'')+'</div>';
     if(notes.length&&AD.list.length) h+='<div class="br-notes">'+notes.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'</div>';
+    /* care notes from the care question, in Describe's warn style */
+    const careT=(Array.isArray(p.care)?p.care:[]).filter(Boolean);
+    if(careT.length&&AD.list.length) h+='<div class="br-care">'+careT.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'</div>';
     if(!AD.list.length) h+='<p class="adv-guide">No stretches fit those answers. Go back and change them, or see a physiotherapist for a plan made for you.</p>';
     h+='<ol class="routine bd-list" id="advList">';
     AD.list.forEach(function(id,i){
