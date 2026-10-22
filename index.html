@@ -730,6 +730,12 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
   -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16z' fill='none' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M13 7l4 4' fill='none' stroke='%23000' stroke-width='2.4'/%3E%3C/svg%3E") center/contain no-repeat;
   mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16z' fill='none' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M13 7l4 4' fill='none' stroke='%23000' stroke-width='2.4'/%3E%3C/svg%3E") center/contain no-repeat}
 .bd-advise + .bd-advise{margin-top:-6px}
+/* Help me choose: one-answer questions and the line saying what the routine worked to */
+.adv-one .bd-pick::after{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--muted) 45%,transparent);background:none}
+.adv-one .bd-pick[aria-checked="true"]::after{box-shadow:none;background:radial-gradient(circle,var(--on-accent) 0 4.5px,var(--accent) 5.5px)}
+.adv-lim{align-self:flex-start;max-width:100%;font-size:15px;font-weight:700;line-height:1.35;color:var(--accent-text);background:#F3FCD7;border-radius:14px;padding:8px 12px;overflow-wrap:anywhere}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .adv-lim{background:#3E4825}}
+:root[data-theme="dark"] .adv-lim{background:#3E4825}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -1082,7 +1088,7 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
         <summary><span class="gc-ic" aria-hidden="true"><svg class="gi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.4M12 17h.01"/></svg></span>
           <span class="gc-t">Help me choose</span><span class="gc-b">Answer a few questions and get a routine that suits your back today.</span><span class="gc-more"><span class="gc-show">Show me how</span><span class="gc-hide">Hide</span></span></summary>
         <div class="gc-body">
-          <p>Tap <b>Help me choose</b> under your routines. It asks where you feel it, what it feels like, what makes it worse, how your back is today, what you would like it to help with and how long you have. It suggests a routine, says why in plain words, and lists anything it left out on purpose. Save it, or save and start straight away.</p>
+          <p>Tap <b>Help me choose</b> under your routines. It asks where you feel it, what it feels like, what makes it worse, how your back is today, which areas you would like to stretch, what you would like it to help with, where you will stretch, whether you have your strap with you and how long you have. It suggests a routine, says why in plain words, and lists anything it left out on purpose. Save it, or save and start straight away.</p>
           <ul>
             <li>It starts with a safety check. If any of those signs apply, it does not suggest a routine and tells you who to contact instead.</li>
             <li>Your answers are remembered, so <b>Check again</b> opens them ready to change and updates the same routine. Your back scores show whether things are getting better.</li>
@@ -5363,7 +5369,7 @@ $('bdBody').addEventListener('click',function(ev){
     B.ret=true; B.step=i; if(B.steps[i]==='list') ensureList(); renderBuilder(); $('builder').scrollTop=0;
   }
 });
-/* ---------- physio: "Help me choose": a safety check, six short questions, then a suggested routine ----------
+/* ---------- physio: "Help me choose": a safety check, a few short questions, then a suggested routine ----------
    The clinical rules are in ADVICE (core script). Uses the routine builder's autoRoutine and optimiseOrder when they
    take options; before that, builds as usual and takes out what to avoid. Red-flag answers are never stored. */
 let AD=null;
@@ -5410,7 +5416,27 @@ function advBuild(){
   AD.plan=p; AD.list=list;
   if(!AD.name){const pr=advPrevRoutine(); AD.name=pr?pr.name:uniqueName(p.name);}
 }
+/* "Question n of N": counted from the steps, so a question added or moved keeps the count right */
+function advQn(st){
+  const qs=AD_STEPS.filter(function(x){return x!=='flags'&&x!=='result';});
+  return 'Question '+(qs.indexOf(st)+1)+' of '+qs.length;
+}
+/* one answer only: a question with no "none" option (strap, where), or one marked single */
+function advSingle(o){return !!o&&(o.single===true||!o.none);}
+function advPicked(k,id){const v=AD.ans[k]; return Array.isArray(v)?v.indexOf(id)>=0:v===id;}
+/* the limits it worked to, in one line: "Standing only, no strap." */
+function advLimits(){
+  const a=AD.ans, Q=ADVICE.Q, bits=[];
+  const w=Q.where&&a.where?Q.where.opts.filter(function(o){return o.id===a.where;})[0]:null;
+  if(w) bits.push(String(w.short||w.label).replace(/\bmy\b/g,'your'));
+  if(Q.strap&&a.strap==='no') bits.push('no strap');
+  else if(Q.strap&&a.strap==='yes') bits.push('with your strap');
+  if(!bits.length) return '';
+  const t=bits.map(function(x,i){return i?lcFirst(x):x;}).join(', ');
+  return t.charAt(0).toUpperCase()+t.slice(1)+'.';
+}
 function advToggle(k,id){
+  if(!Array.isArray(AD.ans[k])) AD.ans[k]=[];
   const l=AD.ans[k], none=ADVICE.Q[k].none;
   if(id===none){AD.ans[k]=l.indexOf(none)>=0?[]:[none]; return;}
   const i=l.indexOf(id); if(i>=0) l.splice(i,1); else l.push(id);
@@ -5441,18 +5467,29 @@ function renderAdvisor(){
       '<h3 class="bd-h3">What you ticked</h3><ul class="adv-ul">'+ADVICE.flags.filter(function(f){return AD.ans.flags.indexOf(f.id)>=0;}).map(function(f){return '<li>'+esc(f.text)+'</li>';}).join('')+'</ul>'+
       '<p class="small">We do not suggest stretches while any of these apply, so that you get checked first. If you ticked one by mistake, tap Back and change it. Outside the UK, use your local emergency number.</p>';
   }else if(ADVICE.Q[st]){
-    const o=ADVICE.Q[st];
-    eb='Question '+AD.step+' of 6'; q=o.q;
-    h='<p class="small">'+esc(o.hint)+'</p><div class="bd-opts">';
-    o.opts.forEach(function(x){h+=pickBtn('data-q="'+st+'" data-id="'+x.id+'"',AD.ans[st].indexOf(x.id)>=0,x.label,x.sub||'');});
-    h+='</div>';
+    const o=ADVICE.Q[st], one=advSingle(o);
+    eb=advQn(st); q=o.q;
+    h='<p class="small">'+esc(o.hint||(one?'Pick one.':'Pick all that apply.'))+'</p>';
+    if(one){
+      /* one answer: a radio group, with a dot rather than a tick so it reads as a single choice */
+      h+='<div class="bd-opts adv-one" role="radiogroup" aria-label="'+esc(o.q)+'">';
+      o.opts.forEach(function(x){
+        const on=advPicked(st,x.id);
+        h+='<button class="bd-pick" role="radio" aria-checked="'+on+'" aria-pressed="'+on+'" data-q1="'+st+'" data-id="'+x.id+'"><span class="bd-t">'+esc(x.label)+'</span>'+(x.sub?'<span class="bd-s">'+esc(x.sub)+'</span>':'')+'</button>';
+      });
+      h+='</div>';
+    }else{
+      h+='<div class="bd-opts">';
+      o.opts.forEach(function(x){h+=pickBtn('data-q="'+st+'" data-id="'+x.id+'"',advPicked(st,x.id),x.label,x.sub||'');});
+      h+='</div>';
+    }
   }else if(st==='score'){
-    eb='Question '+AD.step+' of 6'; q='How is your back today?';
+    eb=advQn(st); q='How is your back today?';
     h='<div class="scores" role="group" aria-label="Back score">';
     for(let i=1;i<=5;i++) h+='<button data-ascore="'+i+'" aria-pressed="'+(AD.ans.score===i)+'" aria-label="Back score '+i+' out of 5">'+i+'</button>';
     h+='</div><div class="ends"><span>1 = sore</span><span>5 = great</span></div><p class="small">Leave it blank if you would rather not say.</p>';
   }else if(st==='mins'){
-    eb='Question '+AD.step+' of 6'; q='How long have you got?';
+    eb=advQn(st); q='How long have you got?';
     h='<div class="bd-lens" role="group" aria-label="Length">';
     LENGTHS.forEach(function(m){h+='<button data-amins="'+m+'" aria-pressed="'+(AD.ans.mins===m)+'"><b>'+m+'</b><span>minutes</span></button>';});
     h+='</div>';
@@ -5462,9 +5499,12 @@ function renderAdvisor(){
     const fs=p.focus.length?'It concentrates on your '+listText(p.focus.map(function(x){return partName(x).toLowerCase();}))+'.':'It is an all-round routine.';
     const tr=scoreTrend(sessions,today());
     eb='Your suggested routine'; q=fmt(tot)+' · '+AD.list.length+(AD.list.length===1?' stretch':' stretches');
-    h='<div class="adv-why"><p>'+esc([fs].concat(why.slice(0,2)).join(' '))+'</p>'+
+    const lim=advLimits(), notes=(Array.isArray(p.notes)?p.notes:[]).filter(Boolean);
+    h=(lim?'<p class="adv-lim">'+esc(lim)+'</p>':'')+
+      '<div class="adv-why"><p>'+esc([fs].concat(why.slice(0,2)).join(' '))+'</p>'+
       (why.length>2?'<p class="small">'+esc(why.slice(2).join(' '))+'</p>':'')+
       (tr?'<p class="small'+(tr.dir==='down'?' adv-down':'')+'">'+esc(tr.text)+'</p>':'')+'</div>';
+    if(notes.length&&AD.list.length) h+='<div class="br-notes">'+notes.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'</div>';
     if(!AD.list.length) h+='<p class="adv-guide">No stretches fit those answers. Go back and change them, or see a physiotherapist for a plan made for you.</p>';
     h+='<ol class="routine bd-list" id="advList">';
     AD.list.forEach(function(id,i){
@@ -5490,7 +5530,9 @@ function renderAdvisor(){
   }
   $('advStep').textContent=eb; $('advQ').textContent=q; $('advBody').innerHTML=h;
   const back=$('advBack'), next=$('advNext');
-  back.hidden=st==='flags'; next.disabled=false;
+  back.hidden=st==='flags';
+  /* a one-answer question must be answered before going on */
+  next.disabled=!!(ADVICE.Q[st]&&advSingle(ADVICE.Q[st])&&!AD.ans[st]);
   next.hidden=st==='flags'&&!AD.ans.flags.length;
   $('advFoot').hidden=back.hidden&&next.hidden;
   back.textContent=st==='result'?'Save':'Back';
@@ -5543,6 +5585,7 @@ $('advBody').addEventListener('click',function(ev){
   let b;
   if((b=q('[data-flag]'))){const l=AD.ans.flags, i=l.indexOf(b.dataset.flag); if(i>=0) l.splice(i,1); else l.push(b.dataset.flag); renderAdvisor(); return;}
   if((b=q('[data-q]'))){advToggle(b.dataset.q,b.dataset.id); renderAdvisor(); return;}
+  if((b=q('[data-q1]'))){AD.ans[b.dataset.q1]=b.dataset.id; renderAdvisor(); return;}
   if((b=q('[data-ascore]'))){const n=Number(b.dataset.ascore); AD.ans.score=AD.ans.score===n?null:n; renderAdvisor(); return;}
   if((b=q('[data-amins]'))){AD.ans.mins=Number(b.dataset.amins); renderAdvisor(); return;}
   if((b=q('[data-ex]'))){openHow(b.dataset.ex); return;}
