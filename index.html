@@ -1750,6 +1750,339 @@ function advisePlan(ans){
   else if(g0) name=opt('goals',g0).name;
   return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30)};
 }
+/* ---------- "Describe a routine": reading a brief typed in her own words ----------
+   The words and what they mean are data, in BRIEF (the physio agent's block above). This code finds them, works out
+   which are negated ("no cobra", "not my neck"), and turns them into the advisor's answers plus her own limits.
+   Safety is never negated: "no numbness down there" still stops, a care note still shows and "not too sore" still
+   counts as sore, because a misread "no" must never hide a red flag. Phrases that carry their own "no" ("no strap",
+   "no kneeling") use it up, so it does not spill onto the next words ("no strap before golf" keeps golf). */
+const BRIEF_USE={autoRoutine:null,uniqueName:null};   /* filled in by the page script, which holds the builder */
+let briefRx=null;                                       /* BRIEF's patterns, compiled once */
+function briefData(){try{return typeof BRIEF!=='undefined'&&BRIEF&&typeof BRIEF==='object'?BRIEF:null;}catch(e){return null;}}
+function briefNorm(t){
+  return String(t==null?'':t).slice(0,2000).toLowerCase().replace(/[‘’‛ʼ`´]/g,"'").replace(/[“”]/g,'"')
+    .replace(/[‐-―−]/g,'-').replace(/&/g,' and ').replace(/\s+/g,' ').trim();
+}
+function briefLc(t){t=String(t||''); return t.charAt(0).toLowerCase()+t.slice(1);}
+function capWords(id){const t=String(id||'').replace(/[_-]+/g,' '); return t.charAt(0).toUpperCase()+t.slice(1);}
+function briefCompile(D){
+  if(briefRx&&briefRx.src===D) return briefRx;
+  const rx=function(list){
+    const out=[];
+    (Array.isArray(list)?list:[]).forEach(function(s){if(typeof s!=='string'||!s) return; try{out.push(new RegExp(s,'gi'));}catch(e){}});
+    return out;
+  };
+  const ent=function(a){return (Array.isArray(a)?a:[]).filter(function(x){return x&&typeof x==='object';}).map(function(x){return {d:x,rx:rx(x.words)};});};
+  const R={src:D,flags:ent(D.flags),care:ent(D.care),areas:ent(D.areas),feel:ent(D.feel),worse:ent(D.worse),goals:ent(D.goals),
+           only:ent(D.only),not:ent(D.not),mods:ent(D.mods),sore:D.sore&&typeof D.sore==='object'?[{d:D.sore,rx:rx(D.sore.words)}]:[],
+           kit:[],stretches:[],negate:rx(D.negate)};
+  if(D.kit&&typeof D.kit==='object') Object.keys(D.kit).forEach(function(k){const x=D.kit[k]; if(x&&typeof x==='object') R.kit.push({d:x,key:k,rx:rx(x.words)});});
+  if(D.stretches&&typeof D.stretches==='object') Object.keys(D.stretches).forEach(function(id){if(EX[id]) R.stretches.push({d:{id:id},rx:rx(D.stretches[id])});});
+  briefRx=R; return R;
+}
+function briefFind(rx,t){
+  const out=[]; let m, n=0;
+  rx.lastIndex=0;
+  while((m=rx.exec(t))&&n++<200){ if(!m[0].length){rx.lastIndex++; continue;} out.push({s:m.index,e:m.index+m[0].length,txt:m[0]}); }
+  rx.lastIndex=0;
+  return out;
+}
+/* the length she asked for: "12 minutes", "12-minute", "ten mins", "half an hour", "a few minutes", or "quick" */
+const BRIEF_NUM={a:1,an:1,one:1,two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,eleven:11,twelve:12,thirteen:13,fourteen:14,
+  fifteen:15,sixteen:16,seventeen:17,eighteen:18,nineteen:19,twenty:20,thirty:30,forty:40,fifty:50,sixty:60};
+function briefNum(w){
+  w=String(w||'').trim();
+  if(/^\d+(\.\d+)?$/.test(w)) return parseFloat(w);
+  const p=w.split(/[\s-]+/);
+  return p.reduce(function(a,x){return a+(BRIEF_NUM[x]||0);},0)||null;
+}
+function briefMins(t){
+  const N='(\\d+(?:\\.\\d+)?|(?:twenty|thirty|forty|fifty|sixty)(?:[\\s-]?(?:one|two|three|four|five|six|seven|eight|nine)\\b)?|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|eleven|twelve|one|two|three|four|five|six|seven|eight|nine|ten|an?)';
+  const P=[
+    {re:'\\b(?:(?:an?|one|1)\\s+)?hour\\s+and\\s+a\\s+half\\b', v:function(){return 90;}},
+    {re:'\\b(?:three|3)\\s+quarters?\\s+of\\s+an\\s+hour\\b', v:function(){return 45;}},
+    {re:'\\b(?:an?\\s+)?quarter\\s+(?:of\\s+an\\s+)?hour\\b', v:function(){return 15;}},
+    {re:'(?:\\bhalf\\s+an|\\bhalf\\s+a|\\bhalf\\s*-?|\\b1/2\\s*(?:an?)?)\\s*hour\\b', v:function(){return 30;}},
+    {re:'\\b'+N+'\\s*-?\\s*(?:hours?|hrs?)\\b', v:function(m){return briefNum(m[1])*60;}},
+    {re:'\\b'+N+'(?:\\s*(?:-|to|or|and)\\s*'+N+')?\\s*-?\\s*(?:minutes?|mins?)\\b', v:function(m){return briefNum(m[1]);}},
+    {re:'\\b'+N+'\\s*-?\\s*(?:seconds?|secs?)\\b', v:function(m){return briefNum(m[1])/60;}},
+    {re:'\\b(?:a\\s+)?few\\s+(?:more\\s+)?(?:minutes?|mins?)\\b', v:function(){return 5;}},
+    {re:'\\b(?:a\\s+)?couple\\s+(?:of\\s+)?(?:minutes?|mins?)\\b', v:function(){return 2;}}
+  ];
+  let best=null;
+  P.forEach(function(p){
+    const m=new RegExp(p.re,'i').exec(t); if(!m) return;
+    const v=p.v(m); if(v==null||!isFinite(v)) return;
+    if(!best||m.index<best.s||(m.index===best.s&&m[0].length>best.len)) best={s:m.index,len:m[0].length,raw:v,txt:m[0]};
+  });
+  if(!best){const q=/\bquick(?:ie|ly)?\b/i.exec(t); if(q) best={s:q.index,len:q[0].length,raw:5,txt:q[0],quick:true};}
+  if(!best) return null;
+  let mins=Math.round(best.raw), said='';
+  if(mins>30){mins=30; said='You said “'+best.txt+'”. The longest routine is 30 minutes, so this one is 30 minutes.';}
+  else if(mins<3){mins=3; said='You said “'+best.txt+'”. The shortest routine is 3 minutes, so this one is 3 minutes.';}
+  return {mins:mins,said:said,s:best.s,e:best.s+best.len};
+}
+function readBrief(text){
+  const raw=typeof text==='string'?text:(text==null?'':String(text));
+  const I={text:raw.slice(0,2000),mins:null,minsSaid:'',answers:{areas:[],feel:[],worse:[],goals:[],score:null},areas:[],goals:[],flags:[],care:[],
+           only:null,notPos:[],noKit:[],mods:[],excludeIds:[],includeIds:[],heard:[],limits:[],empty:true};
+  const D=briefData();
+  if(!D) return I;
+  const R=briefCompile(D), t=briefNorm(raw);
+  if(!t) return I;
+  const heard=[];
+  const hear=function(label,s){if(label) heard.push({label:String(label),s:s});};
+  const ml=briefMins(t);
+  if(ml){I.mins=ml.mins; I.minsSaid=ml.said; hear(ml.mins+' minutes',ml.s);}
+  /* every match of every phrase */
+  let hits=[];
+  ['flags','care','sore','areas','feel','worse','goals','only','not','kit','mods','stretches'].forEach(function(k){
+    R[k].forEach(function(x){x.rx.forEach(function(rx){briefFind(rx,t).forEach(function(m){hits.push({k:k,x:x,s:m.s,e:m.e});});});});
+  });
+  /* where two of her wishes overlap, the more specific wins: "no strap" over the strap stretch, a stretch's name over a body area */
+  /* kit and position phrases always win; otherwise the longer phrase, and on a tie an area or goal beats a stretch's
+     name ("hamstrings" is the body part, "hamstring stretch" the stretch) */
+  const RANK={kit:1,not:1,only:1,stretches:3,goals:2,areas:2,mods:2};
+  const over=function(a,b){return a.s<b.e&&b.s<a.e;};
+  const beats=function(o,h){
+    const ko=RANK[o.k]===1, kh=RANK[h.k]===1;
+    if(ko!==kh) return ko;
+    const lo=o.e-o.s, lh=h.e-h.s;
+    if(lo!==lh) return lo>lh;
+    if(RANK[o.k]!==RANK[h.k]) return RANK[o.k]<RANK[h.k];
+    return o.s<h.s||(o.s===h.s&&hits.indexOf(o)<hits.indexOf(h));
+  };
+  hits=hits.filter(function(h){
+    if(!RANK[h.k]) return true;
+    return !hits.some(function(o){return o!==h&&RANK[o.k]&&over(o,h)&&beats(o,h);});
+  });
+  /* "no strap or chair": try the next item with the same "no" in front, for kit and positions */
+  const TERM=/[,.;:!?\n()]|\b(?:but|then|plus|also|though|although)\b/;
+  const chain=hits.filter(function(h){return h.k==='kit'||h.k==='not';});
+  for(let ci=0;ci<chain.length&&ci<40;ci++){
+    const h=chain[ci], span=t.slice(h.s,h.e);
+    let nw='no';
+    R.negate.some(function(rx){const m=briefFind(rx,span)[0]; if(m){nw=m.txt; return true;} return false;});
+    const j=/^\s*(?:or|nor|and|\/)\s*/.exec(t.slice(h.e)); if(!j) continue;
+    const from=h.e+j[0].length, rest=t.slice(from), stop=TERM.exec(rest), seg=stop?rest.slice(0,stop.index):rest;
+    const cand=nw+' '+seg, off=from-nw.length-1;
+    let found=null;
+    ['kit','not'].forEach(function(k){R[k].forEach(function(x){x.rx.forEach(function(rx){
+      if(found) return;
+      const m=briefFind(rx,cand)[0];
+      if(m&&m.s===0&&m.e>nw.length+1) found={k:k,x:x,s:from,e:off+m.e,chained:true};
+    });});});
+    if(found&&!hits.some(function(o){return o.k===found.k&&o.x===found.x&&over(o,found);})){hits.push(found); chain.push(found);}
+  }
+  hits.sort(function(a,b){return a.s-b.s||b.e-a.e;});
+  /* negation: each "no", "not", "skip" ... applies to the first wish after it (up to a comma, full stop, "and", "but"
+     or 6 words), and on through a plain list of the same kind ("not my neck or shoulders") */
+  let negs=[];
+  R.negate.forEach(function(rx){briefFind(rx,t).forEach(function(m){negs.push(m);});});
+  negs.sort(function(a,b){return a.s-b.s||b.e-a.e;});
+  negs=negs.filter(function(n,i){return !negs.some(function(o,j){return j<i&&o.s<=n.s&&o.e>=n.s;});});    /* overlapping: keep the first */
+  negs=negs.filter(function(n){return !hits.some(function(h){return h.s<=n.s&&h.e>=n.e;});});           /* used up by its own phrase */
+  negs=negs.filter(function(n){return !/\b(?:don't|dont|do not|never)\s+$/.test(t.slice(Math.max(0,n.s-12),n.s));}); /* "don't skip" */
+  negs=negs.filter(function(n,i){                                                                         /* "do not skip": the two cancel */
+    const a=negs[i-1], b=negs[i+1];
+    return !(a&&/^\s*$/.test(t.slice(a.e,n.s)))&&!(b&&/^\s*$/.test(t.slice(n.e,b.s)));
+  });
+  const NEGK={areas:'x',stretches:'x',goals:'g',mods:'m',feel:'f',worse:'f',only:'o'};
+  const JOIN=/^\s*(?:(?:and|or|nor|\/)\s*)?(?:(?:the|my|your|a|an|any|of|for|on|to|with|stretch|stretches|stretching)\s+)*$/;
+  negs.forEach(function(n,ni){
+    const rest=t.slice(n.e), stop=/[,.;:!?\n()]|\b(?:and|but|then|plus|also|though|although|just|so|because|since|while|when|if|as|before|after)\b/.exec(rest);
+    let end=stop?n.e+stop.index:t.length;
+    const w=/\S+/g; let c=0, m;
+    while((m=w.exec(rest))){if(++c===6){end=Math.min(end,n.e+m.index+m[0].length); break;}}
+    const nx=negs[ni+1]; if(nx) end=Math.min(end,nx.s);
+    const inW=hits.filter(function(h){return NEGK[h.k]&&h.s>=n.e&&h.s<end;}), first=inW[0];
+    if(!first) return;
+    /* in the window, every wish of the same kind ("no cobra or bridge"), but not a different kind ("no cobra before golf") */
+    let cur=first;
+    inW.forEach(function(h){if(NEGK[h.k]===NEGK[first.k]){h.neg=true; cur=h;}});
+    for(;;){
+      const nh=hits.filter(function(h){return NEGK[h.k]&&h.s>=cur.e;})[0];
+      if(!nh||NEGK[nh.k]!==NEGK[first.k]||(nx&&nh.s>=nx.s)||!JOIN.test(t.slice(cur.e,nh.s))) break;
+      nh.neg=true; cur=nh;
+    }
+  });
+  /* what she said, in the order she said it */
+  const uniq=function(a,v){if(a.indexOf(v)<0) a.push(v);};
+  const flagIds=ADVICE.flags.map(function(f){return f.id;});
+  const qIds=function(k){return ADVICE.Q[k].opts.map(function(o){return o.id;});};
+  const qLabel=function(k,id){const o=ADVICE.Q[k].opts.filter(function(x){return x.id===id;})[0]; return o?o.label:'';};
+  const posOK=function(l){return (Array.isArray(l)?l:[]).filter(function(p){return POSITIONS.indexOf(p)>=0;});};
+  const out={areas:[],areasNo:[],goals:[],only:[],mods:[]};
+  let sore=null;
+  hits.forEach(function(h){
+    const d=h.x.d;
+    if(h.k==='flags'){if(flagIds.indexOf(d.id)>=0&&I.flags.indexOf(d.id)<0){I.flags.push(d.id); hear(d.label||ADVICE.flags[flagIds.indexOf(d.id)].text,h.s);}}
+    else if(h.k==='care'){if(d.id&&I.care.indexOf(d.id)<0){I.care.push(String(d.id)); hear(d.label||capWords(d.id),h.s);}}
+    else if(h.k==='sore'){if(!sore){sore=d; hear(d.label||'Sore today',h.s);}}
+    else if(h.k==='kit'){if(I.noKit.indexOf(h.x.key)<0){I.noKit.push(h.x.key); hear(d.label||('No '+h.x.key),h.s);
+      I.limits.push({label:d.label||('No '+h.x.key),kit:h.x.key});}}
+    else if(h.k==='not'){const p=posOK(d.pos); p.forEach(function(x){uniq(I.notPos,x);}); if(p.length){hear(d.label,h.s); I.limits.push({label:d.label||'',notPos:p});}}
+    else if(h.k==='only'){if(h.neg) return; const p=posOK(d.pos); if(p.length&&out.only.indexOf(d)<0){out.only.push(d); hear(d.label,h.s);}}
+    else if(h.k==='areas'){
+      if(h.neg){if(out.areasNo.indexOf(d)<0){out.areasNo.push(d); hear('Not the '+briefLc(d.label),h.s);}}
+      else if(out.areas.indexOf(d)<0){out.areas.push(d); hear(d.label,h.s);}
+    }
+    else if(h.k==='stretches'){
+      const id=d.id, nm=briefLc(EX[id].name);
+      if(h.neg){if(I.excludeIds.indexOf(id)<0){I.excludeIds.push(id); hear('No '+nm,h.s);}}
+      else if(I.includeIds.indexOf(id)<0){I.includeIds.push(id); hear('With '+nm,h.s);}
+    }
+    else if(h.k==='goals'){if(!h.neg&&out.goals.indexOf(d)<0){out.goals.push(d); hear(d.label,h.s);}}
+    else if(h.k==='mods'){if(!h.neg&&d.id&&I.mods.indexOf(d.id)<0){I.mods.push(String(d.id)); hear(d.label,h.s);}}
+    else if(h.k==='feel'||h.k==='worse'){
+      if(h.neg||qIds(h.k).indexOf(d.id)<0||I.answers[h.k].indexOf(d.id)>=0) return;
+      I.answers[h.k].push(d.id);
+      hear(d.label||(h.k==='feel'?qLabel('feel',d.id):'Worse: '+briefLc(qLabel('worse',d.id))),h.s);
+    }
+  });
+  /* an area she excluded is left out even if she also asked for it */
+  out.areasNo.forEach(function(a){(Array.isArray(a.ids)?a.ids:[]).forEach(function(id){if(EX[id]) uniq(I.excludeIds,id);});});
+  I.areas=out.areas.filter(function(a){return out.areasNo.indexOf(a)<0;});
+  I.includeIds=I.includeIds.filter(function(id){return I.excludeIds.indexOf(id)<0;});
+  I.goals=out.goals;
+  if(out.only.length){
+    I.only=[]; out.only.forEach(function(o){posOK(o.pos).forEach(function(p){uniq(I.only,p);});});
+    I.limits.push({label:out.only.map(function(o){return o.label;}).filter(Boolean).join(', '),only:I.only.slice()});
+  }
+  const aq=qIds('areas'), gq=qIds('goals');
+  I.areas.forEach(function(a){if(a.advice&&aq.indexOf(a.advice)>=0) uniq(I.answers.areas,a.advice);});
+  I.goals.forEach(function(g){if(g.advice&&gq.indexOf(g.advice)>=0) uniq(I.answers.goals,g.advice);});
+  if(sore){const sc=Number(sore.score); I.answers.score=Number.isInteger(sc)&&sc>=1&&sc<=5?sc:2;}
+  heard.sort(function(a,b){return a.s-b.s;});
+  heard.forEach(function(x){if(!I.heard.some(function(y){return y.label===x.label;})) I.heard.push({label:x.label});});
+  I.empty=!(I.mins||I.flags.length||I.care.length||sore||I.noKit.length||I.notPos.length||I.only||out.areas.length||out.areasNo.length||
+            I.excludeIds.length||I.includeIds.length||I.goals.length||I.mods.length||I.answers.feel.length||I.answers.worse.length);
+  return I;
+}
+/* what she asked for -> a routine: the advisor's rules first, then her own limits, then what she wants more of */
+function briefPlan(interp){
+  const D=briefData()||{};
+  const I=interp&&typeof interp==='object'?interp:readBrief('');
+  const arr=function(v){return Array.isArray(v)?v:[];};
+  const uniq=function(a,v){if(a.indexOf(v)<0) a.push(v);};
+  const P={stop:null,flags:[],mins:10,focus:[],list:[],why:[],left:[],notes:[],care:[],name:'',heard:arr(I.heard).slice(),avoid:[],prefer:[],cautionShare:ADVICE.share};
+  const mn=Number(I.mins), mins=Number.isInteger(mn)&&mn>=3&&mn<=30?mn:10;
+  P.mins=mins;
+  /* red flags: no routine, the most urgent level wins */
+  P.flags=arr(I.flags).filter(function(id){return ADVICE.flags.some(function(f){return f.id===id;});});
+  if(P.flags.length){P.stop=adviceLevel(P.flags); return P;}
+  if(!I.mins) P.notes.push('You did not say how long, so this is a 10 minute routine. Add a length, such as “15 minutes”, to change it.');
+  if(I.minsSaid) P.notes.push(String(I.minsSaid));
+  const A=I.answers&&typeof I.answers==='object'?I.answers:{};
+  const ids=function(k){const ok=ADVICE.Q[k].opts.map(function(o){return o.id;}); return arr(A[k]).filter(function(x,i,a){return ok.indexOf(x)>=0&&a.indexOf(x)===i;});};
+  const sc=Number(A.score);
+  const p=advisePlan({areas:ids('areas'),feel:ids('feel'),worse:ids('worse'),goals:ids('goals'),score:A.score!=null&&Number.isInteger(sc)&&sc>=1&&sc<=5?sc:null});
+  const avoid=p.avoid.slice(), left=p.left.map(function(g){return {ids:g.ids.slice(),reason:g.reason};}), shares=[p.cautionShare];
+  const add=function(list){const o=[]; arr(list).forEach(function(id){if(EX[id]&&avoid.indexOf(id)<0){avoid.push(id); o.push(id);}}); return o;};
+  /* care notes (an operation, pregnancy and the like): safety, so what she asks for cannot bring these back */
+  arr(D.care).forEach(function(c){
+    if(!c||arr(I.care).indexOf(c.id)<0) return;
+    const o=add(c.avoid);
+    if(o.length) left.push({ids:o,reason:c.left||'they need extra care with what you told me, so they are left out to be safe'});
+    if(typeof c.share==='number') shares.push(c.share);
+    if(c.text) P.care.push(String(c.text));
+  });
+  const safe=avoid.slice();
+  /* her own limits: positions, kit she does not have, stretches she does not want */
+  const lim={};
+  const limit=function(id,label){if(!EX[id]) return; uniq(avoid,id); if(label){lim[id]=lim[id]||[]; uniq(lim[id],label);}};
+  const only=Array.isArray(I.only)&&I.only.length?I.only:null, notPos=arr(I.notPos);
+  const labelFor=function(key,pos){
+    const l=arr(I.limits).filter(function(x){return x&&(key==='only'?x.only:x.notPos&&x.notPos.indexOf(pos)>=0);})[0];
+    return l&&l.label?l.label:'';
+  };
+  Object.keys(EX).forEach(function(id){
+    const pos=EX[id].pos;
+    if(only&&only.indexOf(pos)<0) limit(id,labelFor('only'));
+    if(notPos.indexOf(pos)>=0) limit(id,labelFor('not',pos));
+  });
+  const kit=D.kit&&typeof D.kit==='object'?D.kit:{};
+  arr(I.noKit).forEach(function(k){
+    const lab=kit[k]&&kit[k].label?kit[k].label:'No '+k;
+    arr(kit[k]&&kit[k].ids).forEach(function(id){limit(id,lab);});
+    Object.keys(EX).forEach(function(id){if(Array.isArray(EX[id].needs)&&EX[id].needs.indexOf(k)>=0) limit(id,lab);});
+  });
+  arr(I.excludeIds).forEach(function(id){limit(id,'');});
+  const inc=arr(I.includeIds).filter(function(id,i,a){return EX[id]&&a.indexOf(id)===i&&arr(I.excludeIds).indexOf(id)<0;});
+  /* a stretch she asked for that safety or her own limits leave out: say why */
+  const named=function(id){return left.some(function(g){return g.ids.indexOf(id)>=0;});};
+  inc.forEach(function(id){
+    if(safe.indexOf(id)>=0){if(!named(id)) left.push({ids:[id],reason:'it is left out to be safe with what you told me'});}
+    else if(avoid.indexOf(id)>=0&&lim[id]) left.push({ids:[id],reason:'you asked for '+lim[id].map(briefLc).join(', ')});
+  });
+  /* gentle, warm-up and the like */
+  const mods=arr(D.mods).filter(function(m){return m&&arr(I.mods).indexOf(m.id)>=0;});
+  mods.forEach(function(m){
+    let o=[];
+    if(m.avoidIf&&m.avoidIf.level) Object.keys(EX).forEach(function(id){const e=EX[id]; if(e.level===m.avoidIf.level&&e.caution&&inc.indexOf(id)<0) o.push(id);});
+    o=add(o.concat(arr(m.avoid).filter(function(id){return inc.indexOf(id)<0;})));
+    if(o.length) left.push({ids:o,reason:m.left||'they do not suit what you asked for ('+briefLc(m.label||m.id)+')'});
+    if(typeof m.share==='number') shares.push(m.share);
+  });
+  /* picked first: what she named, then the advisor's choices, then the goals, areas and extras she mentioned */
+  const prefer=[];
+  const pre=function(list){arr(list).forEach(function(id){if(EX[id]&&avoid.indexOf(id)<0) uniq(prefer,id);});};
+  const areas=arr(I.areas), goals=arr(I.goals);
+  pre(inc); pre(p.prefer);
+  goals.forEach(function(g){pre(g.prefer);}); areas.forEach(function(a){pre(a.prefer);}); mods.forEach(function(m){pre(m.prefer);});
+  /* focus: from the areas, then the goals, at most three */
+  let focus=[];
+  const fo=function(parts){arr(parts).forEach(function(x){if(PARTS.some(function(q){return q[0]===x;})) uniq(focus,x);});};
+  areas.forEach(function(a){fo(a.parts);});
+  if(!focus.length) goals.forEach(function(g){fo(g.parts);});
+  if(!focus.length) fo(p.focus);
+  focus=focus.slice(0,3);
+  const cs=Math.min.apply(null,shares.filter(function(x){return typeof x==='number'&&isFinite(x)&&x>=0&&x<=1;}).concat([ADVICE.share]));
+  let list=[];
+  try{
+    if(typeof BRIEF_USE.autoRoutine==='function') list=BRIEF_USE.autoRoutine(mins,focus,{avoid:avoid.slice(),prefer:prefer.slice(),cautionShare:cs});
+    else list=prefer.concat(ORDER[mins>12?15:10]).filter(function(id,i,a){return a.indexOf(id)===i;}).slice(0,Math.max(3,Math.round(mins)));
+  }catch(e){list=[];}
+  list=arr(list).filter(function(id,i,a){return EX[id]&&avoid.indexOf(id)<0&&a.indexOf(id)===i;});    /* never anything left out on purpose */
+  /* plain notes about the time */
+  const tot=list.length?totalSeconds(buildTimeline(list)):0;
+  const nameList=function(l){const n=l.map(function(id){return briefLc(EX[id].name);}); return n.length<2?n.join(''):n.slice(0,-1).join(', ')+' and '+n[n.length-1];};
+  const miss=inc.filter(function(id){return avoid.indexOf(id)<0&&list.indexOf(id)<0;});
+  if(miss.length) P.notes.push('There was not room for the '+nameList(miss)+' in '+mins+' minutes.');
+  if(!list.length) P.notes.push('None of the stretches fit everything you asked for. Try leaving out one of your limits, such as the position or the kit.');
+  else if(mins*60-tot>60){
+    const a=Math.max(1,Math.round(tot/60));
+    const pool=Object.keys(EX).filter(function(id){return avoid.indexOf(id)<0;});
+    const have=pool.length?totalSeconds(buildTimeline(pool)):0;
+    P.notes.push(have<mins*60?'Only about '+Math.max(1,Math.round(have/60))+' minutes of stretches suit what you asked for, so this routine comes to about '+a+(a===1?' minute':' minutes')+', not '+mins+'.'
+      :'This routine comes to about '+a+(a===1?' minute':' minutes')+', not '+mins+'. Stretches that need care are kept to a small share of the time, and nothing else that suits what you asked for would fit.');
+  }
+  areas.forEach(function(a){
+    const aid=arr(a.ids).filter(function(id){return !!EX[id];});
+    const own=aid.length?aid:Object.keys(EX).filter(function(id){return arr(a.parts).indexOf(EX[id].part)>=0;});
+    if(!own.length||own.some(function(id){return list.indexOf(id)>=0;})) return;
+    const where='the '+briefLc(a.label||'');
+    P.notes.push(own.every(function(id){return avoid.indexOf(id)>=0;})?'None of the stretches for '+where+' suit what you asked for, so there is nothing for '+where+' in this routine.'
+      :'There was not room for '+where+' in '+mins+' minutes.');
+  });
+  /* why: only the reasons that apply to what made it in */
+  const inList=function(l){return !l||!l.length||l.some(function(id){return list.indexOf(id)>=0;});};
+  const why=[];
+  const replaced=goals.filter(function(g){return g.advice&&g.why;}).map(function(g){const r=ADVICE.rules.filter(function(x){return x.id===g.advice;})[0]; return r&&r.why;});
+  p.why.forEach(function(w){if(replaced.indexOf(w.text)<0&&inList(w.needs)) uniq(why,w.text);});
+  goals.forEach(function(g){if(g.why&&inList(g.prefer)) uniq(why,String(g.why));});
+  mods.forEach(function(m){if(m.why&&inList(m.prefer)) uniq(why,String(m.why));});
+  /* the name: the first goal's, else the first area, else the length; never one already used */
+  let base='';
+  const g0=goals[0], a0=areas[0];
+  if(g0){base=g0.name||''; if(!base&&g0.advice){const o=ADVICE.Q.goals.opts.filter(function(x){return x.id===g0.advice;})[0]; base=o&&o.name||'';}}
+  if(!base&&a0&&a0.label) base='For my '+briefLc(a0.label);
+  if(!base) base=mins+' minute stretch';
+  base=String(base).slice(0,30);
+  try{P.name=typeof BRIEF_USE.uniqueName==='function'?BRIEF_USE.uniqueName(base):base;}catch(e){P.name=base;}
+  P.focus=focus; P.list=list; P.why=why; P.left=left; P.avoid=avoid; P.prefer=prefer; P.cautionShare=cs;
+  return P;
+}
 /* back scores from the record: the last two weeks against the two weeks before (at least three scores in each) */
 function scoreTrend(sessions,today){
   const avg=function(from,to){
@@ -2180,7 +2513,7 @@ function optimiseOrder(list){
   const t=notes.join('; ');
   return {list:out, changes:t.charAt(0).toUpperCase()+t.slice(1)+'.'};
 }
-if(typeof module!=='undefined') module.exports={VOICES,CLIP,COACH_RULES,MILESTONES,coachKeys,scheduleCoach,clipSecs,timeCalls,fadeFor,EX,ORDER,PARTS,POSITIONS,SEQUENCE,optimiseOrder,seqStats,exSeconds,phrases,buildTimeline,totalSeconds,workSeconds,frameFor,dateKey,addDays,currentStreak,bestStreak,fmt,ADVICE,adviceLevel,advisePlan,scoreTrend,COACH_COMMON};
+if(typeof module!=='undefined') module.exports={VOICES,CLIP,COACH_RULES,MILESTONES,coachKeys,scheduleCoach,clipSecs,timeCalls,fadeFor,EX,ORDER,PARTS,POSITIONS,SEQUENCE,optimiseOrder,seqStats,exSeconds,phrases,buildTimeline,totalSeconds,workSeconds,frameFor,dateKey,addDays,currentStreak,bestStreak,fmt,ADVICE,adviceLevel,advisePlan,scoreTrend,COACH_COMMON,readBrief,briefPlan,BRIEF_USE};
 </script>
 <script id="music">
 /* Music: Spotify under the stretching coach.
@@ -3407,9 +3740,11 @@ const BUILTIN={r10:{name:'Short routine',tag:10,img:'img/len10.jpg'},r15:{name:'
 function cleanList(l){return (Array.isArray(l)?l:[]).filter(function(id){return typeof id==='string'&&EX[id];}).slice(0,40);}
 /* Each routine also has a target length (mins), a voice ('' = the usual one from Sound) and a music choice.
    Own routines keep them on their record; the built-in ones keep the user's choices in RT.prefs. */
-const LENGTHS=[5,10,15,20,25,30];
+const LENGTHS=[5,10,15,20,25,30];     /* the length buttons; a routine can aim for any whole number of minutes from 3 to 30 */
 const MUSIC_MODES=['usual','off','mix','spotify'];
-function cleanMins(m){m=Number(m); return LENGTHS.indexOf(m)>=0?m:null;}
+function cleanMins(m){if(m===null||m===''||typeof m==='boolean') return null; m=Number(m); return Number.isInteger(m)&&m>=3&&m<=30?m:null;}
+/* the words she typed in "Describe a routine", kept with the routine it made */
+function cleanBrief(b){return typeof b==='string'&&b.trim()?b.replace(/[\u0000-\u001f]+/g,' ').trim().slice(0,200):'';}
 function cleanVoice(v){return typeof v==='string'&&VOICES.some(function(x){return x.id===v;})?v:'';}
 function cleanMusic(m){
   const o={mode:'usual',spotify:null};
@@ -3456,8 +3791,10 @@ function normRT(x){
     if(!r||typeof r.id!=='string'||!/^u[\w-]{1,40}$/.test(r.id)) return;
     const l=cleanList(r.list); if(!l.length) return;
     if(o.own.some(function(q){return q.id===r.id;})) return;
-    o.own.push({id:r.id,name:String(r.name||'My routine').slice(0,30),list:l,
-                mins:cleanMins(r.mins),focus:cleanFocus(r.focus),voice:cleanVoice(r.voice),music:cleanMusic(r.music)});
+    const q={id:r.id,name:String(r.name||'My routine').slice(0,30),list:l,
+             mins:cleanMins(r.mins),focus:cleanFocus(r.focus),voice:cleanVoice(r.voice),music:cleanMusic(r.music)};
+    const br=cleanBrief(r.brief); if(br) q.brief=br;
+    o.own.push(q);
   });
   o.at=typeof x.at==='string'?x.at.slice(0,30):'';
   o.advice=cleanAdvice(x.advice);
@@ -3473,9 +3810,39 @@ function routineById(id){
             mins:b.tag,focus:[],voice:cleanVoice(p.voice),music:cleanMusic(p.music)};
   }
   const o=RT.own.filter(function(r){return r.id===id;})[0];
-  return o?{id:o.id,name:o.name,list:o.list.slice(),own:true,mins:o.mins,focus:o.focus.slice(),voice:o.voice,music:cleanMusic(o.music)}:null;
+  return o?{id:o.id,name:o.name,list:o.list.slice(),own:true,mins:o.mins,focus:o.focus.slice(),voice:o.voice,music:cleanMusic(o.music),brief:cleanBrief(o.brief)}:null;
 }
 function allRoutines(){return Object.keys(BUILTIN).concat(RT.own.map(function(r){return r.id;})).map(routineById).filter(Boolean);}
+/* names that tell routines apart: case and spaces do not count, and the built-in ones are taken too */
+function nameKey(n){return String(n==null?'':n).replace(/\s+/g,' ').trim().toLowerCase();}
+function nameTaken(name,exceptId){
+  const k=nameKey(name); if(!k) return false;
+  return allRoutines().some(function(r){return r.id!==exceptId&&nameKey(r.name)===k;});
+}
+function uniqueName(base,exceptId){
+  base=String(base==null?'':base).replace(/\s+/g,' ').trim().slice(0,30)||'My routine';
+  if(!nameTaken(base,exceptId)) return base;
+  for(let n=2;n<1000;n++){const sfx=' '+n, t=base.slice(0,30-sfx.length).trim()+sfx; if(!nameTaken(t,exceptId)) return t;}
+  return base;
+}
+/* the message under a name field when that name is already used: shown, or cleared when name is '' */
+function nameMsg(field,name){
+  if(!field) return;
+  let p=field.nextElementSibling;
+  if(!p||!p.classList||!p.classList.contains('name-taken')){
+    if(!name) return;
+    p=document.createElement('p'); p.className='name-taken'; p.setAttribute('role','alert');
+    field.parentNode.insertBefore(p,field.nextSibling);
+  }
+  if(name){p.textContent='You already have a routine called \u201c'+String(name).replace(/\s+/g,' ').trim()+'\u201d. Choose another name.'; p.hidden=false;}
+  else{p.textContent=''; p.hidden=true;}
+}
+/* true when the name can be saved; otherwise shows the message and puts the cursor in the field */
+function nameOK(input,name,exceptId){
+  const field=input&&input.closest?input.closest('.field')||input:input;
+  if(nameTaken(name,exceptId)){nameMsg(field,name); try{input.focus();}catch(e){} return false;}
+  nameMsg(field,''); return true;
+}
 if(!settings.routine||!routineById(settings.routine)) settings.routine=settings.mins===15?'r15':'r10';
 function currentRoutine(){return routineById(settings.routine)||routineById('r10');}
 /* the days in the record turn the coaching lines, so a stretch heard once a day does not always get the same line */
@@ -3533,12 +3900,10 @@ function openEditor(id,draft){
   if(draft){ED={id:'draft',own:true,builtin:false,name:draft.name,list:draft.list.slice(),isNew:false,mins:draft.mins,draft:true};}
   else if(id){const r=routineById(id); ED={id:r.id,own:!!r.own,builtin:!!r.builtin,tag:r.tag,name:r.name,list:r.list.slice(),isNew:false,mins:r.own?r.mins:null};}
   else{
-    let n=1, name='My routine';
-    while(RT.own.some(function(r){return r.name===name;})) name='My routine '+(++n);
-    ED={id:'u'+Date.now().toString(36),own:true,builtin:false,name:name,list:[],isNew:true};
+    ED={id:'u'+Date.now().toString(36),own:true,builtin:false,name:uniqueName('My routine'),list:[],isNew:true};
   }
   $('edTitle').textContent=ED.draft?'Your stretches':ED.isNew?'New routine':ED.builtin?'Edit '+ED.name.toLowerCase():'Edit routine';
-  $('edNameWrap').hidden=!ED.own||ED.draft; $('edName').value=ED.own?ED.name:'';
+  $('edNameWrap').hidden=!ED.own||ED.draft; $('edName').value=ED.own?ED.name:''; nameMsg($('edNameWrap'),'');
   $('edReset').hidden=!ED.builtin; $('edDelete').hidden=!ED.own||ED.isNew||ED.draft;
   $('edSave').textContent=ED.draft?'Done':'Save';
   $('edDelete').textContent='Delete routine'; $('edDelete').dataset.armed='';
@@ -3590,7 +3955,7 @@ $('edOrdMsg').addEventListener('click',function(ev){
 });
 $('edCancel').addEventListener('click',function(){ED=null; $('editor').hidden=true;});
 $('edReset').addEventListener('click',function(){if(ED&&ED.builtin){ED.list=ORDER[ED.tag].slice(); renderEditor();}});
-$('edName').addEventListener('input',function(){if(ED) ED.name=this.value;});
+$('edName').addEventListener('input',function(){if(ED){ED.name=this.value; nameMsg($('edNameWrap'),'');}});
 $('edDelete').addEventListener('click',function(){
   if(!ED||!ED.own) return;
   if(!this.dataset.armed){this.dataset.armed='1'; this.textContent='Tap again to delete'; return;}
@@ -3604,7 +3969,8 @@ $('edSave').addEventListener('click',function(){
   if(ED.builtin){
     if(sameList(ED.list,ORDER[ED.tag])) delete RT.edits[ED.id]; else RT.edits[ED.id]=ED.list.slice();
   }else{
-    const name=(ED.name||'').trim().slice(0,30)||'My routine';
+    const name=(ED.name||'').replace(/\s+/g,' ').trim().slice(0,30)||uniqueName('My routine',ED.id);
+    if(!nameOK($('edName'),name,ED.id)) return;
     const ex=RT.own.filter(function(r){return r.id===ED.id;})[0];
     if(ex){ex.name=name; ex.list=ED.list.slice();} else RT.own.push({id:ED.id,name:name,list:ED.list.slice(),mins:null,focus:[],voice:'',music:cleanMusic(null)});
   }
@@ -3805,7 +4171,7 @@ function autoRoutine(mins,focus,opts){
   }
   return optimiseOrder(chosen).list;
 }
-window.__program={autoRoutine:autoRoutine, normRT:normRT, routineById:routineById};   /* for tests */
+window.__program={autoRoutine:autoRoutine, normRT:normRT, routineById:routineById, cleanMins:cleanMins};   /* for tests */
 
 /* the routine's length, voice and music, shown under the routine cards so it is clear what Start will do */
 function renderRoutineSet(cur){
@@ -3826,16 +4192,14 @@ function openBuilder(id){
   const r=id?routineById(id):null;
   const all=['len','focus','list','voice','music','save'];
   if(!r){
-    let n=1, name='My routine';
-    while(RT.own.some(function(x){return x.name===name;})) name='My routine '+(++n);
-    B={mode:'new',id:'u'+Date.now().toString(36),name:name,mins:10,focus:[],list:null,auto:null,old:null,built:'',
+    B={mode:'new',id:'u'+Date.now().toString(36),name:uniqueName('My routine'),mins:10,focus:[],list:null,auto:null,old:null,built:'',brief:'',
        voice:'',music:{mode:'usual',spotify:null},steps:all,step:0,start:0,ret:false};
   }else{
     const tot=totalSeconds(timelineOf(r));
     /* a routine made before lengths existed has no aim: it is not given one unless she picks a length */
     const near=LENGTHS.reduce(function(a,m){return Math.abs(m*60-tot)<Math.abs(a*60-tot)?m:a;},LENGTHS[0]);
     B={mode:r.builtin?'builtin':'own',id:r.id,name:r.name,tag:r.tag,mins:r.builtin?r.tag:(r.mins||null),near:near,focus:r.focus.slice(),list:r.list.slice(),
-       auto:null,old:null,built:'',voice:r.voice,music:{mode:r.music.mode,spotify:r.music.spotify},
+       auto:null,old:null,built:'',voice:r.voice,music:{mode:r.music.mode,spotify:r.music.spotify},brief:r.brief||'',
        steps:r.builtin?['voice','music','save']:all,step:0,start:0,ret:false};
     B.built=bKey(); B.step=B.start=B.steps.length-1;
   }
@@ -3861,11 +4225,34 @@ function focusShort(segs){
 function ensureList(){
   if(B.mode==='builtin'||B.built===bKey()) return false;
   if(B.list&&B.list.length&&!(B.auto&&sameList(B.list,B.auto))) B.old=B.list;
-  B.auto=autoRoutine(B.mins||B.near||10,B.focus); B.list=B.auto.slice(); B.built=bKey();
+  B.auto=autoRoutine(B.mins||B.near||10,B.focus,briefOpts()); B.list=B.auto.slice(); B.built=bKey();
   return true;
 }
 function builderTakeList(list){if(!B) return; B.list=list.slice(); renderBuilder(); $('builder').scrollTop=0;}
 function closeBuilder(){B=null; $('builder').hidden=true;}
+/* a routine made from a brief keeps what the brief ruled out ("no kneeling", a stretch left out to be safe)
+   when the builder makes a new list for another length or focus */
+function briefOpts(){
+  if(!B||!B.brief||typeof readBrief!=='function') return undefined;
+  if(B.briefKey!==B.brief){
+    B.briefKey=B.brief; B.briefOpt=undefined;
+    try{const p=briefPlan(readBrief(B.brief)); if(!p.stop) B.briefOpt={avoid:p.avoid.slice(),prefer:p.prefer.slice(),cautionShare:p.cautionShare};}catch(e){}
+  }
+  return B.briefOpt;
+}
+/* "Describe a routine" hands over what it built: a new routine, opened at "Your stretches" with that list,
+   with the length and focus steps behind it so Back works (going back and changing them builds afresh) */
+function builderFromBrief(d){
+  d=d&&typeof d==='object'?d:{};
+  const list=cleanList(d.list);
+  openBuilder(null);
+  B.name=uniqueName(typeof d.name==='string'&&d.name.trim()?d.name:'My routine');
+  B.mins=cleanMins(d.mins)||10; B.focus=cleanFocus(d.focus); B.brief=cleanBrief(d.brief);
+  if(list.length){B.auto=list.slice(); B.list=list.slice(); B.built=bKey();}
+  else ensureList();
+  B.step=B.steps.indexOf('list');
+  renderBuilder(); $('builder').scrollTop=0;
+}
 
 let BM={list:null,loading:false,err:false};   /* the Spotify playlists offered in the music step */
 function mu(name,d){try{if(window.Music&&typeof Music[name]==='function'){const v=Music[name](); return v==null?d:v;}}catch(e){} return d;}
@@ -3888,6 +4275,10 @@ function renderBuilder(){
   if(st==='len'){
     h='<div class="bd-lens" role="group" aria-label="Length">';
     LENGTHS.forEach(function(m){h+='<button data-mins="'+m+'" aria-pressed="'+((B.mins||B.near)===m)+'"><b>'+m+'</b><span>minutes</span></button>';});
+    /* a length from a brief ("12 minutes") is not one of the six buttons: it is shown as a seventh, pressed */
+    const cm=cleanMins(B.mins);
+    if(cm&&LENGTHS.indexOf(cm)<0) B.xmins=cm;
+    if(B.xmins) h+='<button data-mins="'+B.xmins+'" aria-pressed="'+(cm===B.xmins)+'"><b>'+B.xmins+'</b><span>minutes</span></button>';
     h+='</div><p class="small">The app picks stretches to come as close to this as it can. You can change them on the next screens.</p>';
     /* the advice questionnaire, when it is in this version of the app */
     if(B.mode==='new'&&typeof openAdvisor==='function')
@@ -3952,7 +4343,8 @@ function renderBuilder(){
   }else{
     const tot=B.list&&B.list.length?realTotal(B.list,B.tag):0, own=B.mode!=='builtin';
     const row=function(k,v,jump){return '<div class="bd-sr"><dt>'+k+'</dt><dd>'+v+'</dd>'+(jump?'<button class="ghost" data-jump="'+jump+'" aria-label="Change '+k.toLowerCase()+'">Change</button>':'')+'</div>';};
-    h=(own?'<label class="field"><span>Name</span><input id="bdName" maxlength="30" autocomplete="off" value="'+esc(B.name)+'"></label>':'')+
+    h=(own?'<label class="field"><span>Name</span><input id="bdName" maxlength="30" autocomplete="off" value="'+esc(B.name)+'"></label>'+
+       (B.taken?'<p class="name-taken" role="alert">'+esc('You already have a routine called \u201c'+B.taken+'\u201d. Choose another name.')+'</p>':''):'')+
       '<dl class="bd-sum">'+
       row('Length',fmt(tot)+(own&&B.mins?' <small>'+esc(aimText(tot,B.mins))+'</small>':''),own?'len':'')+
       (own?row('Focus',esc(focusText(B.focus)),'focus'):'')+
@@ -3986,10 +4378,18 @@ function bSave(){
     if(voice||music.mode!=='usual') RT.prefs[B.id]={voice:voice,music:music}; else delete RT.prefs[B.id];
   }else{
     if(!B.list||!B.list.length) return;
-    const name=(B.name||'').trim().slice(0,30)||'My routine';
+    const name=(B.name||'').replace(/\s+/g,' ').trim().slice(0,30)||uniqueName('My routine',B.id);
+    if(nameTaken(name,B.id)){
+      /* not saved: go to the name and say why */
+      B.taken=name; B.ret=false; B.step=B.steps.indexOf('save'); renderBuilder();
+      const i=$('bdName'); if(i){try{i.focus();}catch(e){}}
+      return;
+    }
+    B.taken='';
     const rec={id:B.id,name:name,list:B.list.slice(),mins:cleanMins(B.mins),focus:cleanFocus(B.focus),voice:voice,music:music};
+    const br=cleanBrief(B.brief); if(br) rec.brief=br;
     const ex=RT.own.filter(function(r){return r.id===B.id;})[0];
-    if(ex) Object.assign(ex,rec); else RT.own.push(rec);
+    if(ex){Object.assign(ex,rec); if(!br) delete ex.brief;} else RT.own.push(rec);
   }
   saveRT(); settings.routine=B.id; store.set('mbs.routine',B.id);
   closeBuilder(); renderRoutines(); prepAudio();
@@ -3997,7 +4397,9 @@ function bSave(){
 $('bdNext').addEventListener('click',function(){if(B) bGo(1);});
 $('bdBack').addEventListener('click',function(){if(B) bGo(-1);});
 $('bdCancel').addEventListener('click',closeBuilder);
-$('bdBody').addEventListener('input',function(ev){if(B&&ev.target.id==='bdName') B.name=ev.target.value;});
+$('bdBody').addEventListener('input',function(ev){
+  if(B&&ev.target.id==='bdName'){B.name=ev.target.value; if(B.taken){B.taken=''; nameMsg(ev.target.closest('.field'),'');}}
+});
 $('bdBody').addEventListener('click',function(ev){
   if(!B) return;
   const t=ev.target, q=function(s){return t.closest(s);};
@@ -4074,7 +4476,7 @@ function advBuild(){
   list=(list||[]).filter(function(id){return EX[id]&&!out(id);});      /* never anything left out on purpose */
   try{if(typeof optimiseOrder==='function') list=optimiseOrder(list).list; else if(typeof sortRoutine==='function') list=sortRoutine(list);}catch(e){}
   AD.plan=p; AD.list=list;
-  if(!AD.name){const pr=advPrevRoutine(); AD.name=pr?pr.name:p.name;}
+  if(!AD.name){const pr=advPrevRoutine(); AD.name=pr?pr.name:uniqueName(p.name);}
 }
 function advToggle(k,id){
   const l=AD.ans[k], none=ADVICE.Q[k].none;
@@ -4166,7 +4568,8 @@ function renderAdvisor(){
 function advSave(start){
   if(!AD||!AD.list||!AD.list.length) return;
   const pr=advPrevRoutine(), id=pr?pr.id:'u'+Date.now().toString(36);
-  const name=(AD.name||'').trim().slice(0,30)||AD.plan.name;
+  const name=(AD.name||'').replace(/\s+/g,' ').trim().slice(0,30)||uniqueName(AD.plan.name,pr?pr.id:null);
+  if(!nameOK($('advName'),name,pr?pr.id:null)) return;
   const rec={id:id,name:name,list:AD.list.slice(),mins:cleanMins(AD.ans.mins),focus:cleanFocus(AD.plan.focus),
              voice:pr?pr.voice:'',music:pr?pr.music:{mode:'usual',spotify:null}};
   if(pr) Object.assign(pr,rec); else RT.own.push(rec);
@@ -4201,7 +4604,7 @@ $('advCard').addEventListener('click',openAdvisor);
 $('advCancel').addEventListener('click',closeAdvisor);
 $('advNext').addEventListener('click',function(){if(AD) advGo(1);});
 $('advBack').addEventListener('click',function(){if(AD) advGo(-1);});
-$('advBody').addEventListener('input',function(ev){if(AD&&ev.target.id==='advName') AD.name=ev.target.value;});
+$('advBody').addEventListener('input',function(ev){if(AD&&ev.target.id==='advName'){AD.name=ev.target.value; nameMsg(ev.target.closest('.field'),'');}});
 $('advBody').addEventListener('click',function(ev){
   if(!AD) return;
   const q=function(s){return ev.target.closest(s);};
@@ -4218,6 +4621,9 @@ renderAdvCard();
 /* the routine cards are redrawn after a restore or an account sync: keep "Check again" in step with them */
 try{new MutationObserver(function(){renderAdvCard();}).observe($('routineCards'),{childList:true});}catch(e){}
 if(typeof window!=='undefined') window.__physio={openAdvisor:openAdvisor,advisePlan:advisePlan};
+/* "Describe a routine": the reading is in the core script; it builds with the builder's autoRoutine and names with uniqueName */
+BRIEF_USE.autoRoutine=autoRoutine; BRIEF_USE.uniqueName=uniqueName;
+window.__brief={readBrief:readBrief, briefPlan:briefPlan, nameTaken:nameTaken, uniqueName:uniqueName, builderFromBrief:builderFromBrief};   /* for tests */
 (function initHome(){
   const t=today();
   $('todayDate').textContent=DOW[t.getDay()]+' '+t.getDate()+' '+MON[t.getMonth()];
