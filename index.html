@@ -670,6 +670,65 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
 :root[data-theme="dark"] .gs-ic{color:#141618}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .g-start{box-shadow:inset 0 0 0 1px var(--line)}}
 :root[data-theme="dark"] .g-start{box-shadow:inset 0 0 0 1px var(--line)}
+
+/* describe a routine */
+#brief .in{min-height:100%}
+#brief .bd-foot{margin-top:auto}
+#brFoot[hidden],#brClear[hidden]{display:none}
+#brHelp{margin-top:-8px}
+/* the box: one white card holding the text and its Build button, so Build stays next to the words when the keyboard is up */
+.br-box{background:var(--surface);box-shadow:var(--shadow);border:1px solid var(--line);border-radius:20px;padding:4px 4px 8px;display:flex;flex-direction:column}
+.br-box:has(#brText:focus){border-color:var(--ink)}
+/* while she types, the footer steps aside so it never sits over the box when a keyboard shrinks the screen */
+#brief:has(#brText:focus) #brFoot{display:none}
+#brText{display:block;width:100%;min-height:112px;max-height:236px;border:0;background:transparent;color:var(--ink);resize:none;
+  font:inherit;font-size:17px;font-weight:500;line-height:1.4;padding:12px 12px 6px;scroll-margin-top:84px;-webkit-appearance:none;appearance:none}
+#brText::placeholder{color:var(--muted);opacity:.8}
+#brText:focus-visible,#brOut [tabindex="-1"]:focus{outline:0}
+.br-row{display:flex;align-items:center;gap:8px;padding:0 4px 0 8px}
+.br-n{flex:1;font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.br-clear{padding:10px 14px;background:transparent;color:var(--muted)}
+.br-build{padding:10px 24px;font-size:16px;font-weight:800}
+/* examples: tap one to fill the box; long ones wrap inside the chip instead of running off the side */
+.br-ex{display:flex;flex-direction:column;gap:10px}
+.br-ex:empty,.br-ex[hidden]{display:none}
+.br-chips{display:flex;flex-wrap:wrap;gap:8px}
+.br-chips button{max-width:100%;min-height:44px;border:0;border-radius:22px;background:var(--surface);box-shadow:inset 0 0 0 1.5px var(--line);padding:10px 16px;
+  font-size:15px;font-weight:600;line-height:1.3;text-align:left;white-space:normal;overflow-wrap:anywhere}
+.br-chips button:active{background:var(--weak)}
+/* what the app understood: quiet lime tags, not buttons */
+.br-sec{display:flex;flex-direction:column;gap:10px}
+.br-sec h3{font-size:16px;color:var(--muted)}
+.br-heard{display:flex;flex-wrap:wrap;gap:6px;margin:0;padding:0;list-style:none}
+.br-heard li{max-width:100%;font-size:14px;font-weight:700;line-height:1.3;color:var(--accent-text);background:#F3FCD7;border-radius:999px;padding:5px 12px;overflow-wrap:anywhere}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .br-heard li{background:#3E4825}}
+:root[data-theme="dark"] .br-heard li{background:#3E4825}
+/* on a stop, what she said is not a choice to celebrate: plain grey tags */
+:root .br-heard.stop li{background:var(--weak);color:var(--ink)}
+#brief .adv-ul{margin:0}
+.br-notes{display:flex;flex-direction:column;gap:6px}
+.br-notes p{font-size:15px;line-height:1.45;padding-left:14px;position:relative}
+.br-notes p::before{content:"";position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:50%;background:var(--muted)}
+.br-none{display:flex;flex-direction:column;gap:6px;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:14px 16px;font-size:16px;line-height:1.45}
+.br-none b{font-weight:700}
+.br-stop-h{font-size:22px;line-height:1.2}
+.br-care{display:flex;flex-direction:column;gap:8px}
+.br-care p{font-size:15px;line-height:1.45;color:var(--warn);background:var(--warn-bg);border-radius:18px;padding:12px 16px}
+#brief .bd-tot{margin-top:4px}
+#brief .bd-tot p:first-child{font-size:19px}
+#brief .addbtn{margin-top:-4px}
+/* a name already used: said under the box, and the box gets a warm ring */
+.name-taken{font-size:14.5px;font-weight:600;line-height:1.4;color:var(--warn);margin-top:-6px;overflow-wrap:anywhere}
+.name-taken:empty,.name-taken[hidden]{display:none}
+.field:has(+ .name-taken:not(:empty):not([hidden])) input{border-color:var(--warn);box-shadow:inset 0 0 0 1px var(--warn),var(--shadow)}
+.field:has(+ .name-taken:not(:empty):not([hidden])) input:focus-visible{outline-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.field input{min-width:0;width:100%}
+/* the entry card beside "Create your own": same outline card, a pencil instead of the plus */
+.br-ic{display:inline-block;width:34px;height:34px;border-radius:50%;background:var(--accent);position:relative;flex:none}
+.br-ic::before{content:"";position:absolute;inset:0;margin:auto;width:18px;height:18px;background:var(--on-accent);
+  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16z' fill='none' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M13 7l4 4' fill='none' stroke='%23000' stroke-width='2.4'/%3E%3C/svg%3E") center/contain no-repeat;
+  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M4 20h4L19 9l-4-4L4 16z' fill='none' stroke='%23000' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M13 7l4 4' fill='none' stroke='%23000' stroke-width='2.4'/%3E%3C/svg%3E") center/contain no-repeat}
+.bd-advise + .bd-advise{margin-top:-6px}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
@@ -879,6 +938,32 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
     <div class="bd-foot" id="advFoot">
       <button class="bd-btn" id="advBack">Back</button>
       <button class="bd-btn bd-next" id="advNext">Next</button>
+    </div>
+  </div>
+</section>
+
+<section id="brief" class="page" hidden aria-labelledby="brTitle">
+  <div class="in">
+    <div class="hd ed-hd">
+      <button class="ghost" id="brCancel">Cancel</button>
+      <h1 id="brTitle">Describe a routine</h1>
+      <span class="bd-sp" aria-hidden="true"></span>
+    </div>
+    <div class="bd-head"><p class="eyebrow">In your own words</p><h2 id="brQ">Describe your routine</h2></div>
+    <p class="small" id="brHelp">Say how long you have, what it is for, where you feel tight, and anything to leave out.</p>
+    <div class="br-box">
+      <textarea id="brText" rows="4" maxlength="300" aria-labelledby="brQ" aria-describedby="brHelp" autocomplete="off" autocapitalize="sentences" enterkeyhint="go"></textarea>
+      <div class="br-row">
+        <button class="ghost br-clear" id="brClear" hidden>Clear</button>
+        <span class="br-n" id="brN"></span>
+        <button class="ghost go br-build" id="brBuild" disabled>Build</button>
+      </div>
+    </div>
+    <div class="bd-body" id="brOut"></div>
+    <div class="br-ex" id="brEx"></div>
+    <div class="bd-foot" id="brFoot" hidden>
+      <button class="bd-btn" id="brSave">Save</button>
+      <button class="bd-btn bd-next" id="brGo">Save and start</button>
     </div>
   </div>
 </section>
@@ -4371,6 +4456,9 @@ function renderRoutines(){
        (extra?'<span class="sub rx">'+esc(extra)+'</span>':'')+'</span></button>';
   });
   h+='<button class="newr" id="newRoutine"><span class="plus" aria-hidden="true"></span><span class="rn">Create your own</span><span class="sub">Choose the length, stretches, voice and music</span></button>';
+  /* describe a routine, when the brief reader is in this version of the app */
+  if(typeof readBrief==='function'&&typeof openBrief==='function')
+    h+='<button class="newr" id="describeRoutine"><span class="br-ic" aria-hidden="true"></span><span class="rn">Describe a routine</span><span class="sub">Type what you want and the app picks the stretches</span></button>';
   $('routineCards').innerHTML=h;
   renderRoutineSet(cur);
   $('routineTitle').textContent=cur.builtin?'In the '+cur.name.toLowerCase():'In '+cur.name;
@@ -4390,6 +4478,7 @@ function renderRoutines(){
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 $('routineCards').addEventListener('click',function(ev){
   if(ev.target.closest('#newRoutine')){openBuilder(null); return;}
+  if(ev.target.closest('#describeRoutine')){openBrief(); return;}
   const b=ev.target.closest('button[data-routine]'); if(b) chooseRoutine(b.dataset.routine);
 });
 $('editBtn').addEventListener('click',function(){openEditor(currentRoutine().id);});
@@ -4784,6 +4873,8 @@ function renderBuilder(){
     /* the advice questionnaire, when it is in this version of the app */
     if(B.mode==='new'&&typeof openAdvisor==='function')
       h+='<button class="bd-advise" id="bdAdvise"><span class="bd-t">Not sure? Help me choose</span><span class="bd-s">Answer a few questions and the app suggests a routine</span></button>';
+    if(B.mode==='new'&&typeof readBrief==='function'&&typeof openBrief==='function')
+      h+='<button class="bd-advise" id="bdDescribe"><span class="bd-t">Describe it instead</span><span class="bd-s">Type what you want in your own words</span></button>';
   }else if(st==='focus'){
     h='<p class="small">Pick as many as you like, or leave it on all-round.</p><div class="bd-opts">'+
       pickBtn('data-focus="all"',!B.focus.length,'All-round','A bit of everything, always with your lower back and hamstrings');
@@ -4919,6 +5010,7 @@ $('bdBody').addEventListener('click',function(ev){
   if(q('#bdBest')){const r=optimiseOrder(B.list); if(r.changes){B.undo=B.list.slice(); B.list=r.list; B.undoAfter=r.list.slice(); B.undoMsg=r.changes;} renderBuilder(); return;}
   if(q('#bdUndo')){if(B.undo){B.list=B.undo; B.undo=null;} renderBuilder(); return;}
   if(q('#bdAdvise')){closeBuilder(); try{if(typeof openAdvisor==='function') openAdvisor();}catch(e){} return;}
+  if(q('#bdDescribe')){closeBuilder(); try{if(typeof openBrief==='function') openBrief();}catch(e){} return;}
   if((b=q('[data-play]'))){try{if(typeof previewVoice==='function') previewVoice(b.dataset.play);}catch(e){} return;}
   if((b=q('[data-voice]'))){B.voice=b.dataset.voice; renderBuilder(); return;}
   if((b=q('[data-mu]'))){if(b.disabled) return; B.music={mode:b.dataset.mu,spotify:b.dataset.mu==='spotify'?B.music.spotify:null}; renderBuilder(); return;}
@@ -5125,6 +5217,167 @@ if(typeof window!=='undefined') window.__physio={openAdvisor:openAdvisor,adviseP
 /* "Describe a routine": the reading is in the core script; it builds with the builder's autoRoutine and names with uniqueName */
 BRIEF_USE.autoRoutine=autoRoutine; BRIEF_USE.uniqueName=uniqueName;
 window.__brief={readBrief:readBrief, briefPlan:briefPlan, nameTaken:nameTaken, uniqueName:uniqueName, builderFromBrief:builderFromBrief};   /* for tests */
+
+/* ---------- describe a routine: she types a brief, the app reads it (readBrief, briefPlan) and builds from the 46 stretches ----------
+   Everything runs in the page. The reading and the plan come from readBrief and briefPlan; this is only the screen. */
+let BR=null;
+const BR_MAX=300;
+function brExamples(){
+  try{if(typeof BRIEF!=='undefined'&&BRIEF&&Array.isArray(BRIEF.examples)) return BRIEF.examples.filter(function(x){return typeof x==='string'&&x;}).slice(0,4);}catch(e){}
+  return [];
+}
+function openBrief(prefill){
+  if(typeof B!=='undefined'&&B&&typeof closeBuilder==='function') closeBuilder();
+  BR={text:typeof prefill==='string'?prefill.slice(0,BR_MAX):'', interp:null, plan:null, name:'', at:null};
+  $('brText').value=BR.text;
+  renderBrief(); $('brief').hidden=false; $('brief').scrollTop=0; brFit();
+}
+function closeBrief(){BR=null; try{$('brText').blur();}catch(e){} $('brief').hidden=true;}
+/* the box's own controls change as she types, without redrawing the result under it */
+function brBoxState(){
+  const t=BR.text, n=t.length;
+  $('brBuild').disabled=!t.trim();
+  $('brBuild').textContent=BR.at!==null&&t.trim()!==BR.at?'Build again':'Build';
+  $('brClear').hidden=!n;
+  $('brN').textContent=n>=BR_MAX-50?(BR_MAX-n)+(BR_MAX-n===1?' character left':' characters left'):'';
+}
+/* the box grows with the words (up to about eight lines), so a long brief is read whole rather than scrolled inside the box */
+function brFit(){const t=$('brText'); if(!t) return; t.style.height='auto'; t.style.height=Math.min(t.scrollHeight+2,236)+'px';}
+function brChips(){
+  const ex=brExamples(); if(!ex.length) return '';
+  return '<div class="br-chips" role="group" aria-label="Examples">'+ex.map(function(x,i){return '<button data-brex="'+i+'">'+esc(x)+'</button>';}).join('')+'</div>';
+}
+function brLabels(l){return (Array.isArray(l)?l:[]).map(function(x){return typeof x==='string'?x:x&&x.label;}).filter(function(x){return typeof x==='string'&&x;});}
+/* the advisor's stop wording is about ticking boxes; here she typed it */
+function brStopText(t){return String(t||'').replace(/leave this one unticked/g,'leave it out').replace(/\bticked\b/g,'mentioned');}
+function brRows(list,segs){
+  let h='<ol class="routine bd-list" id="brList">';
+  list.forEach(function(id,i){
+    const e=EX[id];
+    h+='<li><button data-ex="'+id+'" aria-label="How to do '+esc(e.name)+'"><span class="num">'+(i+1)+'</span>'+media(id,false,thumbFrame(e))+
+       '<span><span class="nm">'+e.name+'</span><span class="dt">'+e.detail+'</span>'+(e.caution?'<span class="cau">'+esc(e.caution)+'</span>':'')+'</span>'+
+       '<span class="tm">'+fmt(workSeconds(segs,i))+'</span></button></li>';
+  });
+  return h+'</ol>';
+}
+function renderBrief(){
+  if(!BR) return;
+  brBoxState();
+  const I=BR.interp, p=BR.plan, ready=typeof readBrief==='function'&&typeof briefPlan==='function';
+  $('brText').placeholder='For example: '+(brExamples()[0]||'12 minutes before golf, standing only, no strap');
+  let h='', showEx=!I||I.empty, foot=false;
+  if(!ready&&BR.at!==null){
+    h='<div class="br-none"><p>This part of the app is not ready yet. Use <b>Create your own</b> or <b>Help me choose</b> for now.</p></div>';
+  }else if(I&&I.empty){
+    h='<div class="br-none"><p><b>I could not pick anything out of that.</b></p><p>Try saying how long you have, what it is for and where you feel tight, like one of these.</p></div>';
+  }else if(p){
+    const heard=brLabels(p.heard&&p.heard.length?p.heard:I.heard), notes=(p.notes||[]).filter(Boolean);
+    if(heard.length) h+='<div class="br-sec"><h3>What I understood</h3><ul class="br-heard'+(p.stop?' stop':'')+'">'+heard.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+    if(notes.length) h+='<div class="br-notes">'+notes.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'</div>';
+    if(p.stop){
+      const L=(ADVICE.levels&&ADVICE.levels[p.stop])||ADVICE.levels.gp;
+      const said=ADVICE.flags.filter(function(f){return (p.flags||[]).indexOf(f.id)>=0;});
+      h+='<div class="adv-stop" role="alert"><h3 class="br-stop-h">'+esc(L.title)+'</h3><p>'+esc(brStopText(L.text))+'</p>'+
+        (L.call?'<a class="adv-call" href="tel:'+L.call+'">Call '+L.call+'</a>':'')+
+        (p.stop==='111'?'<a class="adv-link" href="https://111.nhs.uk" target="_blank" rel="noopener">NHS 111 online</a>':'')+'</div>';
+      if(said.length) h+='<h3 class="bd-h3">What you mentioned</h3><ul class="adv-ul">'+said.map(function(f){return '<li>'+esc(f.text)+'</li>';}).join('')+'</ul>';
+      h+='<p class="small">The app does not suggest stretches while any of these apply, so that you get checked first. If it misread you, change the words above and tap Build again. Outside the UK, use your local emergency number.</p>';
+    }else{
+      const list=(p.list||[]).filter(function(id){return !!EX[id];}), segs=list.length?buildTimeline(list):[], tot=totalSeconds(segs);
+      foot=true;
+      h+='<div class="bd-tot"><p><b>'+fmt(tot)+'</b> in total &middot; '+list.length+(list.length===1?' stretch':' stretches')+'</p>'+
+        (p.mins&&list.length?'<p class="bd-aim">'+esc(aimText(tot,p.mins))+'</p>':'')+'</div>';
+      const why=(p.why||[]).filter(Boolean);
+      if(why.length) h+='<div class="adv-why"><p>'+esc(why.slice(0,2).join(' '))+'</p>'+(why.length>2?'<p class="small">'+esc(why.slice(2).join(' '))+'</p>':'')+'</div>';
+      if(list.length) h+='<p class="small">Tap a stretch to see how to do it.</p>'+brRows(list,segs)+
+        (typeof builderFromBrief==='function'?'<button class="addbtn" id="brChange">Change the stretches</button>':'');
+      else h+='<p class="adv-guide">No stretches fit all of that. Try leaving fewer things out, or allow more positions.</p>';
+      if(p.left&&p.left.length){
+        h+='<div class="adv-left"><h3>Left out on purpose</h3><ul class="adv-ul">';
+        p.left.forEach(function(g){
+          const nm=(g.ids||[]).filter(function(id){return !!EX[id];}).map(function(id){return EX[id].name;});
+          if(!nm.length) return;
+          h+='<li><b>'+esc(nm.some(function(x){return x.indexOf(',')>=0;})?nm.join('; '):listText(nm))+'</b>: '+esc(String(g.reason||'').replace(/\.$/,''))+'.</li>';
+        });
+        h+='</ul></div>';
+      }
+      const care=(p.care||[]).filter(Boolean);
+      if(care.length) h+='<div class="br-care">'+care.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'</div>';
+      h+='<p class="adv-guide">This is general guidance, not a diagnosis. Stop any stretch that hurts or sends pain, tingling or numbness down an arm or leg. If things get worse, or have not improved within a few weeks, see a physiotherapist or your GP.</p>';
+      if(list.length) h+='<label class="field"><span>Name</span><input id="brName" maxlength="30" autocomplete="off" autocapitalize="sentences" enterkeyhint="done" value="'+esc(BR.name)+'"></label>'+
+        '<p class="name-taken" id="brTaken" role="alert"></p>'+
+        '<p class="small">It is saved with your routines. Voice and music are as set in Sound.</p>';
+      $('brSave').disabled=$('brGo').disabled=!list.length;
+    }
+  }
+  $('brOut').innerHTML=h;
+  $('brEx').innerHTML=showEx?(I&&I.empty?'':'<p class="small">Or tap one of these to start.</p>')+brChips():'';
+  $('brFoot').hidden=!foot;
+}
+function briefBuild(){
+  if(!BR) return;
+  const t=BR.text.trim(); if(!t) return;
+  try{$('brText').blur();}catch(e){}
+  BR.at=t; BR.interp=null; BR.plan=null;
+  if(typeof readBrief==='function'&&typeof briefPlan==='function'){
+    try{
+      BR.interp=readBrief(t)||{empty:true};
+      if(!BR.interp.empty) BR.plan=briefPlan(BR.interp);
+    }catch(e){BR.interp={empty:true}; BR.plan=null;}
+    BR.name=BR.plan&&BR.plan.name?String(BR.plan.name).slice(0,30):'';
+  }
+  renderBrief();
+  /* bring the answer up under the header; the box is still there above it */
+  const pg=$('brief'), out=$('brOut'), hd=pg.querySelector('.ed-hd');
+  const y=out.getBoundingClientRect().top-pg.getBoundingClientRect().top+pg.scrollTop-(hd?hd.offsetHeight:0)-8;
+  pg.scrollTop=Math.max(0,y);
+  /* screen readers move to the answer too */
+  const f=out.querySelector('h3,p'); if(f){f.setAttribute('tabindex','-1'); try{f.focus({preventScroll:true});}catch(e){}}
+}
+function brTaken(msg){
+  const el=$('brTaken'); if(!el) return;
+  el.textContent=msg||'';
+  if(msg){const i=$('brName'); if(i){i.focus(); try{i.scrollIntoView({block:'center'});}catch(e){}}}
+}
+function briefSave(start){
+  if(!BR||!BR.plan||BR.plan.stop) return;
+  const p=BR.plan, list=(p.list||[]).filter(function(id){return !!EX[id];});
+  if(!list.length) return;
+  const name=(BR.name||'').replace(/\s+/g,' ').trim().slice(0,30)||String(p.name||'My routine').slice(0,30);
+  if(typeof nameTaken==='function'&&nameTaken(name)){brTaken('You already have a routine called “'+name+'”. Choose another name.'); return;}
+  const id='u'+Date.now().toString(36);
+  RT.own.push({id:id,name:name,list:list.slice(),mins:cleanMins(p.mins),focus:cleanFocus(p.focus),voice:'',music:{mode:'usual',spotify:null},
+               brief:String(BR.at||BR.text).slice(0,200)});
+  saveRT(); settings.routine=id; store.set('mbs.routine',id);
+  closeBrief(); renderRoutines(); prepAudio();
+  if(start) startSession();
+}
+$('brCancel').addEventListener('click',closeBrief);
+$('brBuild').addEventListener('click',briefBuild);
+$('brClear').addEventListener('click',function(){if(!BR) return; BR.text=''; $('brText').value=''; brFit(); BR.interp=BR.plan=null; BR.at=null; renderBrief(); $('brText').focus();});
+$('brSave').addEventListener('click',function(){briefSave(false);});
+$('brGo').addEventListener('click',function(){briefSave(true);});
+$('brText').addEventListener('input',function(){if(!BR) return; BR.text=this.value.slice(0,BR_MAX); brBoxState(); brFit();});
+/* Return builds, as the keyboard's Go key says; the brief is one or two sentences */
+$('brText').addEventListener('keydown',function(ev){if(ev.key==='Enter'&&!ev.shiftKey&&!ev.isComposing){ev.preventDefault(); briefBuild();}});
+$('brief').addEventListener('input',function(ev){if(BR&&ev.target.id==='brName'){BR.name=ev.target.value; brTaken('');}});
+$('brief').addEventListener('keydown',function(ev){if(ev.target.id==='brName'&&ev.key==='Enter'){ev.preventDefault(); ev.target.blur();}});
+$('brief').addEventListener('click',function(ev){
+  if(!BR) return;
+  const q=function(s){return ev.target.closest(s);};
+  let b;
+  if((b=q('[data-brex]'))){
+    const x=brExamples()[Number(b.dataset.brex)]; if(!x) return;
+    BR.text=x; $('brText').value=x; brFit(); briefBuild(); return;
+  }
+  if((b=q('#brList [data-ex]'))){openHow(b.dataset.ex); return;}
+  if(q('#brChange')){
+    const p=BR.plan; if(!p||typeof builderFromBrief!=='function') return;
+    const d={name:(BR.name||'').trim().slice(0,30)||p.name,mins:p.mins,focus:(p.focus||[]).slice(),list:(p.list||[]).slice(),brief:String(BR.at||BR.text).slice(0,200)};
+    try{builderFromBrief(d);}catch(e){return;}
+    closeBrief();
+  }
+});
 (function initHome(){
   const t=today();
   $('todayDate').textContent=DOW[t.getDay()]+' '+t.getDate()+' '+MON[t.getMonth()];
