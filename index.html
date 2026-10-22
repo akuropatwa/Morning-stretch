@@ -1976,7 +1976,7 @@ const BRIEF={
     {id:'chest', label:'Chest', advice:null, parts:['shoulders'], prefer:['armopen','elbowsback','strapopen'],
       ids:['armopen','elbowsback'],
       words:["\\b(tight|stiff|open( up)?|opening|stretch( my| the)?|for( my| the)?) chest\\b", "\\bchest (muscles?|stretch\\w*|openers?)\\b",
-        "\\bpecs?\\b", "\\bpectorals?\\b", "\\b(rounded|round|hunched) shoulders\\b", "\\bhunch\\w*", "\\bposture\\b"]},
+        "(?:^|[,;:.!?(] ?|\\b(?:and|or|my|the|for|plus|also) )chest\\b(?! (pains?|hurts?|hurting|tightness|infection|is|feels|feeling|cold|problems?)\\b)", "\\bpecs?\\b", "\\bpectorals?\\b", "\\b(rounded|round|hunched) shoulders\\b", "\\bhunch\\w*", "\\bposture\\b"]},
     {id:'hips', label:'Hips', advice:'hips', parts:['hips'], prefer:[],
       ids:['fig4','hipflexor','kneecross','worlds','standhip','groin','hydrant','hipcircle','legswing','sideraise'],
       words:["\\bhips?\\b(?! (flexors?|replacement|resurfacing|operation|surgery|ops?|circles?|replaced|was replaced|were replaced|done)\\b)",
@@ -2129,7 +2129,8 @@ const BRIEF={
       "(?:^|[,;:.!?(] ?|\\b(?:and|but|just|only|all|mins?|minutes?|\\d+) )(?:standing|stood|standing up|stood up|upright|on my feet)(?: (?:only|please|pls|today|thanks|if possible|ones|stuff|stretches))? ?(?=[,;:.!?)]|$)",
       "\\bstanding (if possible|if you can|please|today|ones only|stuff|routine|stretch\\w*)\\b", "\\b(mins?|minutes?) (of )?(standing|stood up)\\b", "\\bstood up\\b"]},
     {label:'Seated only', pos:['sit'], also:['crossbody','rolls'],
-      note:'Sitting, there is no hamstring hold. The seated nerve glide is the nearest, and it is gentler.', words:["\\b(seated|sitting|sat)( down)? (only|ones|stretches|exercises)\\b", "\\bonly (seated|sitting|sat down|in (my|a|the) chair)\\b",
+      note:'Sitting, there is no hamstring hold. The seated nerve glide is the nearest, and it is gentler.', words:["\\b(seated|sitting|sat)( down)? (only|ones|stretches|exercises)\\b",
+      "(?:^|[,;:.!?(] ?|\\b(?:and|but|just|only|all|mins?|minutes?|\\d+) )(?:seated|sitting|sitting down|sat down|in (?:my|a|the) chair)(?: (?:only|please|pls|today|thanks|if possible|ones|stuff|stretches))? ?(?=[,;:.!?)]|$)", "\\bonly (seated|sitting|sat down|in (my|a|the) chair)\\b",
       "\\bchair (stretches|only|ones)\\b", "\\bfrom (my|a|the) chair\\b"]},
     {label:'Sitting or standing', pos:['sit','stand'], words:["\\b(sitting|seated) or standing\\b", "\\bstanding or (sitting|seated)\\b"]},
     {label:'At your desk', pos:['sit','stand'], words:["\\bat (my|the|a|your) desk\\b(?! (all|most of the) (day|morning|afternoon|week)\\b| (for|since) )", "\\bby (my|the) desk\\b", "\\bat my workstation\\b"]},
@@ -2139,8 +2140,10 @@ const BRIEF={
   /* she wants none of these positions. note (optional, on only and not): a plain line for notes when it applies. */
   not:[
     /* no positions: a phrase that names a body part but is not a wish to stretch it. The engine drops any area match
-       inside a position phrase, so "new hip" gives only the hip replacement care note, not the Hips area. */
-    {label:'', pos:[], words:["\\b(new|replaced|artificial|false|metal|titanium|bionic) (hips?|knees?)\\b(?= (last|this|in|a|two|three|four|five|six|\\d+|was|is|has|feels|fitted|op|operation|surgery)\\b|[.,;!?]|$)"]},
+       inside a position phrase, so "new hip" gives only the hip replacement care note, not the Hips area, and a new
+       ankle sprain gives the new injury note without making the calves the focus. */
+    {label:'', pos:[], words:["\\b(twisted|sprained|rolled|turned|went over on|gone over on|go over on|going over on|hurt|injured|strained|broke|broken|fractured) (my |an |the |her )?(left |right )?ankle\\b", "\\b(sprained|twisted|broken) ankle\\b", "\\bankle (sprain|injury|strain|fracture|ligament)\\b",
+      "\\b(new|replaced|artificial|false|metal|titanium|bionic) (hips?|knees?)\\b(?= (last|this|in|a|two|three|four|five|six|\\d+|was|is|has|feels|fitted|op|operation|surgery)\\b|[.,;!?]|$)"]},
     {label:'Nothing on the floor', pos:['back','side','front','fours','kneel'],
       note:'Off the floor there is no hamstring hold. Leg swings are the nearest, so do your hamstring stretch lying down later if you can.', words:["\\b(nothing|no|not|none|avoid|skip|without)( stuff| anything| exercises?| stretches?| ones?)? (on|on to|onto|down on) (the |a )?(floor|ground)\\b", "\\bno (floor|ground)\\b", "\\bnot on (the )?(floor|ground)\\b",
       "\\boff the (floor|ground)\\b", "\\b(skip|avoid|leave out|without|no|nothing|none of) (the |any |all )?(floor|ground)( stuff| work| ones| exercises| stretches| bits)?\\b", "\\b(no|without) getting down\\b", "\\b(nothing|no) (on the )?floor (stuff|work|exercises|stretches)\\b", "\\b(but|except|apart from|other than|without) (the |any )?floor( stuff| work| ones| exercises| stretches)\\b", "\\bcan'?t (get|go|lie) down\\b", "\\bcan'?t (get|go) (down )?(on|onto|on to) (the )?(floor|ground)\\b",
@@ -2456,9 +2459,18 @@ const BRIEF={
     {text:'padel tonight', expect:{goals:['padel']}},
     {text:'tennis tomorrow', expect:{goals:['tennis']}},
     {text:'played squash last night', expect:{goals:[], worse:['sport']}},
-    {text:'went over on my ankle yesterday', expect:{care:['injury'], areas:['calves'], flags:[]}},
+    {text:'went over on my ankle yesterday', expect:{care:['injury'], areas:[], flags:[]}},
     {text:'office, suit, quick', expect:{notPos:['back','side','front','fours','kneel'], mins:5}},
     {text:'whatever suits my back', expect:{notPos:[], areas:['lowback']}},
+    /* QA rounds 5 and 6 */
+    {text:'neck and shoulders from the laptop, 5 mins seated', expect:{only:['sit'], areas:['neck','shoulder'], mins:5}},
+    {text:'10 mins, sitting down', expect:{only:['sit'], mins:10}},
+    {text:'sitting makes it worse', expect:{only:null, worse:['sit']}},
+    {text:'upper back and chest, 10 mins', expect:{areas:['midback','chest'], mins:10, flags:[]}},
+    {text:'chest pain and upper back', expect:{flags:['chest']}},
+    {text:'twisted my ankle last week', expect:{care:['injury'], areas:[], flags:[]}},
+    {text:'twisted my ankle, 10 mins calves', expect:{care:['injury'], areas:['calves'], mins:10}},
+    {text:'stiff ankles', expect:{areas:['calves'], feel:['stiff']}},
     {text:'Sitting or standing, 6 minutes', expect:{only:['sit','stand'], mins:6}},
     {text:'45 minutes all round', expect:{mins:30, goals:['general']}},
     {text:'Twenty minute stretch for my calves', expect:{mins:20, areas:['calves']}},
