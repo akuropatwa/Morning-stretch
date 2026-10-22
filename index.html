@@ -711,6 +711,7 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
 .br-notes p::before{content:"";position:absolute;left:0;top:.55em;width:6px;height:6px;border-radius:50%;background:var(--muted)}
 .br-none{display:flex;flex-direction:column;gap:6px;background:var(--surface);box-shadow:var(--shadow);border-radius:18px;padding:14px 16px;font-size:16px;line-height:1.45}
 .br-none b{font-weight:700}
+.br-none .ghost{align-self:flex-start;margin-top:4px}
 .br-stop-h{font-size:22px;line-height:1.2}
 .br-care{display:flex;flex-direction:column;gap:8px}
 .br-care p{font-size:15px;line-height:1.45;color:var(--warn);background:var(--warn-bg);border-radius:18px;padding:12px 16px}
@@ -4970,9 +4971,10 @@ function renderBuilder(){
     if(B.xmins) h+='<button data-mins="'+B.xmins+'" aria-pressed="'+(cm===B.xmins)+'"><b>'+B.xmins+'</b><span>minutes</span></button>';
     h+='</div><p class="small">The app picks stretches to come as close to this as it can. You can change them on the next screens.</p>';
     /* the advice questionnaire, when it is in this version of the app */
-    if(B.mode==='new'&&typeof openAdvisor==='function')
+    /* not when the builder came from a brief: either would throw that routine away */
+    if(B.mode==='new'&&!B.brief&&typeof openAdvisor==='function')
       h+='<button class="bd-advise" id="bdAdvise"><span class="bd-t">Not sure? Help me choose</span><span class="bd-s">Answer a few questions and the app suggests a routine</span></button>';
-    if(B.mode==='new'&&typeof readBrief==='function'&&typeof openBrief==='function')
+    if(B.mode==='new'&&!B.brief&&typeof readBrief==='function'&&typeof openBrief==='function')
       h+='<button class="bd-advise" id="bdDescribe"><span class="bd-t">Describe it instead</span><span class="bd-s">Type what you want in your own words</span></button>';
   }else if(st==='focus'){
     h='<p class="small">Pick as many as you like, or leave it on all-round.</p><div class="bd-opts">'+
@@ -5348,7 +5350,11 @@ function brChips(){
   const ex=brExamples(); if(!ex.length) return '';
   return '<div class="br-chips" role="group" aria-label="Examples">'+ex.map(function(x,i){return '<button data-brex="'+i+'">'+esc(x)+'</button>';}).join('')+'</div>';
 }
-function brLabels(l){return (Array.isArray(l)?l:[]).map(function(x){return typeof x==='string'?x:x&&x.label;}).filter(function(x){return typeof x==='string'&&x;});}
+function brLabels(l){
+  const seen={};
+  return (Array.isArray(l)?l:[]).map(function(x){return typeof x==='string'?x:x&&x.label;})
+    .filter(function(x){if(typeof x!=='string'||!x) return false; const k=x.toLowerCase(); if(seen[k]) return false; seen[k]=1; return true;});
+}
 /* the advisor's stop wording is about ticking boxes; here she typed it */
 function brStopText(t){return String(t||'').replace(/leave this one unticked/g,'leave it out').replace(/\bticked\b/g,'mentioned');}
 function brRows(list,segs){
@@ -5372,8 +5378,14 @@ function renderBrief(){
   }else if(I&&I.empty){
     h='<div class="br-none"><p><b>I could not pick anything out of that.</b></p><p>Try saying how long you have, what it is for and where you feel tight, like one of these.</p></div>';
   }else if(p){
-    const heard=brLabels(p.heard&&p.heard.length?p.heard:I.heard), notes=(p.notes||[]).filter(Boolean);
-    if(heard.length) h+='<div class="br-sec"><h3>What I understood</h3><ul class="br-heard'+(p.stop?' stop':'')+'">'+heard.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
+    let heard=brLabels(p.heard&&p.heard.length?p.heard:I.heard);
+    /* "At your desk" already says desk; "Desk work" next to it reads as a repeat */
+    if(heard.indexOf('At your desk')>=0) heard=heard.filter(function(x){return x!=='Desk work';});
+    const list=(p.list||[]).filter(function(id){return !!EX[id];});
+    /* when nothing fits, the notes all say the same thing as the one message below, so only that is shown */
+    const notes=list.length?(p.notes||[]).filter(Boolean):[];
+    /* on a stop, "What you mentioned" lists the signs in full, so the tags are not repeated above it */
+    if(heard.length&&!p.stop) h+='<div class="br-sec"><h3>What I understood</h3><ul class="br-heard">'+heard.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>';
     if(notes.length) h+='<div class="br-notes">'+notes.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'</div>';
     if(p.stop){
       const L=(ADVICE.levels&&ADVICE.levels[p.stop])||ADVICE.levels.gp;
@@ -5383,16 +5395,19 @@ function renderBrief(){
         (p.stop==='111'?'<a class="adv-link" href="https://111.nhs.uk" target="_blank" rel="noopener">NHS 111 online</a>':'')+'</div>';
       if(said.length) h+='<h3 class="bd-h3">What you mentioned</h3><ul class="adv-ul">'+said.map(function(f){return '<li>'+esc(f.text)+'</li>';}).join('')+'</ul>';
       h+='<p class="small">The app does not suggest stretches while any of these apply, so that you get checked first. If it misread you, change the words above and tap Build again. Outside the UK, use your local emergency number.</p>';
+    }else if(!list.length){
+      h+='<div class="br-none" role="status"><p><b>No stretches fit all of that.</b></p><p>Try leaving out one of your limits, such as the position or the kit, then tap Build again.</p>'+
+        '<button class="ghost" id="brEdit">Change the description</button></div>';
     }else{
-      const list=(p.list||[]).filter(function(id){return !!EX[id];}), segs=list.length?buildTimeline(list):[], tot=totalSeconds(segs);
+      const segs=buildTimeline(list), tot=totalSeconds(segs);
       foot=true;
+      /* a shortfall of more than a minute already has its own note above, so the aim line is not repeated */
       h+='<div class="bd-tot"><p><b>'+fmt(tot)+'</b> in total &middot; '+list.length+(list.length===1?' stretch':' stretches')+'</p>'+
-        (p.mins&&list.length?'<p class="bd-aim">'+esc(aimText(tot,p.mins))+'</p>':'')+'</div>';
+        (p.mins&&p.mins*60-tot<=60?'<p class="bd-aim">'+esc(aimText(tot,p.mins))+'</p>':'')+'</div>';
       const why=(p.why||[]).filter(Boolean);
       if(why.length) h+='<div class="adv-why"><p>'+esc(why.slice(0,2).join(' '))+'</p>'+(why.length>2?'<p class="small">'+esc(why.slice(2).join(' '))+'</p>':'')+'</div>';
-      if(list.length) h+='<p class="small">Tap a stretch to see how to do it.</p>'+brRows(list,segs)+
+      h+='<p class="small">Tap a stretch to see how to do it.</p>'+brRows(list,segs)+
         (typeof builderFromBrief==='function'?'<button class="addbtn" id="brChange">Change the stretches</button>':'');
-      else h+='<p class="adv-guide">No stretches fit all of that. Try leaving fewer things out, or allow more positions.</p>';
       if(p.left&&p.left.length){
         h+='<div class="adv-left"><h3>Left out on purpose</h3><ul class="adv-ul">';
         p.left.forEach(function(g){
@@ -5405,10 +5420,9 @@ function renderBrief(){
       const care=(p.care||[]).filter(Boolean);
       if(care.length) h+='<div class="br-care">'+care.map(function(x){return '<p>'+esc(x)+'</p>';}).join('')+'</div>';
       h+='<p class="adv-guide">This is general guidance, not a diagnosis. Stop any stretch that hurts or sends pain, tingling or numbness down an arm or leg. If things get worse, or have not improved within a few weeks, see a physiotherapist or your GP.</p>';
-      if(list.length) h+='<label class="field"><span>Name</span><input id="brName" maxlength="30" autocomplete="off" autocapitalize="sentences" enterkeyhint="done" value="'+esc(BR.name)+'"></label>'+
+      h+='<label class="field"><span>Name</span><input id="brName" maxlength="30" autocomplete="off" autocapitalize="sentences" enterkeyhint="done" value="'+esc(BR.name)+'"></label>'+
         '<p class="name-taken" id="brTaken" role="alert"></p>'+
         '<p class="small">It is saved with your routines. Voice and music are as set in Sound.</p>';
-      $('brSave').disabled=$('brGo').disabled=!list.length;
     }
   }
   $('brOut').innerHTML=h;
@@ -5472,6 +5486,7 @@ $('brief').addEventListener('click',function(ev){
     BR.text=x; $('brText').value=x; brFit(); briefBuild(); return;
   }
   if((b=q('#brList [data-ex]'))){openHow(b.dataset.ex); return;}
+  if(q('#brEdit')){const t=$('brText'); $('brief').scrollTop=0; t.focus(); try{t.setSelectionRange(t.value.length,t.value.length);}catch(e){} return;}
   if(q('#brChange')){
     const p=BR.plan; if(!p||typeof builderFromBrief!=='function') return;
     const d={name:(BR.name||'').trim().slice(0,30)||p.name,mins:p.mins,focus:(p.focus||[]).slice(),list:(p.list||[]).slice(),brief:cleanBrief(String(BR.at||BR.text)),keep:keepOf(p)};
