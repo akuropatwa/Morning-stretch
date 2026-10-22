@@ -1785,12 +1785,17 @@ const ADVICE={
       {id:'floor', label:'On the floor', sub:'Lying down and kneeling are fine', short:'On the floor', only:null, not:[], also:[], note:''},
       {id:'nokneel', label:'On the floor, no kneeling', sub:'Lying down is fine, but not kneeling or on all fours', short:'No kneeling',
         only:null, not:['kneel','fours'], also:[], note:''},
+      /* preferFor: when a part she wants to stretch has lost its usual stretches to this limit, these allowed ones are
+         picked first for it (in order). The safety rules still win: leg swings stay out with nerve symptoms, on a sore
+         day or after a hip replacement. */
       {id:'stand', label:'Standing only', sub:'Nothing on the floor or in a chair', short:'Standing only', only:['stand'], not:[], also:['sideneck'],
+        preferFor:{ham:['legswing'], back:['midback','sidebend'], core:['squat']},
         note:'There is no standing hamstring hold. Leg swings are the nearest, so do your hamstring stretch lying down later if you can.',
         gaps:{ham:'There is no standing hamstring hold. Leg swings are the nearest, so do your hamstring stretch lying down later if you can.',
           back:'Standing, there are no lower back stretches. The standing twist and side bend keep your back moving, so do pelvic tilts or knee rolls lying down later if you can.',
           core:'The core strength moves are all done lying down or on all fours. Mini squats are the nearest standing.'}},
       {id:'desk', label:'At my desk', sub:'Sitting or standing, in work clothes', short:'At your desk', only:['sit','stand'], not:[], also:[],
+        preferFor:{ham:['legswing','glide'], back:['chairbend','midback'], core:['squat']},
         note:'At a desk there is no hamstring hold. Leg swings and the seated nerve glide are the nearest, so do your hamstring stretch lying down later if you can.',
         gaps:{ham:'At a desk there is no hamstring hold. Leg swings and the seated nerve glide are the nearest, so do your hamstring stretch lying down later if you can.',
           back:'At a desk there are no lower back stretches. The standing twist and the seated side bend keep your back moving, so do pelvic tilts or knee rolls lying down later if you can.',
@@ -1994,6 +1999,8 @@ const BRIEF={
        Every safety rule still applies (nerve symptoms, what makes it worse, sharp pain, a sore day, red flags). */
     {id:'discold', label:'Old disc, settled', words:["^(?=[\\s\\S]*\\b(?:years ago|a year ago|over a year ago|long (?:time )?ago|ages ago|decades? ago|in (?:19|20)\\d\\d|when i was (?:younger|young|in my \\w+)|in my (?:twenties|thirties|forties|20s|30s|40s)|used to have|history of|in the past|old (?:disc|injury|problem|back injury)|(?:settled|healed|recovered|resolved)|(?:fine|ok|okay|good|better|sorted|fixed) now|been fine|no (?:problems?|trouble|issues|flare-?ups|pain) (?:since|for (?:years|ages|a long time|a while)|now)|not (?:bothered|troubled) me (?:for|since|in)|hasn'?t (?:played up|bothered me|been a problem)|not (?:played up|been a problem) (?:for|since|in)))(?![\\s\\S]*\\b(?:playing up|plays up|flar\\w*|acting up|recent\\w*|this (?:week|month|year|morning)|last (?:week|month|few (?:weeks|months)|couple of (?:weeks|months))|(?:days|weeks|a month|months|a few months|couple of months) ago|(?:\\d|two|three|four|five|six) months ago|again|gone again|went again|has gone|just (?:slipped|done)|bad (?:today|at the moment|right now)|at the moment|right now|currently|still (?:sore|bad|hurts|painful|bothering)|sciatica|down (?:my|the|one) leg|tingl\\w*|numb\\w*|waiting (?:for|to see)|physio (?:for|about) it))[\\s\\S]*?(?:\\b(?:slipped|prolapsed?|herniat\\w*|bulg\\w*|ruptured|degenerat\\w*) (?:lumbar )?dis[ck]s?\\b|\\bdis[ck]s?\\b(?! (?:golf|jockey|brakes?|drive|space)\\b)|\\bl[3-5][ \\/-]?(?:l?[4-5]|s1)\\b)"],
       text:'As your disc problem started more than a year ago, the usual stretches are in, press-ups included. Ease into each one, and stop any stretch that sends pain, tingling or numbness down a leg. If it is flaring up today, give your back a low score and the routine will keep to gentler stretches.',
+      /* briefText: Describe's wording (she typed the words, so it gives no date and does not mention the back score) */
+      briefText:'As your disc problem is in the past, the usual stretches are in, press-ups included. Ease into each one, and stop any stretch that sends pain, tingling or numbness down a leg. If it is playing up today, add that to your description and the routine will keep to gentler stretches.',
       prefer:['pressup'], preferWhen:['back']},
     {id:'operation', label:'Recent operation', words:["\\b(operation|surgery|surgeon)\\b", "\\bpost[- ]?op\\b", "\\b(discectomy|microdiscectomy|laminectomy|decompression|spinal fusion|arthroscopy|keyhole)\\b",
         "\\b(knee|back|hip|shoulder|spine|spinal|disc|hernia|ankle|foot|neck|heart|stomach|tummy|bowel|my|an|the|recent|last|keyhole|big|small|minor) ops?\\b", "\\bops? on (my|the|his|her)\\b"],
