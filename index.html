@@ -1793,7 +1793,12 @@ const ADVICE={
     /* the one extra question (see physio-notes.md): things that change which stretches are safe. care: the BRIEF.care id
        whose avoid, share, left and text apply, so Help me choose and Describe treat them the same way. */
     care:{q:'Do any of these apply to you?', hint:'Pick all that apply. They change which stretches are safe for you.', none:'none', opts:[
-      {id:'disc', label:'A disc problem', sub:'Now or in the past, such as a slipped disc', care:'disc'},
+      /* follow: asked straight away, on this screen, while disc is ticked (single choice, required). Each answer names
+         the BRIEF.care entry to apply in place of this option's care. Stored as ans.disc. */
+      {id:'disc', label:'A disc problem', sub:'Now or in the past, such as a slipped disc', care:'disc',
+        follow:{key:'disc', q:'Is your disc problem old and settled, or recent?', opts:[
+          {id:'old', label:'Old and settled', sub:'No flare-ups for a while, and nothing goes down your leg', care:'discold', short:'Old disc, settled'},
+          {id:'recent', label:'Recent or flaring up', sub:'In the last few months, or playing up now', care:'disc', short:'Recent disc problem'}]}},
       {id:'injury', label:'A new strain or injury', sub:'In the last few weeks', care:'injury'},
       {id:'operation', label:'An operation in the last few months', care:'operation'},
       {id:'hiprep', label:'A hip replacement', care:'hiprep'},
@@ -1974,9 +1979,17 @@ const BRIEF={
       text:'As you are pregnant, stretches lying on your back or your front, and deep lunges, are left out. Do not stretch further than feels easy. Check with your midwife or GP before starting new exercise, and stop if anything feels wrong.',
       left:'they have you lying on your back or front, or in a deep lunge, which is best avoided while you are pregnant',
       avoid:['tilt','kneeroll','ham','activeham','fig4','bridge','kneehug','onekneechest','legup','kneecross','groin','deadbug','legbridge','pressup','cobra','worlds'], share:0.25},
-    {id:'disc', label:'Disc problem', words:["\\b(slipped|prolapsed?|herniat\\w*|bulg\\w*|ruptured|degenerat\\w*) (lumbar )?dis[ck]s?\\b", "\\bdis[ck]s?\\b(?! (golf|jockey|brakes?|drive|space)\\b)", "\\bl[3-5][ \\/-]?(l?[4-5]|s1)\\b"],
+    /* a disc problem now, or one she does not say is settled: the cautious entry. With a settled word anywhere in the
+       brief and no word that it is playing up now, the brief reads as discold instead (below). */
+    {id:'disc', label:'Disc problem', words:["^(?!(?=[\\s\\S]*\\b(?:years ago|a year ago|over a year ago|long (?:time )?ago|ages ago|decades? ago|in (?:19|20)\\d\\d|when i was (?:younger|young|in my \\w+)|in my (?:twenties|thirties|forties|20s|30s|40s)|used to have|history of|in the past|old (?:disc|injury|problem|back injury)|(?:settled|healed|recovered|resolved)|(?:fine|ok|okay|good|better|sorted|fixed) now|been fine|no (?:problems?|trouble|issues|flare-?ups|pain) (?:since|for (?:years|ages|a long time|a while)|now)|not (?:bothered|troubled) me (?:for|since|in)|hasn'?t (?:played up|bothered me|been a problem)|not (?:played up|been a problem) (?:for|since|in)))(?![\\s\\S]*\\b(?:playing up|plays up|flar\\w*|acting up|recent\\w*|this (?:week|month|year|morning)|last (?:week|month|few (?:weeks|months)|couple of (?:weeks|months))|(?:days|weeks|a month|months|a few months|couple of months) ago|(?:\\d|two|three|four|five|six) months ago|again|gone again|went again|has gone|just (?:slipped|done)|bad (?:today|at the moment|right now)|at the moment|right now|currently|still (?:sore|bad|hurts|painful|bothering)|sciatica|down (?:my|the|one) leg|tingl\\w*|numb\\w*|waiting (?:for|to see)|physio (?:for|about) it)))[\\s\\S]*?(?:\\b(?:slipped|prolapsed?|herniat\\w*|bulg\\w*|ruptured|degenerat\\w*) (?:lumbar )?dis[ck]s?\\b|\\bdis[ck]s?\\b(?! (?:golf|jockey|brakes?|drive|space)\\b)|\\bl[3-5][ \\/-]?(?:l?[4-5]|s1)\\b)"],
       text:'With a disc problem, ease into each stretch and keep forward bends short. If a stretch sends pain or tingling further down a leg, stop that one.',
       share:0.25},
+    /* an old disc problem, settled: the note only. No lower caution share, so press-ups (hips down) and the other usual
+       stretches come in as normal; press-ups are picked first only when the lower back is in the focus (preferWhen).
+       Every safety rule still applies (nerve symptoms, what makes it worse, sharp pain, a sore day, red flags). */
+    {id:'discold', label:'Old disc, settled', words:["^(?=[\\s\\S]*\\b(?:years ago|a year ago|over a year ago|long (?:time )?ago|ages ago|decades? ago|in (?:19|20)\\d\\d|when i was (?:younger|young|in my \\w+)|in my (?:twenties|thirties|forties|20s|30s|40s)|used to have|history of|in the past|old (?:disc|injury|problem|back injury)|(?:settled|healed|recovered|resolved)|(?:fine|ok|okay|good|better|sorted|fixed) now|been fine|no (?:problems?|trouble|issues|flare-?ups|pain) (?:since|for (?:years|ages|a long time|a while)|now)|not (?:bothered|troubled) me (?:for|since|in)|hasn'?t (?:played up|bothered me|been a problem)|not (?:played up|been a problem) (?:for|since|in)))(?![\\s\\S]*\\b(?:playing up|plays up|flar\\w*|acting up|recent\\w*|this (?:week|month|year|morning)|last (?:week|month|few (?:weeks|months)|couple of (?:weeks|months))|(?:days|weeks|a month|months|a few months|couple of months) ago|(?:\\d|two|three|four|five|six) months ago|again|gone again|went again|has gone|just (?:slipped|done)|bad (?:today|at the moment|right now)|at the moment|right now|currently|still (?:sore|bad|hurts|painful|bothering)|sciatica|down (?:my|the|one) leg|tingl\\w*|numb\\w*|waiting (?:for|to see)|physio (?:for|about) it))[\\s\\S]*?(?:\\b(?:slipped|prolapsed?|herniat\\w*|bulg\\w*|ruptured|degenerat\\w*) (?:lumbar )?dis[ck]s?\\b|\\bdis[ck]s?\\b(?! (?:golf|jockey|brakes?|drive|space)\\b)|\\bl[3-5][ \\/-]?(?:l?[4-5]|s1)\\b)"],
+      text:'As your disc problem is old and settled, the usual stretches are in, press-ups included. Ease into each one, and stop any stretch that sends pain, tingling or numbness down a leg. If it starts playing up again, say so and the routine will go more gently.',
+      prefer:['pressup'], preferWhen:['back']},
     {id:'operation', label:'Recent operation', words:["\\b(operation|surgery|surgeon)\\b", "\\bpost[- ]?op\\b", "\\b(discectomy|microdiscectomy|laminectomy|decompression|spinal fusion|arthroscopy|keyhole)\\b",
         "\\b(knee|back|hip|shoulder|spine|spinal|disc|hernia|ankle|foot|neck|heart|stomach|tummy|bowel|my|an|the|recent|last|keyhole|big|small|minor) ops?\\b", "\\bops? on (my|the|his|her)\\b"],
       text:'As you have had an operation, follow the exercises and limits your surgeon or physiotherapist gave you first. The stronger stretches, and the ones that bend, arch or twist your back a long way, are left out. Stop if anything pulls on the scar or hurts.',
@@ -2331,7 +2344,7 @@ const BRIEF={
     {text:'Stiff after a fall on the ice yesterday, 10 minutes', expect:{flags:['accident'], mins:10}},
     {text:'I slipped on the stairs and my back hurts', expect:{flags:['accident'], areas:['lowback']}},
     {text:'I fell asleep on the sofa and my neck is stiff, ten mins', expect:{flags:[], mins:10, areas:['neck'], feel:['stiff']}},
-    {text:'Slipped disc years ago, 15 minutes hamstrings', expect:{flags:[], care:['disc'], areas:['thigh'], mins:15}},
+    {text:'Slipped disc years ago, 15 minutes hamstrings', expect:{flags:[], care:['discold'], areas:['thigh'], mins:15}},
     {text:'Chest pain and a sore back', expect:{flags:['chest']}},
     {text:'Tight chest and shoulders from the desk', expect:{flags:[], areas:['chest','shoulder'], goals:['desk']}},
     {text:'My left foot keeps catching when I walk', expect:{flags:['weakleg']}},
@@ -2526,6 +2539,19 @@ const BRIEF={
     {text:'twisted my ankle last week', expect:{care:['injury'], areas:[], flags:[]}},
     {text:'twisted my ankle, 10 mins calves', expect:{care:['injury'], areas:['calves'], mins:10}},
     {text:'stiff ankles', expect:{areas:['calves'], feel:['stiff']}},
+    /* v18: old and settled disc, or recent */
+    {text:'old disc, 10 mins lower back', expect:{care:['discold'], areas:['lowback'], mins:10}},
+    {text:'slipped a disc years ago, back is stiff', expect:{care:['discold'], areas:['lowback'], feel:['stiff']}},
+    {text:'my disc is fine now, 15 mins', expect:{care:['discold'], mins:15}},
+    {text:'disc settled, press-ups please', expect:{care:['discold'], includeIds:['pressup']}},
+    {text:'history of a prolapsed disc, 12 mins golf', expect:{care:['discold'], goals:['golf'], mins:12}},
+    {text:'prolapsed disc in 2019, no problems since', expect:{care:['discold']}},
+    {text:'my disc is playing up', expect:{care:['disc']}},
+    {text:'slipped a disc last month', expect:{care:['disc']}},
+    {text:'old disc but it is flaring up again', expect:{care:['disc']}},
+    {text:'disc years ago, sciatica down my left leg now', expect:{care:['disc'], feel:['nerve']}},
+    {text:'prolapsed disc, 10 mins', expect:{care:['disc'], mins:10}},
+    {text:'disc golf', expect:{care:[]}},
     {text:'Sitting or standing, 6 minutes', expect:{only:['sit','stand'], mins:6}},
     {text:'45 minutes all round', expect:{mins:30, goals:['general']}},
     {text:'Twenty minute stretch for my calves', expect:{mins:20, areas:['calves']}},
