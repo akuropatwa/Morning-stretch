@@ -2551,6 +2551,14 @@ function advSingle(k){
   if(q.single===false) return false;
   return (typeof k==='string'&&ADV_SINGLE.indexOf(k)>=0)||!q.none;
 }
+/* The settled form of the disc care entry, in whichever shape the data gives it: a BRIEF.care entry `discOld`, or an
+   `old` object on the disc entry ({text, share, avoid, prefer, left}), else the disc entry without its lower share. */
+function discOld(CARE,disc){
+  const sep=(CARE||[]).filter(function(x){return x&&x.id==='discOld';})[0];
+  if(sep) return sep;
+  const o=disc&&disc.old&&typeof disc.old==='object'?disc.old:null;
+  return {id:'discOld', label:o&&o.label||disc.label, text:o?o.text:disc.text, share:o?o.share:undefined, avoid:o?o.avoid:[], left:o?o.left:'', prefer:o?o.prefer:[]};
+}
 /* stretches that need the strap: the question's list, else Describe's, else the three that use it */
 function advStrapIds(){
   const q=ADVICE.Q&&ADVICE.Q.strap;
@@ -2642,9 +2650,12 @@ function advisePlan(ans){
   L(ans.care).forEach(function(id){
     if(id===cNone) return;
     const o=opt('care',id); if(!o) return;
-    const c=CARE.filter(function(x){return x&&x.id===(o.care||o.id);})[0]; if(!c) return;
+    let c=CARE.filter(function(x){return x&&x.id===(o.care||o.id);})[0]; if(!c) return;
+    /* a disc problem that is old and settled: the settled form of the entry (no lower caution share, its own calm note) */
+    if((o.care||o.id)==='disc'&&ans.disc==='old') c=discOld(CARE,c);
     takeOut(c.avoid,c.left||'they need extra care with what you told me, so they are left out to be safe');
     if(typeof c.share==='number'&&isFinite(c.share)) share=Math.min(share,Math.max(0,c.share));
+    L(c.prefer).forEach(function(x){if(EX[x]&&avoid.indexOf(x)<0) uniq(prefer,x);});
     if(c.text&&care.indexOf(String(c.text))<0) care.push(String(c.text));
   });
   /* any other answer whose option carries rules (a later question): applied like a rule */
@@ -3028,15 +3039,24 @@ function briefPlan(interp){
   const ids=function(k){const ok=ADVICE.Q[k].opts.map(function(o){return o.id;}); return arr(A[k]).filter(function(x,i,a){return ok.indexOf(x)>=0&&a.indexOf(x)===i;});};
   const sc=Number(A.score);
   const p=advisePlan({areas:ids('areas'),feel:ids('feel'),worse:ids('worse'),goals:ids('goals'),score:A.score!=null&&Number.isInteger(sc)&&sc>=1&&sc<=5?sc:null});
-  const avoid=p.avoid.slice(), left=p.left.map(function(g){return {ids:g.ids.slice(),reason:g.reason};}), shares=[p.cautionShare];
+  const avoid=p.avoid.slice(), left=p.left.map(function(g){return {ids:g.ids.slice(),reason:g.reason};}), shares=[p.cautionShare], carePrefer=[];
   const add=function(list){const o=[]; arr(list).forEach(function(id){if(EX[id]&&avoid.indexOf(id)<0){avoid.push(id); o.push(id);}}); return o;};
   /* care notes (an operation, pregnancy and the like): safety, so what she asks for cannot bring these back */
-  arr(D.care).forEach(function(c){
-    if(!c||arr(I.care).indexOf(c.id)<0) return;
+  /* an old, settled disc ("old disc", "disc is fine now"): its settled entry replaces the cautious one; the settled
+     form comes from a `discOld` entry, or from words on the disc entry's `old` (see discOld) */
+  const careIds=arr(I.care).slice();
+  const discE=arr(D.care).filter(function(c){return c&&c.id==='disc';})[0];
+  if(careIds.indexOf('disc')>=0&&discE&&discE.old&&arr(discE.old.words).some(function(w){try{return new RegExp(w,'i').test(briefNorm(I.text));}catch(e){return false;}})) careIds.push('discOld');
+  const careList=arr(D.care).slice();
+  if(careIds.indexOf('discOld')>=0&&!careList.some(function(c){return c&&c.id==='discOld';})&&discE) careList.push(discOld(D.care,discE));
+  if(careIds.indexOf('discOld')>=0&&careIds.indexOf('disc')>=0) careIds.splice(careIds.indexOf('disc'),1);   /* settled replaces cautious */
+  careList.forEach(function(c){
+    if(!c||careIds.indexOf(c.id)<0) return;
     const o=add(c.avoid);
     if(o.length) left.push({ids:o,reason:c.left||'they need extra care with what you told me, so they are left out to be safe'});
     if(typeof c.share==='number') shares.push(c.share);
     if(c.text) P.care.push(String(c.text));
+    arr(c.prefer).forEach(function(x){if(EX[x]) carePrefer.push(x);});
   });
   const safe=avoid.slice();
   /* her own limits: positions, kit she does not have, stretches she does not want */
@@ -3091,7 +3111,7 @@ function briefPlan(interp){
   const prefer=[];
   const pre=function(list){arr(list).forEach(function(id){if(EX[id]&&avoid.indexOf(id)<0) uniq(prefer,id);});};
   const areas=arr(I.areas), goals=arr(I.goals);
-  pre(inc); pre(p.prefer);
+  pre(inc); pre(p.prefer); pre(carePrefer);
   goals.forEach(function(g){pre(g.prefer);}); areas.forEach(function(a){pre(a.prefer);}); mods.forEach(function(m){pre(m.prefer);});
   /* an area she asked for whose usual stretches her limits rule out: any of its stretches that is still allowed
      ("nothing on the floor, no strap, hamstrings" still gets leg swings) */
@@ -4864,8 +4884,13 @@ function cleanAdvice(a){
   const sc=Number(ans.score);
   const out={at:typeof a.at==='string'?a.at.slice(0,30):'',
           answers:{areas:list('areas'),feel:list('feel'),worse:list('worse'),score:ans.score!=null&&ans.score!==''&&Number.isInteger(sc)&&sc>=1&&sc<=5?sc:null,
-                   goals:list('goals'),mins:cleanMins(ans.mins),stretch:list('stretch'),strap:one('strap'),where:one('where')},
+                   goals:list('goals'),mins:cleanMins(ans.mins),stretch:list('stretch'),strap:one('strap'),where:one('where'),care:list('care')},
           routine:typeof a.routine==='string'&&/^u[\w-]{1,40}$/.test(a.routine)?a.routine:''};
+  /* the disc follow-up on the care screen: 'old' or 'recent', only while "a disc problem" is ticked */
+  const discTicked=out.answers.care&&out.answers.care.some(function(id){
+    try{const o=ADVICE.Q.care.opts.filter(function(x){return x.id===id;})[0]; return !!o&&(o.care||o.id)==='disc';}catch(e){return false;}
+  });
+  out.answers.disc=discTicked&&(ans.disc==='old'||ans.disc==='recent')?ans.disc:null;
   /* a further question physio may add (one at most): kept the same way, by its own ids */
   try{
     Object.keys(ADVICE.Q).forEach(function(k){
@@ -5559,11 +5584,22 @@ let AD_STEPS=advSteps();
 function advSteps(){
   const fixed={flags:1,score:1,mins:1,result:1};
   const l=AD_ORDER.filter(function(k){return fixed[k]||(ADVICE.Q&&ADVICE.Q[k]&&Array.isArray(ADVICE.Q[k].opts));});
-  Object.keys(ADVICE.Q||{}).forEach(function(k){if(l.indexOf(k)<0&&Array.isArray(ADVICE.Q[k].opts)) l.splice(l.indexOf('mins'),0,k);});
+  /* the disc follow-up sits on the care screen, so it is never a screen of its own */
+  Object.keys(ADVICE.Q||{}).forEach(function(k){if(k!=='disc'&&l.indexOf(k)<0&&Array.isArray(ADVICE.Q[k].opts)) l.splice(l.indexOf('mins'),0,k);});
   return l;
 }
 /* a required single-choice question waits for an answer before Next */
-function advNeeds(st){const q=ADVICE.Q&&ADVICE.Q[st]; return !!q&&advSingle(st)&&q.required!==false&&!AD.ans[st];}
+function advNeeds(st){
+  const q=ADVICE.Q&&ADVICE.Q[st];
+  if(!!q&&advSingle(st)&&q.required!==false&&!AD.ans[st]) return true;
+  /* the care screen waits for the disc follow-up while "a disc problem" is ticked */
+  if(st==='care'&&advDiscTicked()&&AD.ans.disc!=='old'&&AD.ans.disc!=='recent') return true;
+  return false;
+}
+function advDiscTicked(){
+  const c=ADVICE.Q&&ADVICE.Q.care; if(!c||!AD||!Array.isArray(AD.ans.care)) return false;
+  return AD.ans.care.some(function(id){const o=c.opts.filter(function(x){return x.id===id;})[0]; return !!o&&(o.care||o.id)==='disc';});
+}
 function advSaved(){
   const a=(RT&&RT.advice&&typeof RT.advice==='object')?RT.advice:store.get('mbs.advice',null);
   return a&&typeof a==='object'&&a.answers&&typeof a.answers==='object'?a:null;
@@ -5583,6 +5619,7 @@ function openAdvisor(){
     if(advSingle(k)){const v=advList(typeof a[k]==='string'?[a[k]]:[],k); AD.ans[k]=v.length?v[0]:null;}
     else AD.ans[k]=advList(a[k],k);
   });
+  AD.ans.disc=a.disc==='old'||a.disc==='recent'?a.disc:null;      /* the disc follow-up, prefilled */
   renderAdvisor(); $('advisor').hidden=false; $('advisor').scrollTop=0;
 }
 function closeAdvisor(){AD=null; $('advisor').hidden=true;}
@@ -5644,9 +5681,12 @@ function advToggle(k,id){
   if(advSingle(k)){AD.ans[k]=id; return;}      /* one answer: tapping another replaces it */
   if(!Array.isArray(AD.ans[k])) AD.ans[k]=[];
   const l=AD.ans[k], none=ADVICE.Q[k].none;
-  if(id===none){AD.ans[k]=l.indexOf(none)>=0?[]:[none]; return;}
-  const i=l.indexOf(id); if(i>=0) l.splice(i,1); else l.push(id);
-  const j=l.indexOf(none); if(j>=0) l.splice(j,1);
+  if(id===none) AD.ans[k]=l.indexOf(none)>=0?[]:[none];
+  else{
+    const i=l.indexOf(id); if(i>=0) l.splice(i,1); else l.push(id);
+    const j=l.indexOf(none); if(j>=0) l.splice(j,1);
+  }
+  if(k==='care'&&!advDiscTicked()) AD.ans.disc=null;     /* the disc follow-up goes with the disc tick */
 }
 function renderAdvisor(){
   const st=AD.stop?'stop':AD_STEPS[AD.step];
@@ -5761,6 +5801,7 @@ function advSave(start){
   if(pr){Object.assign(pr,rec); if(!kp) delete pr.keep;} else RT.own.push(rec);
   const a=AD.ans, ans={areas:a.areas.slice(),feel:a.feel.slice(),worse:a.worse.slice(),score:a.score,goals:a.goals.slice(),mins:cleanMins(a.mins)};
   Object.keys(ADVICE.Q).forEach(function(k){if(!(k in ans)&&k in a) ans[k]=Array.isArray(a[k])?a[k].slice():a[k];});
+  ans.disc=a.disc||null;
   RT.advice=cleanAdvice({at:new Date().toISOString(),answers:ans,routine:id});
   store.set('mbs.advice',RT.advice);
   saveRT(); settings.routine=id; store.set('mbs.routine',id);
