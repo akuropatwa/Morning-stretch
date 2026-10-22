@@ -2602,7 +2602,15 @@ function advisePlan(ans){
   if(W){
     const want=focus.length?focus:['back','ham'];
     const whereOut=avoid.filter(function(id){const pos=EX[id].pos; return (Array.isArray(W.only)&&W.only.length&&W.only.indexOf(pos)<0)||L(W.not).indexOf(pos)>=0;});
-    if(W.note&&whereOut.some(function(id){return want.indexOf(EX[id].part)>=0;})) notes.push(String(W.note));
+    /* the note is for a real gap: a part she wants that loses at least half its stretches this way */
+    /* a note that names a body part ("no standing hamstring hold") is about that part only */
+    const nl=String(W.note||'').toLowerCase();
+    const about=PARTS.filter(function(x){return nl.indexOf(x[1].toLowerCase().split(/[ ,]/)[0].replace(/s$/,''))>=0;}).map(function(x){return x[0];});
+    const gap=want.filter(function(pt){return !about.length||about.indexOf(pt)>=0;}).some(function(pt){
+      const all=Object.keys(EX).filter(function(id){return EX[id].part===pt;});
+      return all.length&&all.filter(function(id){return whereOut.indexOf(id)>=0;}).length*2>=all.length;
+    });
+    if(W.note&&gap) notes.push(String(W.note));
   }
   /* a part left with nothing at all, unless the note above already speaks of it */
   const said=notes.join(' ').toLowerCase();
