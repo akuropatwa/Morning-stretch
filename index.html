@@ -2374,6 +2374,12 @@ function briefNum(w){
   return p.reduce(function(a,x){return a+(BRIEF_NUM[x]||0);},0)||null;
 }
 function briefMins(t){
+  /* minutes, with the usual typos and autocorrect ("minits", "minuets", "mintues", "mns") */
+  const U='(?:minutes?|mins?|minits?|minuets?|minuts?|mintues?|mintes?|minites?|minuites?|minuetes?|mns|mnts?)';
+  /* a bare number: digits or words, never "one" or "a" ("quick one" is not one minute) */
+  const NB='(\\d{1,3}|(?:twenty|thirty)(?:[\\s-]?(?:one|two|three|four|five|six|seven|eight|nine)\\b)?|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|eleven|twelve|two|three|four|five|six|seven|eight|nine|ten)';
+  /* not a length when a unit or a score follows: "12 weeks", "10/10", "9 out of 10", "3 reps" */
+  const NOTU='(?![\\d.]|\\s*(?:/|%|:|x\\b|th\\b|st\\b|nd\\b|rd\\b|weeks?|wks?|days?|months?|years?|yrs?|y/?o\\b|reps?|times|sets?|kg|kilos?|lbs?|pounds?|stone|out\\b|of\\b|am\\b|pm\\b|o.?clock|hours?|hrs?|seconds?|secs?|people|kids|children|holes?|miles?|km|k\\b|steps|degrees?))';
   const N='(\\d+(?:\\.\\d+)?|(?:twenty|thirty|forty|fifty|sixty)(?:[\\s-]?(?:one|two|three|four|five|six|seven|eight|nine)\\b)?|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|eleven|twelve|one|two|three|four|five|six|seven|eight|nine|ten|an?)';
   const P=[
     {re:'\\b(?:(?:an?|one|1)\\s+)?hour\\s+and\\s+a\\s+half\\b', v:function(){return 90;}},
@@ -2381,10 +2387,16 @@ function briefMins(t){
     {re:'\\b(?:an?\\s+)?quarter\\s+(?:of\\s+an\\s+)?hour\\b', v:function(){return 15;}},
     {re:'(?:\\bhalf\\s+an|\\bhalf\\s+a|\\bhalf\\s*-?|\\b1/2\\s*(?:an?)?)\\s*hour\\b', v:function(){return 30;}},
     {re:'\\b'+N+'\\s*-?\\s*(?:hours?|hrs?)\\b', v:function(m){return briefNum(m[1])*60;}},
-    {re:'\\b'+N+'(?:\\s*(?:-|to|or|and)\\s*'+N+')?\\s*-?\\s*(?:minutes?|mins?)\\b', v:function(m){return briefNum(m[1]);}},
+    {re:'\\b'+N+'(?:\\s*(?:-|to|or|and)\\s*'+N+')?\\s*-?\\s*'+U+'\\b', v:function(m){return briefNum(m[1]);}},
+    {re:'\\b\\d{1,2}\\s?m\\b', v:function(m){return parseInt(m[0],10);}},
     {re:'\\b'+N+'\\s*-?\\s*(?:seconds?|secs?)\\b', v:function(m){return briefNum(m[1])/60;}},
-    {re:'\\b(?:a\\s+)?few\\s+(?:more\\s+)?(?:minutes?|mins?)\\b', v:function(){return 5;}},
-    {re:'\\b(?:a\\s+)?couple\\s+(?:of\\s+)?(?:minutes?|mins?)\\b', v:function(){return 2;}}
+    {re:'\\b(?:a\\s+)?few\\s+(?:more\\s+)?'+U+'\\b', v:function(){return 5;}},
+    {re:'\\b(?:a\\s+)?couple\\s+(?:of\\s+)?'+U+'\\b', v:function(){return 2;}},
+    /* "a quick 10", "quick 15 for my back": the number after quick is the length */
+    {re:'\\bquick(?:ie)?\\s+(?:one\\s+)?(?:of\\s+)?'+NB+'\\b'+NOTU, v:function(m){return briefNum(m[1]);}},
+    /* a bare 3 to 30 at the start, or before "for": "10 for my back", "15, gentle" */
+    {re:'^(?:just\\s+|about\\s+|around\\s+)?'+NB+'\\b'+NOTU, v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}},
+    {re:'\\b'+NB+'\\s+for\\b', v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}}
   ];
   let best=null;
   P.forEach(function(p){
@@ -2400,7 +2412,7 @@ function briefMins(t){
   return {mins:mins,said:said,s:best.s,e:best.s+best.len};
 }
 function readBrief(text){
-  const raw=typeof text==='string'?text:(text==null?'':String(text));
+  const raw=typeof text==='string'?text:'';     /* only typed text is read */
   const I={text:raw.slice(0,2000),mins:null,minsSaid:'',answers:{areas:[],feel:[],worse:[],goals:[],score:null},areas:[],goals:[],flags:[],care:[],
            only:null,notPos:[],noKit:[],mods:[],excludeIds:[],includeIds:[],heard:[],limits:[],empty:true};
   const D=briefData();
@@ -2462,7 +2474,11 @@ function readBrief(text){
     return !(a&&/^\s*$/.test(t.slice(a.e,n.s)))&&!(b&&/^\s*$/.test(t.slice(n.e,b.s)));
   });
   const NEGK={areas:'x',stretches:'x',goals:'g',mods:'m',feel:'f',worse:'f',only:'o'};
-  const JOIN=/^\s*(?:(?:or|nor|\/)\s*)?(?:(?:the|my|your|a|an|any|of|for|on|to|with|stretch|stretches|stretching)\s+)*$/;
+  /* a negated list goes on through "and", "or", "&", "/" ("skip the cobra and bird dog", "no neck and shoulders"),
+     and through a comma between two stretch names ("skip cobra, bird dog"); "but" and the like end it */
+  const FILL='(?:(?:the|my|your|a|an|any|of|for|on|to|with|stretch|stretches|stretching|either|neither|no|not|nor)\\s+)*';
+  const JOIN=new RegExp('^\\s*(?:(?:and|or|nor|\\/)\\s+|\\/\\s*)'+FILL+'$');
+  const JOINC=new RegExp('^\\s*,\\s*(?:(?:and|or|nor)\\s+)?'+FILL+'$');
   negs.forEach(function(n,ni){
     const rest=t.slice(n.e), stop=/[,.;:!?\n()]|\b(?:and|but|then|plus|also|though|although|just|so|because|since|while|when|if|as|before|after)\b/.exec(rest);
     let end=stop?n.e+stop.index:t.length;
@@ -2476,7 +2492,9 @@ function readBrief(text){
     inW.forEach(function(h){if(NEGK[h.k]===NEGK[first.k]){h.neg=true; cur=h;}});
     for(;;){
       const nh=hits.filter(function(h){return NEGK[h.k]&&h.s>=cur.e;})[0];
-      if(!nh||NEGK[nh.k]!==NEGK[first.k]||(nx&&nh.s>=nx.s)||!JOIN.test(t.slice(cur.e,nh.s))) break;
+      const gap=t.slice(cur.e,nh&&nh.s);
+      if(!nh||nh.k!==cur.k||(nx&&nh.s>=nx.s)) break;     /* the same kind: stretch after stretch, area after area */
+      if(!JOIN.test(gap)&&!(JOINC.test(gap)&&cur.k==='stretches'&&nh.k==='stretches')) break;
       nh.neg=true; cur=nh;
     }
   });
@@ -2635,13 +2653,14 @@ function briefPlan(interp){
   const nameList=function(l){const n=l.map(function(id){return briefLc(EX[id].name);}); return n.length<2?n.join(''):n.slice(0,-1).join(', ')+' and '+n[n.length-1];};
   const miss=inc.filter(function(id){return avoid.indexOf(id)<0&&list.indexOf(id)<0;});
   if(miss.length) P.notes.push('There was not room for the '+nameList(miss)+' in '+mins+' minutes.');
-  if(!list.length) P.notes.push('None of the stretches fit everything you asked for. Try leaving out one of your limits, such as the position or the kit.');
-  else if(mins*60-tot>60){
+  /* nothing fits: the screen says so in its own line, so no note here as well */
+  if(list.length&&mins*60-tot>60){
     const a=Math.max(1,Math.round(tot/60));
     const pool=Object.keys(EX).filter(function(id){return avoid.indexOf(id)<0;});
     const have=pool.length?totalSeconds(buildTimeline(pool)):0;
-    P.notes.push(have<mins*60?'Only about '+Math.max(1,Math.round(have/60))+' minutes of stretches suit what you asked for, so this routine comes to about '+a+(a===1?' minute':' minutes')+', not '+mins+'.'
-      :'This routine comes to about '+a+(a===1?' minute':' minutes')+', not '+mins+'. Stretches that need care are kept to a small share of the time, and nothing else that suits what you asked for would fit.');
+    const hv=Math.max(1,Math.round(have/60)), mw=function(n){return n+(n===1?' minute':' minutes');};
+    P.notes.push(have<mins*60?'Only about '+mw(hv)+' of stretches '+(hv===1?'suits':'suit')+' what you asked for, so this routine comes to about '+mw(a)+', not '+mins+'.'
+      :'This routine comes to about '+mw(a)+', not '+mins+'. Stretches that need care are kept to a small share of the time, and nothing else that suits what you asked for would fit.');
   }
   areas.forEach(function(a){
     const aid=arr(a.ids).filter(function(id){return !!EX[id];});
@@ -2663,6 +2682,9 @@ function briefPlan(interp){
   const g0=goals[0], a0=areas[0];
   if(g0){base=g0.name||''; if(!base&&g0.advice){const o=ADVICE.Q.goals.opts.filter(function(x){return x.id===g0.advice;})[0]; base=o&&o.name||'';}}
   if(!base&&a0&&a0.label) base='For my '+briefLc(a0.label);
+  /* else what kind of routine it is ("Gentle routine", "Wind down routine"), or a sore day */
+  if(!base&&mods[0]) base=mods[0].name||(mods[0].label?String(mods[0].label)+' routine':'');
+  if(!base&&A.score!=null&&Number(A.score)<=2) base='Sore day stretch';
   if(!base) base=mins+' minute stretch';
   base=String(base).slice(0,30);
   try{P.name=typeof BRIEF_USE.uniqueName==='function'?BRIEF_USE.uniqueName(base):base;}catch(e){P.name=base;}
@@ -4330,7 +4352,17 @@ const LENGTHS=[5,10,15,20,25,30];     /* the length buttons; a routine can aim f
 const MUSIC_MODES=['usual','off','mix','spotify'];
 function cleanMins(m){if(m===null||m===''||typeof m==='boolean') return null; m=Number(m); return Number.isInteger(m)&&m>=3&&m<=30?m:null;}
 /* the words she typed in "Describe a routine", kept with the routine it made */
-function cleanBrief(b){return typeof b==='string'&&b.trim()?b.replace(/[\u0000-\u001f]+/g,' ').trim().slice(0,200):'';}
+function cleanBrief(b){return typeof b==='string'&&b.trim()?b.replace(/[\u0000-\u001f]+/g,' ').trim().slice(0,300):'';}
+/* what a brief ruled out (care notes, positions, kit, stretches she named), kept with the routine so that building
+   it again at another length or focus can never drop a safety limit, even if the words are read differently later.
+   null or {avoid:[ids], share: the caution cap 0 to 1/3} */
+function cleanKeep(k){
+  if(!k||typeof k!=='object'||Array.isArray(k)) return null;
+  const a=(Array.isArray(k.avoid)?k.avoid:[]).filter(function(id,i,l){return typeof id==='string'&&EX[id]&&l.indexOf(id)===i;});
+  const sh=Number(k.share), share=k.share!=null&&isFinite(sh)&&sh>=0&&sh<=1?Math.min(sh,1/3):null;
+  return a.length||share!==null?{avoid:a,share:share}:null;
+}
+function keepOf(plan){return plan&&!plan.stop?cleanKeep({avoid:plan.avoid,share:plan.cautionShare}):null;}
 function cleanVoice(v){return typeof v==='string'&&VOICES.some(function(x){return x.id===v;})?v:'';}
 function cleanMusic(m){
   const o={mode:'usual',spotify:null};
@@ -4380,6 +4412,7 @@ function normRT(x){
     const q={id:r.id,name:String(r.name||'My routine').slice(0,30),list:l,
              mins:cleanMins(r.mins),focus:cleanFocus(r.focus),voice:cleanVoice(r.voice),music:cleanMusic(r.music)};
     const br=cleanBrief(r.brief); if(br) q.brief=br;
+    const kp=cleanKeep(r.keep); if(kp) q.keep=kp;
     o.own.push(q);
   });
   o.at=typeof x.at==='string'?x.at.slice(0,30):'';
@@ -4396,7 +4429,7 @@ function routineById(id){
             mins:b.tag,focus:[],voice:cleanVoice(p.voice),music:cleanMusic(p.music)};
   }
   const o=RT.own.filter(function(r){return r.id===id;})[0];
-  return o?{id:o.id,name:o.name,list:o.list.slice(),own:true,mins:o.mins,focus:o.focus.slice(),voice:o.voice,music:cleanMusic(o.music),brief:cleanBrief(o.brief)}:null;
+  return o?{id:o.id,name:o.name,list:o.list.slice(),own:true,mins:o.mins,focus:o.focus.slice(),voice:o.voice,music:cleanMusic(o.music),brief:cleanBrief(o.brief),keep:cleanKeep(o.keep)}:null;
 }
 function allRoutines(){return Object.keys(BUILTIN).concat(RT.own.map(function(r){return r.id;})).map(routineById).filter(Boolean);}
 /* names that tell routines apart: case and spaces do not count, and the built-in ones are taken too */
@@ -4789,7 +4822,7 @@ function openBuilder(id){
     /* a routine made before lengths existed has no aim: it is not given one unless she picks a length */
     const near=LENGTHS.reduce(function(a,m){return Math.abs(m*60-tot)<Math.abs(a*60-tot)?m:a;},LENGTHS[0]);
     B={mode:r.builtin?'builtin':'own',id:r.id,name:r.name,tag:r.tag,mins:r.builtin?r.tag:(r.mins||null),near:near,focus:r.focus.slice(),list:r.list.slice(),
-       auto:null,old:null,built:'',voice:r.voice,music:{mode:r.music.mode,spotify:r.music.spotify},brief:r.brief||'',
+       auto:null,old:null,built:'',voice:r.voice,music:{mode:r.music.mode,spotify:r.music.spotify},brief:r.brief||'',keep:r.keep||null,
        steps:r.builtin?['voice','music','save']:all,step:0,start:0,ret:false};
     B.built=bKey(); B.step=B.start=B.steps.length-1;
   }
@@ -4823,10 +4856,18 @@ function closeBuilder(){B=null; $('builder').hidden=true;}
 /* a routine made from a brief keeps what the brief ruled out ("no kneeling", a stretch left out to be safe)
    when the builder makes a new list for another length or focus */
 function briefOpts(){
-  if(!B||!B.brief||typeof readBrief!=='function') return undefined;
+  if(!B||(!B.brief&&!B.keep)) return undefined;
   if(B.briefKey!==B.brief){
     B.briefKey=B.brief; B.briefOpt=undefined;
-    try{const p=briefPlan(readBrief(B.brief)); if(!p.stop) B.briefOpt={avoid:p.avoid.slice(),prefer:p.prefer.slice(),cautionShare:p.cautionShare};}catch(e){}
+    let o={avoid:[],prefer:[],cautionShare:null};
+    try{if(B.brief&&typeof readBrief==='function'){const p=briefPlan(readBrief(B.brief)); if(!p.stop) o={avoid:p.avoid.slice(),prefer:p.prefer.slice(),cautionShare:p.cautionShare};}}catch(e){}
+    /* the limits saved with the routine always count too, whatever the words are read as now */
+    const k=cleanKeep(B.keep);
+    if(k){k.avoid.forEach(function(id){if(o.avoid.indexOf(id)<0) o.avoid.push(id);}); if(k.share!==null) o.cautionShare=o.cautionShare===null?k.share:Math.min(o.cautionShare,k.share);}
+    o.prefer=o.prefer.filter(function(id){return o.avoid.indexOf(id)<0;});
+    if(o.cautionShare===null) delete o.cautionShare;
+    B.briefOpt=o;
+    B.keep=cleanKeep({avoid:o.avoid,share:o.cautionShare});
   }
   return B.briefOpt;
 }
@@ -4837,7 +4878,8 @@ function builderFromBrief(d){
   const list=cleanList(d.list);
   openBuilder(null);
   B.name=uniqueName(typeof d.name==='string'&&d.name.trim()?d.name:'My routine');
-  B.mins=cleanMins(d.mins)||10; B.focus=cleanFocus(d.focus); B.brief=cleanBrief(d.brief);
+  B.mins=cleanMins(d.mins)||10; B.focus=cleanFocus(d.focus); B.brief=cleanBrief(d.brief); B.keep=cleanKeep(d.keep);
+  briefOpts();     /* reads the brief now, so what it ruled out is kept with the routine when it is saved */
   if(list.length){B.auto=list.slice(); B.list=list.slice(); B.built=bKey();}
   else ensureList();
   B.step=B.steps.indexOf('list');
@@ -4980,8 +5022,10 @@ function bSave(){
     B.taken='';
     const rec={id:B.id,name:name,list:B.list.slice(),mins:cleanMins(B.mins),focus:cleanFocus(B.focus),voice:voice,music:music};
     const br=cleanBrief(B.brief); if(br) rec.brief=br;
+    if(br) briefOpts();
+    const kp=cleanKeep(B.keep); if(kp) rec.keep=kp;
     const ex=RT.own.filter(function(r){return r.id===B.id;})[0];
-    if(ex){Object.assign(ex,rec); if(!br) delete ex.brief;} else RT.own.push(rec);
+    if(ex){Object.assign(ex,rec); if(!br) delete ex.brief; if(!kp) delete ex.keep;} else RT.own.push(rec);
   }
   saveRT(); settings.routine=B.id; store.set('mbs.routine',B.id);
   closeBuilder(); renderRoutines(); prepAudio();
@@ -5347,7 +5391,7 @@ function briefSave(start){
   if(typeof nameTaken==='function'&&nameTaken(name)){brTaken('You already have a routine called “'+name+'”. Choose another name.'); return;}
   const id='u'+Date.now().toString(36);
   RT.own.push({id:id,name:name,list:list.slice(),mins:cleanMins(p.mins),focus:cleanFocus(p.focus),voice:'',music:{mode:'usual',spotify:null},
-               brief:String(BR.at||BR.text).slice(0,200)});
+               brief:cleanBrief(String(BR.at||BR.text)), keep:keepOf(p)});
   saveRT(); settings.routine=id; store.set('mbs.routine',id);
   closeBrief(); renderRoutines(); prepAudio();
   if(start) startSession();
@@ -5373,7 +5417,7 @@ $('brief').addEventListener('click',function(ev){
   if((b=q('#brList [data-ex]'))){openHow(b.dataset.ex); return;}
   if(q('#brChange')){
     const p=BR.plan; if(!p||typeof builderFromBrief!=='function') return;
-    const d={name:(BR.name||'').trim().slice(0,30)||p.name,mins:p.mins,focus:(p.focus||[]).slice(),list:(p.list||[]).slice(),brief:String(BR.at||BR.text).slice(0,200)};
+    const d={name:(BR.name||'').trim().slice(0,30)||p.name,mins:p.mins,focus:(p.focus||[]).slice(),list:(p.list||[]).slice(),brief:cleanBrief(String(BR.at||BR.text)),keep:keepOf(p)};
     try{builderFromBrief(d);}catch(e){return;}
     closeBrief();
   }
