@@ -2498,7 +2498,8 @@ function briefNorm(t){
 /* minutes typed with a typo or autocorrect ("15 mns", "10 minits", "12 minuets") read as "mins", so the words
    around them match as they would after "mins" */
 function briefUnits(t){
-  return t.replace(/(\d|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty))(\s*-?\s*)(?:minits?|minuets?|minuts?|mintues?|mintes?|minites?|minuites?|minuetes?|mns|mnts?|mons)\b/g,'$1$2mins');
+  return t.replace(/\b(\d{1,2})\s?m\b(?!\s*(?:of|tall|high|long|wide|away)\b)/g,'$1 mins')
+    .replace(/(\d|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty))(\s*-?\s*)(?:minits?|minuets?|minuts?|mintues?|mintes?|minites?|minuites?|minuetes?|mns|mnts?|mons)\b/g,'$1$2mins');
 }
 function briefLc(t){t=String(t||''); return t.charAt(0).toLowerCase()+t.slice(1);}
 function capWords(id){const t=String(id||'').replace(/[_-]+/g,' '); return t.charAt(0).toUpperCase()+t.slice(1);}
@@ -2639,11 +2640,18 @@ function readBrief(text){
     return !(a&&/^\s*$/.test(t.slice(a.e,n.s)))&&!(b&&/^\s*$/.test(t.slice(n.e,b.s)));
   });
   const NEGK={areas:'x',stretches:'x',goals:'g',mods:'m',feel:'f',worse:'f',only:'o'};
-  /* a negated list goes on through "and", "or", "&", "/" ("skip the cobra and bird dog", "no neck and shoulders"),
-     and through a comma between two stretch names ("skip cobra, bird dog"); "but" and the like end it */
-  const FILL='(?:(?:the|my|your|a|an|any|of|for|on|to|with|stretch|stretches|stretching|either|neither|no|not|nor)\\s+)*';
-  const JOIN=new RegExp('^\\s*(?:(?:and|or|nor|\\/)\\s+|\\/\\s*)'+FILL+'$');
-  const JOINC=new RegExp('^\\s*,\\s*(?:(?:and|or|nor)\\s+)?'+FILL+'$');
+  /* A list keeps its "no" to the end, as English lists read: "no neck, shoulders and upper back", "skip cobra, bridge or
+     bird dog". Between two items only commas, "and", "or", "&", "/" and small words may come; anything else ends the
+     list: "but", "please", "yes", "want", "focus on", "plus", a full stop, a length or any other kind of wish.
+     A part of the list followed by "please" or "yes" is wanted ("no neck, hips please"). */
+  const FILL='(?:(?:the|my|your|a|an|any|of|for|on|to|with|stretch|stretches|stretching|either|neither|no|not|nor|also)\\s+)*';
+  const SEP=new RegExp('^\\s*(?:(?:,|&|\\/|and\\b|or\\b|nor\\b)\\s*)+'+FILL+'$');
+  const WANT=/^\s*(?:please|pls|plz|yes|yeah|thanks|thank you|ok)\b/;
+  const busy=function(a,b){            /* something else she said between two items: a length or another kind of wish */
+    if(ml&&ml.s<b&&ml.e>a) return true;
+    return hits.some(function(h){return h.s>=a&&h.e<=b&&NEGK[h.k]!=='x';});
+  };
+  let run=0;
   negs.forEach(function(n,ni){
     const rest=t.slice(n.e), stop=/[,.;:!?\n()]|\b(?:and|but|then|plus|also|though|although|just|so|because|since|while|when|if|as|before|after)\b/.exec(rest);
     let end=stop?n.e+stop.index:t.length;
@@ -2652,19 +2660,27 @@ function readBrief(text){
     const nx=negs[ni+1]; if(nx) end=Math.min(end,nx.s);
     const inW=hits.filter(function(h){return NEGK[h.k]&&h.s>=n.e&&h.s<end;}), first=inW[0];
     if(!first) return;
+    run++;
     /* in the window, every wish of the same kind ("no cobra or bridge"), but not a different kind ("no cobra before golf") */
     let cur=first;
-    inW.forEach(function(h){if(NEGK[h.k]===NEGK[first.k]){h.neg=true; cur=h;}});
+    inW.forEach(function(h){if(NEGK[h.k]===NEGK[first.k]){h.neg=true; h.run=run; cur=h;}});
+    if(NEGK[first.k]!=='x') return;
     for(;;){
-      const nh=hits.filter(function(h){return NEGK[h.k]&&h.s>=cur.e;})[0];
-      const gap=t.slice(cur.e,nh&&nh.s);
+      const nh=hits.filter(function(h){return NEGK[h.k]&&h.s>=cur.e&&h!==cur;})[0];
       if(!nh||nh.k!==cur.k||(nx&&nh.s>=nx.s)) break;     /* the same kind: stretch after stretch, area after area */
-      /* after a comma: stretch names always carry on ("skip cobra, bird dog"); an area carries on when it closes the
-         list or leads to "or" ("no neck, shoulders or upper back", "not my neck, shoulders"), but not into a fresh
-         request ("no neck, hips please", "no neck, hips and hamstrings") */
-      const closes=/^\s*(?:$|[,.;:!?\n)]|(?:or|nor|either)\b)/.test(t.slice(nh.e));
-      if(!JOIN.test(gap)&&!(JOINC.test(gap)&&cur.k===nh.k&&(nh.k==='stretches'||(nh.k==='areas'&&closes)))) break;
-      nh.neg=true; cur=nh;
+      if(!SEP.test(t.slice(cur.e,nh.s))||busy(cur.e,nh.s)) break;
+      /* "no neck, hips please": the part after the comma is wanted. Look along that part (joined without commas). */
+      if(/,/.test(t.slice(cur.e,nh.s))){
+        let last=nh;
+        for(;;){
+          const q=hits.filter(function(h){return h.k===nh.k&&h.s>=last.e&&h!==last;})[0];
+          if(!q||/,/.test(t.slice(last.e,q.s))||!SEP.test(t.slice(last.e,q.s))) break;
+          last=q;
+        }
+        if(WANT.test(t.slice(last.e))) break;
+      }
+      if(WANT.test(t.slice(cur.e,nh.s))) break;
+      nh.neg=true; nh.run=run; cur=nh;
     }
   });
   /* what she said, in the order she said it */
@@ -2674,6 +2690,7 @@ function readBrief(text){
   const qLabel=function(k,id){const o=ADVICE.Q[k].opts.filter(function(x){return x.id===id;})[0]; return o?o.label:'';};
   const posOK=function(l){return (Array.isArray(l)?l:[]).filter(function(p){return POSITIONS.indexOf(p)>=0;});};
   const out={areas:[],areasNo:[],goals:[],only:[],mods:[]};
+  const body=[];     /* areas and stretches, heard at the end so a list reads as one chip and exclusion wins */
   let sore=null;
   hits.forEach(function(h){
     const d=h.x.d;
@@ -2688,13 +2705,13 @@ function readBrief(text){
     }
     else if(h.k==='only'){if(h.neg) return; const p=posOK(d.pos); if(p.length&&out.only.indexOf(d)<0){out.only.push(d); hear(d.label,h.s);}}
     else if(h.k==='areas'){
-      if(h.neg){if(out.areasNo.indexOf(d)<0){out.areasNo.push(d); hear('Not the '+briefLc(d.label),h.s);}}
-      else if(out.areas.indexOf(d)<0){out.areas.push(d); hear(d.label,h.s);}
+      if(h.neg){if(out.areasNo.indexOf(d)<0){out.areasNo.push(d); body.push({no:true,run:h.run,s:h.s,area:d,label:briefLc(d.label)});}}
+      else if(out.areas.indexOf(d)<0){out.areas.push(d); body.push({s:h.s,area:d,label:d.label});}
     }
     else if(h.k==='stretches'){
       const id=d.id, nm=briefLc(EX[id].name);
-      if(h.neg){if(I.excludeIds.indexOf(id)<0){I.excludeIds.push(id); hear('No '+nm,h.s);}}
-      else if(I.includeIds.indexOf(id)<0){I.includeIds.push(id); hear('With '+nm,h.s);}
+      if(h.neg){if(I.excludeIds.indexOf(id)<0){I.excludeIds.push(id); body.push({no:true,run:h.run,s:h.s,id:id,label:nm});}}
+      else if(I.includeIds.indexOf(id)<0){I.includeIds.push(id); body.push({s:h.s,id:id,label:'With '+nm});}
     }
     else if(h.k==='goals'){if(!h.neg&&out.goals.indexOf(d)<0){out.goals.push(d); hear(d.label,h.s);}}
     else if(h.k==='mods'){if(!h.neg&&d.id&&I.mods.indexOf(d.id)<0){I.mods.push(String(d.id)); hear(d.label,h.s);}}
@@ -2717,6 +2734,21 @@ function readBrief(text){
   I.areas.forEach(function(a){if(a.advice&&aq.indexOf(a.advice)>=0) uniq(I.answers.areas,a.advice);});
   I.goals.forEach(function(g){if(g.advice&&gq.indexOf(g.advice)>=0) uniq(I.answers.goals,g.advice);});
   if(sore){const sc=Number(sore.score); I.answers.score=Number.isInteger(sc)&&sc>=1&&sc<=5?sc:2;}
+  /* areas and stretch names: an exclusion wins, so nothing shows as both wanted and not; one list, one chip
+     ("Not the neck, hips or hamstrings", "No cobra raises or glute bridge") */
+  const orList=function(l){return l.length<2?l.join(''):l.slice(0,-1).join(', ')+' or '+l[l.length-1];};
+  const groups=[];
+  body.forEach(function(b){
+    if(!b.no){
+      if(b.area&&out.areasNo.indexOf(b.area)>=0) return;
+      if(b.id&&I.excludeIds.indexOf(b.id)>=0) return;
+      hear(b.label,b.s); return;
+    }
+    const kind=b.area?'a':'x';
+    const g=groups.filter(function(x){return x.run===b.run&&x.kind===kind&&b.run;})[0];
+    if(g) g.items.push(b.label); else groups.push({run:b.run,kind:kind,s:b.s,items:[b.label]});
+  });
+  groups.forEach(function(g){hear((g.kind==='a'?'Not the ':'No ')+orList(g.items),g.s);});
   heard.sort(function(a,b){return a.s-b.s;});
   heard.forEach(function(x){if(!I.heard.some(function(y){return y.label===x.label;})) I.heard.push({label:x.label});});
   I.empty=!(I.mins||I.flags.length||I.care.length||sore||I.noKit.length||I.notPos.length||I.only||out.areas.length||out.areasNo.length||
