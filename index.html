@@ -4623,7 +4623,7 @@ function voiceOK(id){return typeof id==='string'&&VOICES.some(function(v){return
 /* The phone app's service worker keeps voice files by their full address, saved copy first. The page itself is always
    the newest, so each voice file is asked for with a version that changes whenever its clip layout changes (and with
    every phone app build), so a new page never reads clips from an old file. */
-const BUILD=/*BUILD*/"v17";
+const BUILD=/*BUILD*/"v18";
 function packVer(id){
   const v=VOICES.filter(function(x){return x.id===id;})[0];
   let end=0, h=5381;
