@@ -2604,18 +2604,33 @@ function briefMins(t,skip){
       const v=briefNum(m[2]); return v>=3&&v<=30?v:null;}},
     {re:',\\s*'+NB+'\\s*,', v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}}
   ];
-  let best=null;
+  /* a time that describes her day is not the routine's length: "golf in an hour", "a run in 20 minutes", "sat for an
+     hour", "after an hour on the train", "an hour ago", "45 minutes later". "for 12 minutes" with no such verb before
+     it, and "10 mins before golf", stay lengths. */
+  const dayTime=function(a,b){
+    const pre=t.slice(Math.max(0,a-60),a), post=t.slice(b,b+40);
+    const clause=pre.split(/[,.;:!?\n]/).pop();
+    if(/\b(?:in|after|until|till|til|within|ago|by|from)\s+(?:(?:about|around|roughly|another|the next|the|just|over|under|nearly|less than|more than|a good|half|a half|a quarter of|quarter of|three quarters of)\s+)*$/.test(clause)) return true;
+    if(/\bbefore\s+(?:(?:about|around|the)\s+)*$/.test(clause)&&!/\b(?:golf|tennis|run|work|meeting|bed|round|game|match)\b/.test(post.slice(0,3))) return true;
+    if(/\b(?:sat|sit|sitting|seated|driving|drove|drive|driven|flying|flew|flight|walking|walked|walk|stood|standing|travelling|traveling|travelled|commuting|commute|working|worked|typing|ran|running|run|cycling|cycled|cycle|biked|played|playing|golfing|gardening|gardened|hoovering|cleaning|lifting|carrying|bent|bending|kneeling|knelt|lying|lay|slept|sleeping|stuck|been|on (?:the|a|my) (?:train|plane|bus|tube|flight|bike|feet|laptop|computer|phone)|at (?:my|the|a) (?:desk|computer|laptop))\b[^,.;:!?]{0,30}\bfor\s+(?:(?:about|around|over|nearly|almost|a good|more than|at least|the last|the past|hours and)\s+)*$/.test(clause)) return true;
+    if(/^\s*(?:ago|later|earlier|from now|away|time|of (?:sitting|driving|travel|travelling|flying|walking|typing|work|gardening|golf|tennis|meetings?|calls?|zoom)|on (?:the|a) (?:train|plane|bus|tube|road|motorway|flight|bike)|(?:drive|flight|journey|commute|train|trip|walk|meeting|call|round|game|match|wait|delay|queue)s?\b|(?:to|till|until) (?:tee|go|kick|start|my|the|golf|tennis))\b/.test(post)) return true;
+    return false;
+  };
+  let best=null; const cands=[];
   P.forEach(function(p){
-    const re=new RegExp(p.re,'gi'); let m=null, x, n=0;
+    const re=new RegExp(p.re,'gi'); let x, n=0;
     while((x=re.exec(t))&&n++<50){
       const a=x.index, b=a+x[0].length;
-      if(!(skip||[]).some(function(k){return k.s<b&&a<k.e&&/\d|\b(?:four|two|three|ten)\b/.test(t.slice(k.s,k.e));})){m=x; break;}
-      if(!x[0].length) re.lastIndex++;
+      if(!x[0].length){re.lastIndex++; continue;}
+      if((skip||[]).some(function(k){return k.s<b&&a<k.e&&/\d|\b(?:four|two|three|ten)\b/.test(t.slice(k.s,k.e));})||dayTime(a,b)) continue;
+      const v=p.v(x); if(v==null||!isFinite(v)) continue;
+      cands.push({s:a,len:x[0].length,raw:v,txt:x[0]});
     }
-    if(!m) return;
-    const v=p.v(m); if(v==null||!isFinite(v)) return;
-    if(!best||m.index<best.s||(m.index===best.s&&m[0].length>best.len)) best={s:m.index,len:m[0].length,raw:v,txt:m[0]};
   });
+  /* the first length she gives; but one over 30 ("I've got an hour, 15 mins of it") gives way to one that fits */
+  cands.sort(function(a,b){return a.s-b.s||b.len-a.len;});
+  const fit=cands.filter(function(c){return Math.round(c.raw)>=3&&Math.round(c.raw)<=30;})[0];
+  best=cands.length?(Math.round(cands[0].raw)>30&&fit?fit:cands[0]):null;
   if(!best){const q=/\bquick(?:ie|ly)?\b/i.exec(t); if(q) best={s:q.index,len:q[0].length,raw:5,txt:q[0],quick:true};}
   if(!best) return null;
   let mins=Math.round(best.raw), said='';
