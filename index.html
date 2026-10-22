@@ -2485,17 +2485,35 @@ function adviceLevel(flags){
   return best;
 }
 /* answers: {areas, feel, worse, score, goals, mins}  ->  what to build and why */
+/* The questions added in v18 (ADVICE.Q.stretch, .strap, .where) and any later one are all optional here, so answers
+   saved before them still work. A single-choice question's answer is one id (or null); the others are lists. */
+const ADV_SINGLE=['strap','where'];
+function advSingle(k){const q=ADVICE.Q&&ADVICE.Q[k]; return !!q&&(q.single===true||(q.single!==false&&ADV_SINGLE.indexOf(k)>=0));}
+/* stretches that need the strap: the question's list, else Describe's, else the three that use it */
+function advStrapIds(){
+  const q=ADVICE.Q&&ADVICE.Q.strap;
+  let l=q&&Array.isArray(q.ids)?q.ids:null;
+  try{if(!l&&typeof BRIEF!=='undefined'&&BRIEF&&BRIEF.kit&&BRIEF.kit.strap&&Array.isArray(BRIEF.kit.strap.ids)) l=BRIEF.kit.strap.ids;}catch(e){}
+  return (l||['ham','groin','strapopen']).filter(function(id){return !!EX[id];});
+}
 function advisePlan(ans){
-  const A={areas:ans.areas||[],feel:ans.feel||[],worse:ans.worse||[],goals:ans.goals||[]};
-  const has=function(k,ids){return ids.some(function(id){return A[k].indexOf(id)>=0;});};
+  ans=ans&&typeof ans==='object'?ans:{};
+  const L=function(v){return Array.isArray(v)?v:[];};
+  const A={areas:L(ans.areas),feel:L(ans.feel),worse:L(ans.worse),goals:L(ans.goals),stretch:L(ans.stretch)};
+  const has=function(k,ids){return ids.some(function(id){return (A[k]||[]).indexOf(id)>=0;});};
   const clause=function(c){return Object.keys(c).some(function(k){return has(k,c[k]);});};
-  const opt=function(k,id){return ADVICE.Q[k].opts.filter(function(o){return o.id===id;})[0];};
-  const avoid=[], prefer=[], left=[], why=[];
+  const opt=function(k,id){const q=ADVICE.Q[k]; return q&&Array.isArray(q.opts)?q.opts.filter(function(o){return o&&o.id===id;})[0]:undefined;};
+  const avoid=[], prefer=[], left=[], why=[], notes=[], limits=[];
   let share=ADVICE.share;
-  /* the body parts to focus on: where it is felt, or else the goals; at most three */
+  const uniq=function(a,v){if(a.indexOf(v)<0) a.push(v);};
+  const sNone=ADVICE.Q.stretch&&ADVICE.Q.stretch.none||'all';
+  const stretchOpts=A.stretch.filter(function(id){return id!==sNone;}).map(function(id){return opt('stretch',id);}).filter(Boolean);
+  /* the body parts to focus on: what she wants to stretch, then where it is felt, then the goals; at most three */
   let focus=[];
-  A.areas.forEach(function(id){const o=opt('areas',id); if(o) (o.parts||[]).forEach(function(p){if(focus.indexOf(p)<0) focus.push(p);});});
-  if(!focus.length) A.goals.forEach(function(id){const o=opt('goals',id); if(o) (o.parts||[]).forEach(function(p){if(focus.indexOf(p)<0) focus.push(p);});});
+  const fo=function(o){if(o) L(o.parts).forEach(function(p){if(PARTS.some(function(x){return x[0]===p;})) uniq(focus,p);});};
+  stretchOpts.forEach(fo);
+  A.areas.forEach(function(id){fo(opt('areas',id));});
+  if(!focus.length) A.goals.forEach(function(id){fo(opt('goals',id));});
   focus=focus.slice(0,3);
   const ruleOn=function(r){
     if(r.areas) return false;
@@ -2504,8 +2522,15 @@ function advisePlan(ans){
     if(r.maxScore!=null&&!(ans.score!=null&&ans.score<=r.maxScore)) return false;
     return true;
   };
+  const strapNo=ans.strap==='no';
   ADVICE.rules.forEach(function(r){
-    if(r.areas) A.areas.forEach(function(id){const o=opt('areas',id); if(o&&o.prefer) o.prefer.forEach(function(x){if(EX[x]&&prefer.indexOf(x)<0) prefer.push(x);});});
+    if(r.areas){
+      /* what she wants to stretch, then where it hurts, ahead of the goals */
+      stretchOpts.forEach(function(o){L(o.prefer).forEach(function(x){if(EX[x]) uniq(prefer,x);});});
+      A.areas.forEach(function(id){const o=opt('areas',id); if(o&&o.prefer) o.prefer.forEach(function(x){if(EX[x]&&prefer.indexOf(x)<0) prefer.push(x);});});
+      /* no strap but hamstrings wanted: the hamstring stretches that need no strap (if the safety rules allow them) */
+      if(strapNo&&focus.indexOf('ham')>=0) ['legup','activeham'].forEach(function(x){if(EX[x]&&avoid.indexOf(x)<0) uniq(prefer,x);});
+    }
     if(!ruleOn(r)) return;
     let out=(r.avoid||[]).slice();
     /* a general rule (sharp pain, a sore day) does not take out what an earlier, more specific rule chose to include */
@@ -2517,13 +2542,74 @@ function advisePlan(ans){
     if(r.share!=null) share=Math.min(share,r.share);
     if(r.why) why.push({text:r.why,needs:r.needs||null});
   });
+  /* her practical limits, after the safety rules: the strap and where she will stretch */
+  const lc=function(t){t=String(t||''); return t.charAt(0).toLowerCase()+t.slice(1);};
+  const takeOut=function(ids,reason){
+    const out=L(ids).filter(function(id,i,a){return EX[id]&&avoid.indexOf(id)<0&&a.indexOf(id)===i;});
+    out.forEach(function(id){avoid.push(id);});
+    if(out.length&&reason) left.push({ids:out,reason:reason});
+    return out;
+  };
+  if(strapNo){
+    const sq=ADVICE.Q.strap||{}, no=opt('strap','no')||{};
+    takeOut(advStrapIds(),no.left||sq.left||'they need the strap, and you have not got it with you');
+    limits.push(no.limit||'No strap');
+  }
+  const W=ans.where?opt('where',ans.where):null;
+  if(W){
+    const only=Array.isArray(W.only)&&W.only.length?W.only:null, not=L(W.not), also=L(W.also);
+    const out=Object.keys(EX).filter(function(id){
+      if(also.indexOf(id)>=0) return false;
+      const pos=EX[id].pos;
+      return (only&&only.indexOf(pos)<0)||not.indexOf(pos)>=0;
+    });
+    /* only the ones she would otherwise have had first are named in "Left out on purpose"; the limit line says the rest */
+    const named=out.filter(function(id){return prefer.indexOf(id)>=0&&avoid.indexOf(id)<0;});
+    takeOut(named,W.left||'they do not suit where you will stretch ('+lc(W.label)+')');
+    takeOut(out,'');
+    if(only||not.length) limits.push(W.limit||W.label||'');
+  }
+  /* any other answer whose option carries rules (a later question, such as how hard): applied like a rule */
+  Object.keys(ADVICE.Q).forEach(function(k){
+    if(['areas','feel','worse','goals','stretch','strap','where'].indexOf(k)>=0) return;
+    const v=ans[k], ids=Array.isArray(v)?v:(typeof v==='string'?[v]:[]);
+    ids.forEach(function(id){
+      const o=opt(k,id); if(!o) return;
+      let out=L(o.avoid).slice();
+      if(o.avoidIf&&o.avoidIf.level) Object.keys(EX).forEach(function(x){const e=EX[x]; if(e.level===o.avoidIf.level&&e.caution&&out.indexOf(x)<0) out.push(x);});
+      takeOut(out,o.left||'');
+      L(o.prefer).forEach(function(x){if(EX[x]) uniq(prefer,x);});
+      if(typeof o.share==='number'&&isFinite(o.share)) share=Math.min(share,Math.max(0,o.share));
+      if(o.why) why.push({text:o.why,needs:o.needs||null});
+      if(o.limit) limits.push(o.limit);
+    });
+  });
+  /* where she stretches can leave a gap in a part she wants (all-round always wants the hamstrings and lower back):
+     the option's own note says so; a part left with nothing at all is named */
+  if(W){
+    const want=focus.length?focus:['back','ham'];
+    const whereOut=avoid.filter(function(id){const pos=EX[id].pos; return (Array.isArray(W.only)&&W.only.length&&W.only.indexOf(pos)<0)||L(W.not).indexOf(pos)>=0;});
+    if(W.note&&whereOut.some(function(id){return want.indexOf(EX[id].part)>=0;})) notes.push(String(W.note));
+  }
+  /* a part left with nothing at all, unless the note above already speaks of it */
+  const said=notes.join(' ').toLowerCase();
+  const short=focus.filter(function(p){
+    if(Object.keys(EX).some(function(id){return EX[id].part===p&&avoid.indexOf(id)<0;})) return false;
+    const nm=PARTS.filter(function(x){return x[0]===p;})[0][1].toLowerCase();
+    return said.indexOf(nm.slice(0,Math.max(5,nm.length-2)))<0;
+  });
+  if(short.length) notes.push('Nothing for your '+short.map(function(p){return lc(PARTS.filter(function(x){return x[0]===p;})[0][1]);}).join(' or ')+' suits your answers, so this routine leaves '+(short.length===1?'it':'them')+' out.');
   const pref=prefer.filter(function(id){return avoid.indexOf(id)<0;});
-  /* a suggested name */
+  /* a suggested name: where it hurts, else what she wants to stretch, else the goal */
   let name='My stretch plan';
-  const a0=A.areas.filter(function(id){return id!=='none';})[0], g0=A.goals.filter(function(id){return id!=='general';})[0];
-  if(a0) name='For my '+opt('areas',a0).label.toLowerCase();
-  else if(g0) name=opt('goals',g0).name;
-  return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30)};
+  const a0=A.areas.filter(function(id){return id!=='none';}).map(function(id){return opt('areas',id);}).filter(Boolean)[0];
+  const s0=stretchOpts[0], g0=A.goals.filter(function(id){return id!=='general';}).map(function(id){return opt('goals',id);}).filter(Boolean)[0];
+  if(a0) name='For my '+lc(a0.label);
+  else if(s0) name=s0.name||'For my '+lc(s0.label);
+  else if(g0&&g0.name) name=g0.name;
+  const lim=limits.filter(Boolean);
+  const limitText=lim.length?lim.map(function(t,i){return i?lc(t):t;}).join(', ')+'.':'';
+  return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30), notes:notes, limits:lim, limitText:limitText};
 }
 /* ---------- "Describe a routine": reading a brief typed in her own words ----------
    The words and what they mean are data, in BRIEF (the physio agent's block above). This code finds them, works out
@@ -4674,8 +4760,8 @@ function cleanFocus(f){return (Array.isArray(f)?f:[]).filter(function(p,i,a){ret
 function cleanAdvice(a){
   if(!a||typeof a!=='object'||Array.isArray(a)) return null;
   const ans=a.answers&&typeof a.answers==='object'&&!Array.isArray(a.answers)?a.answers:{};
-  const list=function(key){
-    const v=Array.isArray(ans[key])?ans[key]:[];
+  const list=function(key,given){
+    const v=given||(Array.isArray(ans[key])?ans[key]:[]);
     let ok=function(x){return /^[a-z]{2,12}$/.test(x);};
     try{
       if(typeof ADVICE!=='undefined'&&ADVICE&&ADVICE.Q&&ADVICE.Q[key]&&Array.isArray(ADVICE.Q[key].opts)){
@@ -4684,11 +4770,21 @@ function cleanAdvice(a){
     }catch(e){}
     return v.filter(function(x,i){return typeof x==='string'&&ok(x)&&v.indexOf(x)===i;}).slice(0,12);
   };
+  /* a single answer (strap, where): one of the question's ids, or null */
+  const one=function(key){const v=ans[key]; if(typeof v!=='string') return null; const l=list.call(null,key,[v]); return l.length?l[0]:null;};
   const sc=Number(ans.score);
-  return {at:typeof a.at==='string'?a.at.slice(0,30):'',
+  const out={at:typeof a.at==='string'?a.at.slice(0,30):'',
           answers:{areas:list('areas'),feel:list('feel'),worse:list('worse'),score:ans.score!=null&&ans.score!==''&&Number.isInteger(sc)&&sc>=1&&sc<=5?sc:null,
-                   goals:list('goals'),mins:cleanMins(ans.mins)},
+                   goals:list('goals'),mins:cleanMins(ans.mins),stretch:list('stretch'),strap:one('strap'),where:one('where')},
           routine:typeof a.routine==='string'&&/^u[\w-]{1,40}$/.test(a.routine)?a.routine:''};
+  /* a further question physio may add (one at most): kept the same way, by its own ids */
+  try{
+    Object.keys(ADVICE.Q).forEach(function(k){
+      if(k in out.answers||k==='flags') return;
+      out.answers[k]=advSingle(k)?one(k):list(k);
+    });
+  }catch(e){}
+  return out;
 }
 function normRT(x){
   const o={edits:{},own:[],prefs:{},at:'',advice:null};
@@ -5367,19 +5463,39 @@ $('bdBody').addEventListener('click',function(ev){
    The clinical rules are in ADVICE (core script). Uses the routine builder's autoRoutine and optimiseOrder when they
    take options; before that, builds as usual and takes out what to avoid. Red-flag answers are never stored. */
 let AD=null;
-const AD_STEPS=['flags','areas','feel','worse','score','goals','mins','result'];
+/* The screens, in order. A question in ADVICE.Q only gets a screen when it is in this version's data, so the count
+   ("Question 3 of 9") always matches what she sees; a further question physio adds goes before the length. */
+const AD_ORDER=['flags','areas','feel','worse','score','stretch','goals','where','strap','mins','result'];
+let AD_STEPS=advSteps();
+function advSteps(){
+  const fixed={flags:1,score:1,mins:1,result:1};
+  const l=AD_ORDER.filter(function(k){return fixed[k]||(ADVICE.Q&&ADVICE.Q[k]&&Array.isArray(ADVICE.Q[k].opts));});
+  Object.keys(ADVICE.Q||{}).forEach(function(k){if(l.indexOf(k)<0&&Array.isArray(ADVICE.Q[k].opts)) l.splice(l.indexOf('mins'),0,k);});
+  return l;
+}
+function advQCount(){return AD_STEPS.filter(function(k){return k!=='flags'&&k!=='result';}).length;}
+function advQNum(){return AD_STEPS.slice(0,AD.step+1).filter(function(k){return k!=='flags'&&k!=='result';}).length;}
+/* a required single-choice question waits for an answer before Next */
+function advNeeds(st){const q=ADVICE.Q&&ADVICE.Q[st]; return !!q&&advSingle(st)&&q.required!==false&&!AD.ans[st];}
 function advSaved(){
   const a=(RT&&RT.advice&&typeof RT.advice==='object')?RT.advice:store.get('mbs.advice',null);
   return a&&typeof a==='object'&&a.answers&&typeof a.answers==='object'?a:null;
 }
 function advDate(iso){const d=new Date(iso); return isNaN(d)?'':d.getDate()+' '+MON[d.getMonth()];}
-function advList(v,k){const ok=ADVICE.Q[k].opts.map(function(o){return o.id;}); return (Array.isArray(v)?v:[]).filter(function(x,i,a){return ok.indexOf(x)>=0&&a.indexOf(x)===i;});}
+function advList(v,k){const ok=(ADVICE.Q[k]&&ADVICE.Q[k].opts||[]).map(function(o){return o.id;}); return (Array.isArray(v)?v:[]).filter(function(x,i,a){return ok.indexOf(x)>=0&&a.indexOf(x)===i;});}
 function openAdvisor(){
   if(typeof B!=='undefined'&&B&&typeof closeBuilder==='function') closeBuilder();
   const s=advSaved(), a=s?s.answers:{}, cs=currentScore();
   const sc=cs!=null?cs:(a.score>=1&&a.score<=5?Math.round(a.score):null);
+  AD_STEPS=advSteps();
   AD={step:0, stop:null, prev:s, plan:null, list:null, name:'',
       ans:{flags:[], areas:advList(a.areas,'areas'), feel:advList(a.feel,'feel'), worse:advList(a.worse,'worse'), score:sc, goals:advList(a.goals,'goals'), mins:cleanMins(a.mins)||10}};
+  /* the newer questions: earlier answers come back; the first time nothing is picked */
+  Object.keys(ADVICE.Q).forEach(function(k){
+    if(k in AD.ans) return;
+    if(advSingle(k)){const v=advList(typeof a[k]==='string'?[a[k]]:[],k); AD.ans[k]=v.length?v[0]:null;}
+    else AD.ans[k]=advList(a[k],k);
+  });
   renderAdvisor(); $('advisor').hidden=false; $('advisor').scrollTop=0;
 }
 function closeAdvisor(){AD=null; $('advisor').hidden=true;}
@@ -5407,10 +5523,21 @@ function advBuild(){
   }catch(e){list=[];}
   list=(list||[]).filter(function(id){return EX[id]&&!out(id);});      /* never anything left out on purpose */
   try{if(typeof optimiseOrder==='function') list=optimiseOrder(list).list; else if(typeof sortRoutine==='function') list=sortRoutine(list);}catch(e){}
+  /* the stretches that suit her answers fill clearly less than the time: say so plainly, as Describe does */
+  p.notes=(p.notes||[]).slice();
+  const tot=list.length?totalSeconds(buildTimeline(list)):0;
+  if(list.length&&T-tot>60){
+    const mw=function(n){return n+(n===1?' minute':' minutes');}, a=Math.max(1,Math.round(tot/60));
+    const pool=Object.keys(EX).filter(function(id){return !out(id);}), have=pool.length?totalSeconds(buildTimeline(pool)):0, hv=Math.max(1,Math.round(have/60));
+    p.notes.push(have<T?'Only about '+mw(hv)+' of stretches '+(hv===1?'suits':'suit')+' your answers, so this routine comes to about '+mw(a)+', not '+mins+'.'
+      :'This routine comes to about '+mw(a)+', not '+mins+'. Stretches that need care are kept to a small share of the time, and nothing else that suits your answers would fit.');
+  }
   AD.plan=p; AD.list=list;
   if(!AD.name){const pr=advPrevRoutine(); AD.name=pr?pr.name:uniqueName(p.name);}
 }
 function advToggle(k,id){
+  if(advSingle(k)){AD.ans[k]=id; return;}      /* one answer: tapping another replaces it */
+  if(!Array.isArray(AD.ans[k])) AD.ans[k]=[];
   const l=AD.ans[k], none=ADVICE.Q[k].none;
   if(id===none){AD.ans[k]=l.indexOf(none)>=0?[]:[none]; return;}
   const i=l.indexOf(id); if(i>=0) l.splice(i,1); else l.push(id);
@@ -5442,17 +5569,18 @@ function renderAdvisor(){
       '<p class="small">We do not suggest stretches while any of these apply, so that you get checked first. If you ticked one by mistake, tap Back and change it. Outside the UK, use your local emergency number.</p>';
   }else if(ADVICE.Q[st]){
     const o=ADVICE.Q[st];
-    eb='Question '+AD.step+' of 6'; q=o.q;
-    h='<p class="small">'+esc(o.hint)+'</p><div class="bd-opts">';
-    o.opts.forEach(function(x){h+=pickBtn('data-q="'+st+'" data-id="'+x.id+'"',AD.ans[st].indexOf(x.id)>=0,x.label,x.sub||'');});
+    const one=advSingle(st), on=function(id){return one?AD.ans[st]===id:(AD.ans[st]||[]).indexOf(id)>=0;};
+    eb='Question '+advQNum()+' of '+advQCount(); q=o.q;
+    h=(o.hint?'<p class="small">'+esc(o.hint)+'</p>':'')+'<div class="bd-opts"'+(one?' role="radiogroup" aria-label="'+esc(o.q)+'"':'')+'>';
+    o.opts.forEach(function(x){h+=pickBtn('data-q="'+st+'" data-id="'+x.id+'"'+(one?' data-one="1"':''),on(x.id),x.label,x.sub||'');});
     h+='</div>';
   }else if(st==='score'){
-    eb='Question '+AD.step+' of 6'; q='How is your back today?';
+    eb='Question '+advQNum()+' of '+advQCount(); q='How is your back today?';
     h='<div class="scores" role="group" aria-label="Back score">';
     for(let i=1;i<=5;i++) h+='<button data-ascore="'+i+'" aria-pressed="'+(AD.ans.score===i)+'" aria-label="Back score '+i+' out of 5">'+i+'</button>';
     h+='</div><div class="ends"><span>1 = sore</span><span>5 = great</span></div><p class="small">Leave it blank if you would rather not say.</p>';
   }else if(st==='mins'){
-    eb='Question '+AD.step+' of 6'; q='How long have you got?';
+    eb='Question '+advQNum()+' of '+advQCount(); q='How long have you got?';
     h='<div class="bd-lens" role="group" aria-label="Length">';
     LENGTHS.forEach(function(m){h+='<button data-amins="'+m+'" aria-pressed="'+(AD.ans.mins===m)+'"><b>'+m+'</b><span>minutes</span></button>';});
     h+='</div>';
@@ -5496,6 +5624,7 @@ function renderAdvisor(){
   back.textContent=st==='result'?'Save':'Back';
   next.textContent=st==='flags'?'Next':st==='stop'?'Close':st==='mins'?'Show my routine':st==='result'?'Save and start':'Next';
   if(st==='result'){back.disabled=next.disabled=!AD.list.length;} else back.disabled=false;
+  if(st!=='result'&&st!=='stop'&&advNeeds(st)) next.disabled=true;
 }
 function advSave(start){
   if(!AD||!AD.list||!AD.list.length) return;
@@ -5504,9 +5633,12 @@ function advSave(start){
   if(!nameOK($('advName'),name,pr?pr.id:null)) return;
   const rec={id:id,name:name,list:AD.list.slice(),mins:cleanMins(AD.ans.mins),focus:cleanFocus(AD.plan.focus),
              voice:pr?pr.voice:'',music:pr?pr.music:{mode:'usual',spotify:null}};
-  if(pr) Object.assign(pr,rec); else RT.own.push(rec);
-  const a=AD.ans;
-  RT.advice={at:new Date().toISOString(),answers:{areas:a.areas.slice(),feel:a.feel.slice(),worse:a.worse.slice(),score:a.score,goals:a.goals.slice(),mins:cleanMins(a.mins)},routine:id};
+  /* what her answers ruled out (safety, strap, where), so building it again at another length keeps it */
+  const kp=cleanKeep({avoid:AD.plan.avoid,share:AD.plan.cautionShare}); if(kp) rec.keep=kp;
+  if(pr){Object.assign(pr,rec); if(!kp) delete pr.keep;} else RT.own.push(rec);
+  const a=AD.ans, ans={areas:a.areas.slice(),feel:a.feel.slice(),worse:a.worse.slice(),score:a.score,goals:a.goals.slice(),mins:cleanMins(a.mins)};
+  Object.keys(ADVICE.Q).forEach(function(k){if(!(k in ans)&&k in a) ans[k]=Array.isArray(a[k])?a[k].slice():a[k];});
+  RT.advice=cleanAdvice({at:new Date().toISOString(),answers:ans,routine:id});
   store.set('mbs.advice',RT.advice);
   saveRT(); settings.routine=id; store.set('mbs.routine',id);
   closeAdvisor(); renderRoutines(); renderAdvCard(); prepAudio();
@@ -5518,6 +5650,7 @@ function advGo(dir){
     if(st==='stop'){closeAdvisor(); return;}
     if(st==='result'){advSave(true); return;}
     if(st==='flags'){const lv=adviceLevel(AD.ans.flags); if(lv){AD.stop=lv; renderAdvisor(); $('advisor').scrollTop=0; return;}}
+    if(advNeeds(st)) return;
     AD.step++;
     if(AD_STEPS[AD.step]==='result') advBuild();
   }else{
@@ -5552,7 +5685,7 @@ $('advBody').addEventListener('click',function(ev){
 renderAdvCard();
 /* the routine cards are redrawn after a restore or an account sync: keep "Check again" in step with them */
 try{new MutationObserver(function(){renderAdvCard();}).observe($('routineCards'),{childList:true});}catch(e){}
-if(typeof window!=='undefined') window.__physio={openAdvisor:openAdvisor,advisePlan:advisePlan};
+if(typeof window!=='undefined') window.__physio={openAdvisor:openAdvisor,advisePlan:advisePlan,cleanAdvice:cleanAdvice,advSteps:advSteps};
 /* "Describe a routine": the reading is in the core script; it builds with the builder's autoRoutine and names with uniqueName */
 BRIEF_USE.autoRoutine=autoRoutine; BRIEF_USE.uniqueName=uniqueName;
 window.__brief={readBrief:readBrief, briefPlan:briefPlan, nameTaken:nameTaken, uniqueName:uniqueName, builderFromBrief:builderFromBrief};   /* for tests */
