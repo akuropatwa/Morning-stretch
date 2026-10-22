@@ -2669,15 +2669,12 @@ function readBrief(text){
       const nh=hits.filter(function(h){return NEGK[h.k]&&h.s>=cur.e&&h!==cur;})[0];
       if(!nh||nh.k!==cur.k||(nx&&nh.s>=nx.s)) break;     /* the same kind: stretch after stretch, area after area */
       if(!SEP.test(t.slice(cur.e,nh.s))||busy(cur.e,nh.s)) break;
-      /* "no neck, hips please": the part after the comma is wanted. Look along that part (joined without commas). */
+      /* "no neck, hips please": a single item straight after the comma, with "please" right after it, is wanted.
+         A "please" that ends a longer list only ends it ("no neck, shoulders and upper back please" is all three out). */
       if(/,/.test(t.slice(cur.e,nh.s))){
-        let last=nh;
-        for(;;){
-          const q=hits.filter(function(h){return h.k===nh.k&&h.s>=last.e&&h!==last;})[0];
-          if(!q||/,/.test(t.slice(last.e,q.s))||!SEP.test(t.slice(last.e,q.s))) break;
-          last=q;
-        }
-        if(WANT.test(t.slice(last.e))) break;
+        const q=hits.filter(function(h){return h.k===nh.k&&h.s>=nh.e&&h!==nh;})[0];
+        const more=q&&!/,/.test(t.slice(nh.e,q.s))&&SEP.test(t.slice(nh.e,q.s));
+        if(!more&&cur===first&&WANT.test(t.slice(nh.e))) break;     /* only straight after the first, single, negated item */
       }
       if(WANT.test(t.slice(cur.e,nh.s))) break;
       nh.neg=true; nh.run=run; cur=nh;
