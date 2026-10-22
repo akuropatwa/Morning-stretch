@@ -713,8 +713,10 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
 .br-none b{font-weight:700}
 .br-none .ghost{align-self:flex-start;margin-top:4px}
 .br-stop-h{font-size:22px;line-height:1.2}
-.br-care{display:flex;flex-direction:column;gap:8px}
-.br-care p{font-size:15px;line-height:1.45;color:var(--warn);background:var(--warn-bg);border-radius:18px;padding:12px 16px}
+.br-care{display:flex;flex-direction:column;background:var(--warn-bg);border-radius:18px;padding:2px 16px}
+/* several notes read as one card, split by hairlines, so they do not push the routine far down */
+.br-care p{font-size:15px;line-height:1.45;color:var(--warn);padding:11px 0}
+.br-care p + p{border-top:1px solid color-mix(in srgb,var(--warn) 22%,transparent)}
 #brief .bd-tot{margin-top:4px}
 #brief .bd-tot p:first-child{font-size:19px}
 #brief .addbtn{margin-top:-4px}
@@ -1093,8 +1095,9 @@ h3{font-weight:700;font-size:17px;line-height:1.25;letter-spacing:-.01em}
         <summary><span class="gc-ic" aria-hidden="true"><svg class="gi" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.4M12 17h.01"/></svg></span>
           <span class="gc-t">Help me choose</span><span class="gc-b">Answer a few questions and get a routine that suits your back today.</span><span class="gc-more"><span class="gc-show">Show me how</span><span class="gc-hide">Hide</span></span></summary>
         <div class="gc-body">
-          <p>Tap <b>Help me choose</b> under your routines. It asks where you feel it, what it feels like, what makes it worse, how your back is today, which areas you would like to stretch, what you would like it to help with, where you will stretch, whether you have your strap with you and how long you have. It suggests a routine, says why in plain words, and lists anything it left out on purpose. Save it, or save and start straight away.</p>
+          <p>Tap <b>Help me choose</b> under your routines. It asks where you feel it, what it feels like, what makes it worse, how your back is today, which areas you would like to stretch, what you would like it to help with, where you will stretch, whether you have your strap with you, whether any health conditions apply to you and how long you have. It suggests a routine, says why in plain words, and lists anything it left out on purpose. Save it, or save and start straight away.</p>
           <ul>
+            <li>The health question covers a disc problem, a new strain or injury, a recent operation, a hip or knee replacement, osteoporosis, a heart condition or high blood pressure, and pregnancy. If you tick a disc problem, it also asks when it started, so an old one is not treated like a new one.</li>
             <li>It starts with a safety check. If any of those signs apply, it does not suggest a routine and tells you who to contact instead.</li>
             <li>Your answers are remembered, so <b>Check again</b> opens them ready to change and updates the same routine. Your back scores show whether things are getting better.</li>
             <li>It follows NHS and NICE guidance on back pain and common physiotherapy practice. It is general guidance, not a diagnosis. If things get worse, or have not improved within a few weeks, see a physiotherapist or your GP.</li>
