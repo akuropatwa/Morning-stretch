@@ -2585,7 +2585,7 @@ function advSingle(k){
 /* The settled form of the disc care entry, in whichever shape the data gives it: a BRIEF.care entry `discOld`, or an
    `old` object on the disc entry ({text, share, avoid, prefer, left}), else the disc entry without its lower share. */
 function discOld(CARE,disc){
-  const sep=(CARE||[]).filter(function(x){return x&&x.id==='discOld';})[0];
+  const sep=(CARE||[]).filter(function(x){return x&&(x.id==='discold'||x.id==='discOld');})[0];
   if(sep) return sep;
   const o=disc&&disc.old&&typeof disc.old==='object'?disc.old:null;
   return {id:'discOld', label:o&&o.label||disc.label, text:o?o.text:disc.text, share:o?o.share:undefined, avoid:o?o.avoid:[], left:o?o.left:'', prefer:o?o.prefer:[]};
@@ -2676,17 +2676,21 @@ function advisePlan(ans){
   }
   /* care (a disc problem, a hip replacement, pregnancy...): each option names a BRIEF.care entry, applied exactly as
      Describe applies it: its stretches left out with its reason, its caution cap, and its text shown with the routine */
-  const care=[], cq=ADVICE.Q.care, cNone=cq&&cq.none||'none';
+  const care=[], carePref=[], cq=ADVICE.Q.care, cNone=cq&&cq.none||'none';
   let CARE=[]; try{if(typeof BRIEF!=='undefined'&&BRIEF&&Array.isArray(BRIEF.care)) CARE=BRIEF.care;}catch(e){}
   L(ans.care).forEach(function(id){
     if(id===cNone) return;
     const o=opt('care',id); if(!o) return;
-    let c=CARE.filter(function(x){return x&&x.id===(o.care||o.id);})[0]; if(!c) return;
-    /* a disc problem that is old and settled: the settled form of the entry (no lower caution share, its own calm note) */
-    if((o.care||o.id)==='disc'&&ans.disc==='old') c=discOld(CARE,c);
+    /* a follow-up on the option (disc: old or recent) names the entry to use instead; unanswered, the option's own */
+    let cid=o.care||o.id;
+    const fo=o.follow&&typeof o.follow==='object'?o.follow:null;
+    if(fo&&Array.isArray(fo.opts)){const fa=fo.opts.filter(function(x){return x&&x.id===ans[fo.key||'disc'];})[0]; if(fa&&fa.care) cid=fa.care;}
+    let c=CARE.filter(function(x){return x&&x.id===cid;})[0]; if(!c) return;
+    /* no follow-up in the data: an old disc still drops the lower share (the settled form of the entry) */
+    if(!fo&&cid==='disc'&&ans.disc==='old') c=discOld(CARE,c);
     takeOut(c.avoid,c.left||'they need extra care with what you told me, so they are left out to be safe');
     if(typeof c.share==='number'&&isFinite(c.share)) share=Math.min(share,Math.max(0,c.share));
-    L(c.prefer).forEach(function(x){if(EX[x]&&avoid.indexOf(x)<0) uniq(prefer,x);});
+    carePref.push(c);
     if(c.text&&care.indexOf(String(c.text))<0) care.push(String(c.text));
   });
   /* any other answer whose option carries rules (a later question): applied like a rule */
@@ -2730,6 +2734,16 @@ function advisePlan(ans){
     return said.indexOf(nm.split(/[ ,]/)[0].replace(/s$/,''))<0;
   });
   if(short.length) notes.push('Nothing for your '+short.map(function(pt){return lc(PARTS.filter(function(x){return x[0]===pt;})[0][1]);}).join(' or ')+' suits your answers, so this routine leaves '+(short.length===1?'it':'them')+' out.');
+  /* a care entry's prefer (an old, settled disc: press-ups for a lower back routine): picked first, only when one of
+     its preferWhen parts is in the focus, and never bringing back anything left out */
+  carePref.forEach(function(c){
+    const pw=L(c.preferWhen);
+    if(pw.length&&!pw.some(function(pt){return focus.indexOf(pt)>=0;})) return;
+    L(c.prefer).slice().reverse().forEach(function(x){
+      if(!EX[x]||avoid.indexOf(x)>=0) return;
+      const i=prefer.indexOf(x); if(i>=0) prefer.splice(i,1); prefer.unshift(x);
+    });
+  });
   const pref=prefer.filter(function(id){return avoid.indexOf(id)<0;});
   /* a suggested name: where it hurts, else what she wants to stretch, else the goal */
   let name='My stretch plan';
@@ -3073,21 +3087,18 @@ function briefPlan(interp){
   const avoid=p.avoid.slice(), left=p.left.map(function(g){return {ids:g.ids.slice(),reason:g.reason};}), shares=[p.cautionShare], carePrefer=[];
   const add=function(list){const o=[]; arr(list).forEach(function(id){if(EX[id]&&avoid.indexOf(id)<0){avoid.push(id); o.push(id);}}); return o;};
   /* care notes (an operation, pregnancy and the like): safety, so what she asks for cannot bring these back */
-  /* an old, settled disc ("old disc", "disc is fine now"): its settled entry replaces the cautious one; the settled
-     form comes from a `discOld` entry, or from words on the disc entry's `old` (see discOld) */
+  /* care entries as read from the words; an old, settled disc is its own entry (discold), chosen by the data's words.
+     If both are read, the settled one gives way to the cautious one: a misread "old" must not lift a safety limit. */
   const careIds=arr(I.care).slice();
-  const discE=arr(D.care).filter(function(c){return c&&c.id==='disc';})[0];
-  if(careIds.indexOf('disc')>=0&&discE&&discE.old&&arr(discE.old.words).some(function(w){try{return new RegExp(w,'i').test(briefNorm(I.text));}catch(e){return false;}})) careIds.push('discOld');
-  const careList=arr(D.care).slice();
-  if(careIds.indexOf('discOld')>=0&&!careList.some(function(c){return c&&c.id==='discOld';})&&discE) careList.push(discOld(D.care,discE));
-  if(careIds.indexOf('discOld')>=0&&careIds.indexOf('disc')>=0) careIds.splice(careIds.indexOf('disc'),1);   /* settled replaces cautious */
+  if(careIds.indexOf('disc')>=0&&careIds.indexOf('discold')>=0) careIds.splice(careIds.indexOf('discold'),1);
+  const careList=arr(D.care);
   careList.forEach(function(c){
     if(!c||careIds.indexOf(c.id)<0) return;
     const o=add(c.avoid);
     if(o.length) left.push({ids:o,reason:c.left||'they need extra care with what you told me, so they are left out to be safe'});
     if(typeof c.share==='number') shares.push(c.share);
     if(c.text) P.care.push(String(c.text));
-    arr(c.prefer).forEach(function(x){if(EX[x]) carePrefer.push(x);});
+    arr(c.prefer).forEach(function(x){if(EX[x]) carePrefer.push({id:x,when:arr(c.preferWhen)});});
   });
   const safe=avoid.slice();
   /* her own limits: positions, kit she does not have, stretches she does not want */
@@ -3142,7 +3153,7 @@ function briefPlan(interp){
   const prefer=[];
   const pre=function(list){arr(list).forEach(function(id){if(EX[id]&&avoid.indexOf(id)<0) uniq(prefer,id);});};
   const areas=arr(I.areas), goals=arr(I.goals);
-  pre(inc); pre(p.prefer); pre(carePrefer);
+  pre(inc); pre(p.prefer);
   goals.forEach(function(g){pre(g.prefer);}); areas.forEach(function(a){pre(a.prefer);}); mods.forEach(function(m){pre(m.prefer);});
   /* an area she asked for whose usual stretches her limits rule out: any of its stretches that is still allowed
      ("nothing on the floor, no strap, hamstrings" still gets leg swings) */
@@ -3158,6 +3169,13 @@ function briefPlan(interp){
   if(!focus.length) goals.forEach(function(g){fo(g.parts);});
   if(!focus.length) fo(p.focus);
   focus=focus.slice(0,3);
+  /* a care entry's prefer (old disc: press-ups) goes first, but only when one of its preferWhen parts is in the
+     focus (as in Help me choose), and never brings back anything left out */
+  carePrefer.slice().reverse().forEach(function(c){
+    if(c.when.length&&!c.when.some(function(pt){return focus.indexOf(pt)>=0;})) return;
+    if(avoid.indexOf(c.id)>=0) return;
+    const i=prefer.indexOf(c.id); if(i>=0) prefer.splice(i,1); prefer.unshift(c.id);
+  });
   const cs=Math.min.apply(null,shares.filter(function(x){return typeof x==='number'&&isFinite(x)&&x>=0&&x<=1;}).concat([ADVICE.share]));
   let list=[];
   try{
@@ -4919,7 +4937,7 @@ function cleanAdvice(a){
           routine:typeof a.routine==='string'&&/^u[\w-]{1,40}$/.test(a.routine)?a.routine:''};
   /* the disc follow-up on the care screen: 'old' or 'recent', only while "a disc problem" is ticked */
   const discTicked=out.answers.care&&out.answers.care.some(function(id){
-    try{const o=ADVICE.Q.care.opts.filter(function(x){return x.id===id;})[0]; return !!o&&(o.care||o.id)==='disc';}catch(e){return false;}
+    try{const o=ADVICE.Q.care.opts.filter(function(x){return x.id===id;})[0]; return !!o&&((o.care||o.id)==='disc'||!!(o.follow&&(o.follow.key||'disc')==='disc'));}catch(e){return false;}
   });
   out.answers.disc=discTicked&&(ans.disc==='old'||ans.disc==='recent')?ans.disc:null;
   /* a further question physio may add (one at most): kept the same way, by its own ids */
