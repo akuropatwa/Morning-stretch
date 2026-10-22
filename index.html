@@ -1752,7 +1752,56 @@ const ADVICE={
       {id:'tennis', label:'Tennis', parts:['shoulders','upper'], name:'Before tennis'},
       {id:'running', label:'Running', parts:['legs','hips'], name:'Before a run'},
       {id:'desk', label:'Desk work', sub:'Sitting for long spells', parts:['upper','shoulders'], name:'Desk day stretch'},
-      {id:'general', label:'Moving well day to day', parts:[]}]}
+      {id:'general', label:'Moving well day to day', parts:[]}]},
+    /* v18. Where she would like to stretch, which can differ from where it hurts. parts: the focus; prefer: picked first
+       where the safety rules allow. Lower back picks stay neutral (no forward bends first) because of the disc history. */
+    stretch:{q:'Which areas would you like to stretch?', hint:'Pick all that apply. These can be different from where it hurts.', none:'all', opts:[
+      {id:'lowback', label:'Lower back', parts:['back'], prefer:['tilt','kneeroll','catcow','bridge']},
+      {id:'hams', label:'Hamstrings', sub:'The backs of your thighs', parts:['ham'], prefer:['ham','legup','activeham']},
+      {id:'hips', label:'Hips and buttocks', parts:['hips'], prefer:['fig4','standhip','hipflexor','kneecross']},
+      {id:'quads', label:'Front of the thighs', sub:'And the fronts of your hips', parts:['legs'], prefer:['sidequad','standhip','hipflexor']},
+      {id:'calves', label:'Calves', parts:['legs'], prefer:['calf','soleus','calfraise']},
+      {id:'upper', label:'Upper back and sides', parts:['upper'], prefer:['openbook','midback','sidebend','reachup']},
+      {id:'chest', label:'Chest and shoulders', parts:['shoulders'], prefer:['armopen','elbowsback','crossbody','strapopen','rolls']},
+      {id:'neck', label:'Neck', parts:['shoulders'], prefer:['sideneck','rolls','uppback']},
+      {id:'core', label:'Core strength', sub:'Gentle strength work that supports your back', parts:['core'], prefer:['bridge','birddog','deadbug','sideplank']},
+      {id:'all', label:'A bit of everything', parts:[], prefer:[]}]},
+    /* ids: the stretches that cannot be done without the strap (Describe's kit.strap.ids is this same list). The side-lying
+       quad stretch only offers the strap as an option, so it stays. With no strap, the no option's prefer is used when
+       hamstrings are wanted: the leg-up and active hamstring stretches need no strap. */
+    strap:{q:'Have you got your strap with you?', hint:'Choose one.', single:true, ids:['ham','groin','strapopen'],
+      left:'they need the strap', opts:[
+      {id:'yes', label:'Yes', short:'With the strap'},
+      {id:'no', label:'No', sub:'Stretches that need the strap are left out', short:'No strap', prefer:['legup','activeham']}]},
+    /* position rules in the same form as BRIEF.only and BRIEF.not (Standing only and No kneeling match them exactly).
+       note: the general line when the limit leaves a wanted area short (hamstrings, the usual gap). gaps: a plainer line
+       for each PARTS id this limit leaves with nothing at all, used in place of note for that part. */
+    where:{q:'Where will you stretch?', hint:'Choose one.', single:true, opts:[
+      {id:'floor', label:'On the floor', sub:'Lying down and kneeling are fine', short:'On the floor', only:null, not:[], also:[], note:''},
+      {id:'nokneel', label:'On the floor, no kneeling', sub:'Lying down is fine, but not kneeling or on all fours', short:'No kneeling',
+        only:null, not:['kneel','fours'], also:[], note:''},
+      {id:'stand', label:'Standing only', sub:'Nothing on the floor or in a chair', short:'Standing only', only:['stand'], not:[], also:['sideneck'],
+        note:'There is no standing hamstring hold. Leg swings are the nearest, so do your hamstring stretch lying down later if you can.',
+        gaps:{ham:'There is no standing hamstring hold. Leg swings are the nearest, so do your hamstring stretch lying down later if you can.',
+          back:'Standing, there are no lower back stretches. The standing twist and side bend keep your back moving, so do pelvic tilts or knee rolls lying down later if you can.',
+          core:'The core strength moves are all done lying down or on all fours. Mini squats are the nearest standing.'}},
+      {id:'desk', label:'At my desk', sub:'Sitting or standing, in work clothes', short:'At your desk', only:['sit','stand'], not:[], also:[],
+        note:'At a desk there is no hamstring hold. Leg swings and the seated nerve glide are the nearest, so do your hamstring stretch lying down later if you can.',
+        gaps:{ham:'At a desk there is no hamstring hold. Leg swings and the seated nerve glide are the nearest, so do your hamstring stretch lying down later if you can.',
+          back:'At a desk there are no lower back stretches. The standing twist and the seated side bend keep your back moving, so do pelvic tilts or knee rolls lying down later if you can.',
+          core:'The core strength moves are all done lying down or on all fours. Mini squats are the nearest at a desk.'}}]},
+    /* the one extra question (see physio-notes.md): things that change which stretches are safe. care: the BRIEF.care id
+       whose avoid, share, left and text apply, so Help me choose and Describe treat them the same way. */
+    care:{q:'Do any of these apply to you?', hint:'Pick all that apply. They change which stretches are safe for you.', none:'none', opts:[
+      {id:'disc', label:'A disc problem', sub:'Now or in the past, such as a slipped disc', care:'disc'},
+      {id:'injury', label:'A new strain or injury', sub:'In the last few weeks', care:'injury'},
+      {id:'operation', label:'An operation in the last few months', care:'operation'},
+      {id:'hiprep', label:'A hip replacement', care:'hiprep'},
+      {id:'kneerep', label:'A knee replacement', care:'kneerep'},
+      {id:'osteo', label:'Osteoporosis or thin bones', care:'osteo'},
+      {id:'heart', label:'A heart condition or high blood pressure', care:'heart'},
+      {id:'pregnant', label:'Pregnant', care:'pregnant'},
+      {id:'none', label:'None of these'}]}
   },
   share:1/3,      /* the usual cap on time spent in stretches with a caution note */
   /* Rules, most important first. A rule applies when every clause in `all` matches (a clause matches when any of its
@@ -2174,7 +2223,7 @@ const BRIEF={
   ],
   /* kit she does not have: words = phrases meaning she has none; ids = the stretches that need it */
   kit:{
-    strap:{label:'No strap', ids:['ham','groin','strapopen'],
+    strap:{label:'No strap', ids:ADVICE.Q.strap.ids,      /* the same list Help me choose uses */
       words:["\\bno strap\\b(?! (stretch|hamstring|shoulder)\\b)", "\\bwithout (a |the |my )?(strap|belt)\\b",
         "\\b(haven'?t|have not|don'?t have|do not have|not got|no) (got )?(a |the |my |any )?(yoga |stretch(ing)? )?(strap|band)\\b",
         "\\b(forgot|forgotten|left|lost) (the |my )?strap\\b", "\\bstrap ?(less|free)\\b",
