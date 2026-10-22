@@ -2332,21 +2332,18 @@ function readBrief(text){
     R[k].forEach(function(x){x.rx.forEach(function(rx){briefFind(rx,t).forEach(function(m){hits.push({k:k,x:x,s:m.s,e:m.e});});});});
   });
   /* where two of her wishes overlap, the more specific wins: "no strap" over the strap stretch, a stretch's name over a body area */
-  /* kit and position phrases always win; otherwise the longer phrase, and on a tie an area or goal beats a stretch's
-     name ("hamstrings" is the body part, "hamstring stretch" the stretch) */
-  const RANK={kit:1,not:1,only:1,stretches:3,goals:2,areas:2,mods:2};
+  /* An area or stretch name inside a kit or position phrase does not count ("not on my back" is a position, not the
+     lower back). Between areas and stretch names the longer match wins ("side neck" is the stretch, not the neck);
+     matches of the same span all count ("forward bends" is all three). Kit, positions, goals and the rest all stand. */
   const over=function(a,b){return a.s<b.e&&b.s<a.e;};
-  const beats=function(o,h){
-    const ko=RANK[o.k]===1, kh=RANK[h.k]===1;
-    if(ko!==kh) return ko;
-    const lo=o.e-o.s, lh=h.e-h.s;
-    if(lo!==lh) return lo>lh;
-    if(RANK[o.k]!==RANK[h.k]) return RANK[o.k]<RANK[h.k];
-    return o.s<h.s||(o.s===h.s&&hits.indexOf(o)<hits.indexOf(h));
-  };
+  const LIM={kit:1,not:1,only:1}, BODY={areas:1,stretches:1};
   hits=hits.filter(function(h){
-    if(!RANK[h.k]) return true;
-    return !hits.some(function(o){return o!==h&&RANK[o.k]&&over(o,h)&&beats(o,h);});
+    if(!BODY[h.k]) return true;
+    return !hits.some(function(o){
+      if(o===h||!over(o,h)) return false;
+      if(LIM[o.k]) return o.s<=h.s&&h.e<=o.e;
+      return BODY[o.k]&&(o.e-o.s)>(h.e-h.s);
+    });
   });
   /* "no strap or chair": try the next item with the same "no" in front, for kit and positions */
   const TERM=/[,.;:!?\n()]|\b(?:but|then|plus|also|though|although)\b/;
@@ -2380,7 +2377,7 @@ function readBrief(text){
     return !(a&&/^\s*$/.test(t.slice(a.e,n.s)))&&!(b&&/^\s*$/.test(t.slice(n.e,b.s)));
   });
   const NEGK={areas:'x',stretches:'x',goals:'g',mods:'m',feel:'f',worse:'f',only:'o'};
-  const JOIN=/^\s*(?:(?:and|or|nor|\/)\s*)?(?:(?:the|my|your|a|an|any|of|for|on|to|with|stretch|stretches|stretching)\s+)*$/;
+  const JOIN=/^\s*(?:(?:or|nor|\/)\s*)?(?:(?:the|my|your|a|an|any|of|for|on|to|with|stretch|stretches|stretching)\s+)*$/;
   negs.forEach(function(n,ni){
     const rest=t.slice(n.e), stop=/[,.;:!?\n()]|\b(?:and|but|then|plus|also|though|although|just|so|because|since|while|when|if|as|before|after)\b/.exec(rest);
     let end=stop?n.e+stop.index:t.length;
@@ -2413,7 +2410,10 @@ function readBrief(text){
     else if(h.k==='sore'){if(!sore){sore=d; hear(d.label||'Sore today',h.s);}}
     else if(h.k==='kit'){if(I.noKit.indexOf(h.x.key)<0){I.noKit.push(h.x.key); hear(d.label||('No '+h.x.key),h.s);
       I.limits.push({label:d.label||('No '+h.x.key),kit:h.x.key});}}
-    else if(h.k==='not'){const p=posOK(d.pos); p.forEach(function(x){uniq(I.notPos,x);}); if(p.length){hear(d.label,h.s); I.limits.push({label:d.label||'',notPos:p});}}
+    else if(h.k==='not'){
+      const p=posOK(d.pos); p.forEach(function(x){uniq(I.notPos,x);});
+      if(p.length&&!I.limits.some(function(l){return l.d===d;})){hear(d.label,h.s); I.limits.push({label:d.label||'',notPos:p,d:d});}
+    }
     else if(h.k==='only'){if(h.neg) return; const p=posOK(d.pos); if(p.length&&out.only.indexOf(d)<0){out.only.push(d); hear(d.label,h.s);}}
     else if(h.k==='areas'){
       if(h.neg){if(out.areasNo.indexOf(d)<0){out.areasNo.push(d); hear('Not the '+briefLc(d.label),h.s);}}
@@ -2439,7 +2439,7 @@ function readBrief(text){
   I.goals=out.goals;
   if(out.only.length){
     I.only=[]; out.only.forEach(function(o){posOK(o.pos).forEach(function(p){uniq(I.only,p);});});
-    I.limits.push({label:out.only.map(function(o){return o.label;}).filter(Boolean).join(', '),only:I.only.slice()});
+    I.limits.push({label:out.only.map(function(o){return o.label;}).filter(Boolean).join(', '),only:I.only.slice(),ds:out.only.slice()});
   }
   const aq=qIds('areas'), gq=qIds('goals');
   I.areas.forEach(function(a){if(a.advice&&aq.indexOf(a.advice)>=0) uniq(I.answers.areas,a.advice);});
@@ -2484,15 +2484,24 @@ function briefPlan(interp){
   const lim={};
   const limit=function(id,label){if(!EX[id]) return; uniq(avoid,id); if(label){lim[id]=lim[id]||[]; uniq(lim[id],label);}};
   const only=Array.isArray(I.only)&&I.only.length?I.only:null, notPos=arr(I.notPos);
-  const labelFor=function(key,pos){
-    const l=arr(I.limits).filter(function(x){return x&&(key==='only'?x.only:x.notPos&&x.notPos.indexOf(pos)>=0);})[0];
-    return l&&l.label?l.label:'';
-  };
+  /* the position entries she matched: `also` lists stretches that can be done that way too (side neck standing),
+     `note` is a plain line shown when that limit is used */
+  const L=arr(I.limits).filter(function(x){return x&&typeof x==='object';});
+  const onlyL=L.filter(function(x){return x.only;})[0]||null, onlyD=onlyL?arr(onlyL.ds):arr(D.only).filter(function(o){return o&&only&&arr(o.pos).some(function(q){return only.indexOf(q)>=0;});});
+  const notL=L.filter(function(x){return x.notPos;});
+  const alsoOnly=[]; onlyD.forEach(function(o){arr(o&&o.also).forEach(function(id){uniq(alsoOnly,id);});});
+  const noted=[];
   Object.keys(EX).forEach(function(id){
     const pos=EX[id].pos;
-    if(only&&only.indexOf(pos)<0) limit(id,labelFor('only'));
-    if(notPos.indexOf(pos)>=0) limit(id,labelFor('not',pos));
+    if(only&&only.indexOf(pos)<0&&alsoOnly.indexOf(id)<0) limit(id,onlyL&&onlyL.label||'');
+    notL.forEach(function(l){
+      if(arr(l.notPos).indexOf(pos)<0||arr(l.d&&l.d.also).indexOf(id)>=0) return;
+      limit(id,l.label); if(noted.indexOf(l)<0) noted.push(l);
+    });
+    if(notL.length===0&&notPos.indexOf(pos)>=0) limit(id,'');
   });
+  if(only) onlyD.forEach(function(o){if(o&&o.note) uniq(P.notes,String(o.note));});
+  noted.forEach(function(l){if(l.d&&l.d.note) uniq(P.notes,String(l.d.note));});
   const kit=D.kit&&typeof D.kit==='object'?D.kit:{};
   arr(I.noKit).forEach(function(k){
     const lab=kit[k]&&kit[k].label?kit[k].label:'No '+k;
@@ -4326,8 +4335,8 @@ function nameMsg(field,name){
     p=document.createElement('p'); p.className='name-taken'; p.setAttribute('role','alert');
     field.parentNode.insertBefore(p,field.nextSibling);
   }
-  if(name){p.textContent='You already have a routine called \u201c'+String(name).replace(/\s+/g,' ').trim()+'\u201d. Choose another name.'; p.hidden=false;}
-  else{p.textContent=''; p.hidden=true;}
+  if(name) p.textContent='You already have a routine called \u201c'+String(name).replace(/\s+/g,' ').trim()+'\u201d. Choose another name.';
+  else p.parentNode.removeChild(p);
 }
 /* true when the name can be saved; otherwise shows the message and puts the cursor in the field */
 function nameOK(input,name,exceptId){
