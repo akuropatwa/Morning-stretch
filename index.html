@@ -2451,6 +2451,11 @@ function briefNorm(t){
   return String(t==null?'':t).slice(0,2000).toLowerCase().replace(/[‘’‛ʼ`´]/g,"'").replace(/[“”]/g,'"')
     .replace(/[‐-―−]/g,'-').replace(/&/g,' and ').replace(/\s+/g,' ').trim();
 }
+/* minutes typed with a typo or autocorrect ("15 mns", "10 minits", "12 minuets") read as "mins", so the words
+   around them match as they would after "mins" */
+function briefUnits(t){
+  return t.replace(/(\d|\b(?:one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|twenty|thirty))(\s*-?\s*)(?:minits?|minuets?|minuts?|mintues?|mintes?|minites?|minuites?|minuetes?|mns|mnts?|mons)\b/g,'$1$2mins');
+}
 function briefLc(t){t=String(t||''); return t.charAt(0).toLowerCase()+t.slice(1);}
 function capWords(id){const t=String(id||'').replace(/[_-]+/g,' '); return t.charAt(0).toUpperCase()+t.slice(1);}
 function briefCompile(D){
@@ -2507,7 +2512,12 @@ function briefMins(t){
     {re:'\\bquick(?:ie)?\\s+(?:one\\s+)?(?:of\\s+)?'+NB+'\\b'+NOTU, v:function(m){return briefNum(m[1]);}},
     /* a bare 3 to 30 at the start, or before "for": "10 for my back", "15, gentle" */
     {re:'^(?:just\\s+|about\\s+|around\\s+)?'+NB+'\\b'+NOTU, v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}},
-    {re:'\\b'+NB+'\\s+for\\b', v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}}
+    {re:'\\b'+NB+'\\s+for\\b', v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}},
+    /* a bare 3 to 30 at the very end ("neck 5"), unless the word before makes it a score, an age or a time */
+    {re:'(?:^|[\\s,(])(?:([a-z\']+)\\s+)?'+NB+'\\s*[.!]*\\s*$', v:function(m){
+      if(m[1]&&/^(pain|score|level|rated|rate|is|was|at|of|out|age|aged|im|i'm|about|number|than|by|under|over|size|day|week|month|year|hole|par|from|to|and|or|in|on)$/.test(m[1])) return null;
+      const v=briefNum(m[2]); return v>=3&&v<=30?v:null;}},
+    {re:',\\s*'+NB+'\\s*,', v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}}
   ];
   let best=null;
   P.forEach(function(p){
@@ -2528,7 +2538,7 @@ function readBrief(text){
            only:null,notPos:[],noKit:[],mods:[],excludeIds:[],includeIds:[],heard:[],limits:[],empty:true};
   const D=briefData();
   if(!D) return I;
-  const R=briefCompile(D), t=briefNorm(raw);
+  const R=briefCompile(D), t=briefUnits(briefNorm(raw));
   if(!t) return I;
   const heard=[];
   const hear=function(label,s){if(label) heard.push({label:String(label),s:s});};
@@ -2605,7 +2615,11 @@ function readBrief(text){
       const nh=hits.filter(function(h){return NEGK[h.k]&&h.s>=cur.e;})[0];
       const gap=t.slice(cur.e,nh&&nh.s);
       if(!nh||nh.k!==cur.k||(nx&&nh.s>=nx.s)) break;     /* the same kind: stretch after stretch, area after area */
-      if(!JOIN.test(gap)&&!(JOINC.test(gap)&&cur.k==='stretches'&&nh.k==='stretches')) break;
+      /* after a comma: stretch names always carry on ("skip cobra, bird dog"); an area carries on when it closes the
+         list or leads to "or" ("no neck, shoulders or upper back", "not my neck, shoulders"), but not into a fresh
+         request ("no neck, hips please", "no neck, hips and hamstrings") */
+      const closes=/^\s*(?:$|[,.;:!?\n)]|(?:or|nor|either)\b)/.test(t.slice(nh.e));
+      if(!JOIN.test(gap)&&!(JOINC.test(gap)&&cur.k===nh.k&&(nh.k==='stretches'||(nh.k==='areas'&&closes)))) break;
       nh.neg=true; cur=nh;
     }
   });
@@ -2714,8 +2728,11 @@ function briefPlan(interp){
     });
     if(notL.length===0&&notPos.indexOf(pos)>=0) limit(id,'');
   });
-  if(only) onlyD.forEach(function(o){if(o&&o.note) uniq(P.notes,String(o.note));});
-  noted.forEach(function(l){if(l.d&&l.d.note) uniq(P.notes,String(l.d.note));});
+  /* the position notes all say much the same (there is no hamstring hold that way): one is enough */
+  const pn=[];
+  if(only) onlyD.forEach(function(o){if(o&&o.note) uniq(pn,String(o.note));});
+  noted.forEach(function(l){if(l.d&&l.d.note) uniq(pn,String(l.d.note));});
+  if(pn.length) P.notes.push(pn[0]);
   const kit=D.kit&&typeof D.kit==='object'?D.kit:{};
   arr(I.noKit).forEach(function(k){
     const lab=kit[k]&&kit[k].label?kit[k].label:'No '+k;
@@ -2745,6 +2762,13 @@ function briefPlan(interp){
   const areas=arr(I.areas), goals=arr(I.goals);
   pre(inc); pre(p.prefer);
   goals.forEach(function(g){pre(g.prefer);}); areas.forEach(function(a){pre(a.prefer);}); mods.forEach(function(m){pre(m.prefer);});
+  /* an area she asked for whose usual stretches her limits rule out: any of its stretches that is still allowed
+     ("nothing on the floor, no strap, hamstrings" still gets leg swings) */
+  areas.forEach(function(a){
+    const own=arr(a.ids).filter(function(id){return EX[id]&&avoid.indexOf(id)<0;});
+    Object.keys(EX).forEach(function(id){if(arr(a.parts).indexOf(EX[id].part)>=0&&avoid.indexOf(id)<0&&own.indexOf(id)<0) own.push(id);});
+    if(own.length&&!own.some(function(id){return prefer.indexOf(id)>=0;})) pre(own.slice(0,1));
+  });
   /* focus: from the areas, then the goals, at most three */
   let focus=[];
   const fo=function(parts){arr(parts).forEach(function(x){if(PARTS.some(function(q){return q[0]===x;})) uniq(focus,x);});};
@@ -2763,7 +2787,7 @@ function briefPlan(interp){
   const tot=list.length?totalSeconds(buildTimeline(list)):0;
   const nameList=function(l){const n=l.map(function(id){return briefLc(EX[id].name);}); return n.length<2?n.join(''):n.slice(0,-1).join(', ')+' and '+n[n.length-1];};
   const miss=inc.filter(function(id){return avoid.indexOf(id)<0&&list.indexOf(id)<0;});
-  if(miss.length) P.notes.push('There was not room for the '+nameList(miss)+' in '+mins+' minutes.');
+  if(miss.length) P.notes.push('The '+nameList(miss)+(miss.length===1?' did':' did')+' not fit in '+mins+' minutes'+(miss.some(function(id){return EX[id].caution;})?', as stretches that need care are kept to a small share of the time.':'.'));
   /* nothing fits: the screen says so in its own line, so no note here as well */
   if(list.length&&mins*60-tot>60){
     const a=Math.max(1,Math.round(tot/60));
@@ -2774,12 +2798,15 @@ function briefPlan(interp){
       :'This routine comes to about '+mw(a)+', not '+mins+'. Stretches that need care are kept to a small share of the time, and nothing else that suits what you asked for would fit.');
   }
   areas.forEach(function(a){
-    const aid=arr(a.ids).filter(function(id){return !!EX[id];});
-    const own=aid.length?aid:Object.keys(EX).filter(function(id){return arr(a.parts).indexOf(EX[id].part)>=0;});
+    /* its own stretches, and any others for that body part (the seated nerve glide counts for the hamstrings) */
+    const own=arr(a.ids).filter(function(id){return !!EX[id];});
+    Object.keys(EX).forEach(function(id){if(arr(a.parts).indexOf(EX[id].part)>=0&&own.indexOf(id)<0) own.push(id);});
     if(!own.length||own.some(function(id){return list.indexOf(id)>=0;})) return;
     const where='the '+briefLc(a.label||'');
-    P.notes.push(own.every(function(id){return avoid.indexOf(id)>=0;})?'None of the stretches for '+where+' suit what you asked for, so there is nothing for '+where+' in this routine.'
-      :'There was not room for '+where+' in '+mins+' minutes.');
+    const okIds=own.filter(function(id){return avoid.indexOf(id)<0;});
+    P.notes.push(!okIds.length?'None of the stretches for '+where+' suit what you asked for, so there is nothing for '+where+' in this routine.'
+      :okIds.every(function(id){return EX[id].caution;})?'The only stretches for '+where+' that suit what you asked for need care, and those are kept to a small share of the time, so there is nothing for '+where+' in this routine.'
+      :'The stretches for '+where+' that suit what you asked for did not fit in '+mins+' minutes.');
   });
   /* why: only the reasons that apply to what made it in */
   const inList=function(l){return !l||!l.length||l.some(function(id){return list.indexOf(id)>=0;});};
