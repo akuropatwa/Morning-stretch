@@ -2538,7 +2538,12 @@ function briefCompile(D){
   if(briefRx&&briefRx.src===D) return briefRx;
   const rx=function(list){
     const out=[];
-    (Array.isArray(list)?list:[]).forEach(function(s){if(typeof s!=='string'||!s) return; try{out.push(new RegExp(s,'gi'));}catch(e){}});
+    (Array.isArray(list)?list:[]).forEach(function(s){
+      if(typeof s!=='string'||!s) return;
+      /* a pattern for the start of the brief ("^back") also fits the start of each clause ("not the neck, back please") */
+      if(s.charAt(0)==='^') s='(?:^|[,;.!?]\\s*)(?:'+s.slice(1)+')';
+      try{out.push(new RegExp(s,'gi'));}catch(e){}
+    });
     return out;
   };
   const ent=function(a){return (Array.isArray(a)?a:[]).filter(function(x){return x&&typeof x==='object';}).map(function(x){return {d:x,rx:rx(x.words)};});};
@@ -2552,7 +2557,11 @@ function briefCompile(D){
 function briefFind(rx,t){
   const out=[]; let m, n=0;
   rx.lastIndex=0;
-  while((m=rx.exec(t))&&n++<200){ if(!m[0].length){rx.lastIndex++; continue;} out.push({s:m.index,e:m.index+m[0].length,txt:m[0]}); }
+  while((m=rx.exec(t))&&n++<200){
+    if(!m[0].length){rx.lastIndex++; continue;}
+    const lead=/^[,;.!?]\s*/.exec(m[0]), k=lead?lead[0].length:0;     /* a clause-start match begins after its comma */
+    if(m[0].length>k) out.push({s:m.index+k,e:m.index+m[0].length,txt:m[0].slice(k)});
+  }
   rx.lastIndex=0;
   return out;
 }
@@ -2565,7 +2574,7 @@ function briefNum(w){
   const p=w.split(/[\s-]+/);
   return p.reduce(function(a,x){return a+(BRIEF_NUM[x]||0);},0)||null;
 }
-function briefMins(t){
+function briefMins(t,skip){
   /* minutes, with the usual typos and autocorrect ("minits", "minuets", "mintues", "mns") */
   const U='(?:minutes?|mins?|minits?|minuets?|minuts?|mintues?|mintes?|minites?|minuites?|minuetes?|mns|mnts?)';
   /* a bare number: digits or words, never "one" or "a" ("quick one" is not one minute) */
@@ -2590,14 +2599,20 @@ function briefMins(t){
     {re:'^(?:just\\s+|about\\s+|around\\s+)?'+NB+'\\b'+NOTU, v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}},
     {re:'\\b'+NB+'\\s+for\\b', v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}},
     /* a bare 3 to 30 at the very end ("neck 5"), unless the word before makes it a score, an age or a time */
-    {re:'(?:^|[\\s,(])(?:([a-z\']+)\\s+)?'+NB+'\\s*[.!]*\\s*$', v:function(m){
+    {re:'(?:^|[\\s,(])(?:([a-z\']+)\\s+)?'+NB+'\\s*(?:(?:please|pls|plz|thanks|thank you)\\b\\s*)?(?:[.!]*\\s*$|[,.;!?])', v:function(m){
       if(m[1]&&/^(pain|score|level|rated|rate|is|was|at|of|out|age|aged|im|i'm|about|number|than|by|under|over|size|day|week|month|year|hole|par|from|to|and|or|in|on)$/.test(m[1])) return null;
       const v=briefNum(m[2]); return v>=3&&v<=30?v:null;}},
     {re:',\\s*'+NB+'\\s*,', v:function(m){const v=briefNum(m[1]); return v>=3&&v<=30?v:null;}}
   ];
   let best=null;
   P.forEach(function(p){
-    const m=new RegExp(p.re,'i').exec(t); if(!m) return;
+    const re=new RegExp(p.re,'gi'); let m=null, x, n=0;
+    while((x=re.exec(t))&&n++<50){
+      const a=x.index, b=a+x[0].length;
+      if(!(skip||[]).some(function(k){return k.s<b&&a<k.e&&/\d|\b(?:four|two|three|ten)\b/.test(t.slice(k.s,k.e));})){m=x; break;}
+      if(!x[0].length) re.lastIndex++;
+    }
+    if(!m) return;
     const v=p.v(m); if(v==null||!isFinite(v)) return;
     if(!best||m.index<best.s||(m.index===best.s&&m[0].length>best.len)) best={s:m.index,len:m[0].length,raw:v,txt:m[0]};
   });
@@ -2618,7 +2633,10 @@ function readBrief(text){
   if(!t) return I;
   const heard=[];
   const hear=function(label,s){if(label) heard.push({label:String(label),s:s});};
-  const ml=briefMins(t);
+  /* stretch names with a number in them ("figure 4") are not lengths */
+  const nameSpans=[];
+  R.stretches.forEach(function(x){x.rx.forEach(function(rx){briefFind(rx,t).forEach(function(m){nameSpans.push(m);});});});
+  const ml=briefMins(t,nameSpans);
   if(ml){I.mins=ml.mins; I.minsSaid=ml.said; hear(ml.mins+' minutes',ml.s);}
   /* every match of every phrase */
   let hits=[];
@@ -2696,10 +2714,17 @@ function readBrief(text){
     let cur=first;
     inW.forEach(function(h){if(NEGK[h.k]===NEGK[first.k]){h.neg=true; h.run=run; cur=h;}});
     if(NEGK[first.k]!=='x') return;
+    /* closed: the list has had its "and" or "or" and last item ("no neck or shoulders"); a comma after that starts
+       something new ("no neck or shoulders, lower back please") */
+    let closed=cur!==first&&/\b(?:and|or|nor)\b|&|\//.test(t.slice(first.e,cur.s));
     for(;;){
       const nh=hits.filter(function(h){return NEGK[h.k]&&h.s>=cur.e&&h!==cur;})[0];
       if(!nh||nh.k!==cur.k||(nx&&nh.s>=nx.s)) break;     /* the same kind: stretch after stretch, area after area */
-      if(!SEP.test(t.slice(cur.e,nh.s))||busy(cur.e,nh.s)) break;
+      const gap=t.slice(cur.e,nh.s);
+      if(!SEP.test(gap)||busy(cur.e,nh.s)) break;
+      if(closed&&/,/.test(gap)) break;
+      /* "please" straight after an item closes the "no" there ("no neck please, back please") */
+      if(WANT.test(gap)) break;
       /* "no neck, hips please": a single item straight after the comma, with "please" right after it, is wanted.
          A "please" that ends a longer list only ends it ("no neck, shoulders and upper back please" is all three out). */
       if(/,/.test(t.slice(cur.e,nh.s))){
@@ -2707,7 +2732,7 @@ function readBrief(text){
         const more=q&&!/,/.test(t.slice(nh.e,q.s))&&SEP.test(t.slice(nh.e,q.s));
         if(!more&&cur===first&&WANT.test(t.slice(nh.e))) break;     /* only straight after the first, single, negated item */
       }
-      if(WANT.test(t.slice(cur.e,nh.s))) break;
+      if(/\b(?:and|or|nor)\b|&|\//.test(gap)) closed=true;
       nh.neg=true; nh.run=run; cur=nh;
     }
   });
