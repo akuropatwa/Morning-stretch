@@ -2596,10 +2596,10 @@ function advSingle(k){
    actually in the routine. If none it names is in the list, it becomes a plain line about that part: nothing suits
    (the named stretches are left out by her answers), or they did not fit in the time. Lines that name no stretch stay. */
 /* the notes after gapNote: a rewritten line goes when another line already says the same part has nothing */
-function gapNotes(notes,list,avoid,mins,focus){
+function gapNotes(notes,list,avoid,mins,focus,safe){
   const out=[];
   (notes||[]).forEach(function(t){
-    const g=gapNote(t,list,avoid,mins,focus);
+    const g=gapNote(t,list,avoid,mins,focus,safe);
     if(!g||out.indexOf(g)>=0) return;
     if(g!==t){
       const pt=PARTS.filter(function(x){return g.toLowerCase().indexOf(x[1].toLowerCase())>=0;})[0];
@@ -2610,22 +2610,84 @@ function gapNotes(notes,list,avoid,mins,focus){
   });
   return out;
 }
-function gapNote(text,list,avoid,mins,focus){
+/* Each sentence of a gap line is read as a claim and an optional suggestion for later, split at ", so":
+   "Leg swings and the seated nerve glide are the nearest, so do your hamstring stretch lying down later if you can."
+   A stretch named in the claim must be in the routine: the ones that are not are taken out of the sentence, and if
+   none is left the whole line becomes a plain one about that part. A stretch suggested for later must not be one a
+   safety rule leaves out (safe: the safety-only avoid list); if all are, the suggestion goes. */
+function gapNote(text,list,avoid,mins,focus,safe){
   text=String(text||''); if(!text) return text;
-  const t=text.toLowerCase();
-  /* a line about a part she did not ask for (all-round, or another focus) is general advice: left as written */
-  const pt0=PARTS.filter(function(x){return t.indexOf(x[1].toLowerCase().split(/[ ,]/)[0].replace(/s$/,''))>=0;})[0];
-  if(Array.isArray(focus)&&(!pt0||focus.indexOf(pt0[0])<0)) return text;
-  const names=Object.keys(EX).filter(function(id){
-    const n=EX[id].name.toLowerCase(), m=n.replace(/^(standing|seated) /,'');
-    return t.indexOf(n)>=0||(m!==n&&t.indexOf(m)>=0);
-  });
-  if(!names.length||names.some(function(id){return (list||[]).indexOf(id)>=0;})) return text;
-  const pt=PARTS.filter(function(x){return t.indexOf(x[1].toLowerCase().split(/[ ,]/)[0].replace(/s$/,''))>=0;})[0];
+  list=list||[]; avoid=avoid||[]; safe=Array.isArray(safe)?safe:null;
+  const lc=text.toLowerCase();
+  const pt=PARTS.filter(function(x){return lc.indexOf(x[1].toLowerCase().split(/[ ,]/)[0].replace(/s$/,''))>=0;})[0];
   const what=pt?'your '+pt[1].toLowerCase():'that';
-  const allOut=names.every(function(id){return (avoid||[]).indexOf(id)>=0;});
-  return allOut?'Nothing for '+what+' suits your answers here, so this routine leaves '+(pt?'them':'it')+' out.'
-    :'The stretches for '+what+' that suit your answers did not fit in '+mins+' minutes.';
+  /* every stretch name in a piece of text, with where it is (and a "the " in front of it, if there is one) */
+  const find=function(t){
+    const l=t.toLowerCase(), cand=[];
+    Object.keys(EX).forEach(function(id){
+      const n=EX[id].name.toLowerCase(), m=n.replace(/^(standing|seated) /,'');
+      [n,m].forEach(function(w,wi){
+        if(wi&&w===n) return;
+        for(let i=l.indexOf(w);i>=0;i=l.indexOf(w,i+1)){
+          if((i===0||!/[a-z]/.test(l.charAt(i-1)))&&!/[a-z]/.test(l.charAt(i+w.length)||' ')) cand.push({id:id,i:i,len:w.length,plural:/s$/.test(w)});
+        }
+      });
+    });
+    /* the longest name wins where two overlap ("seated side bend" over "side bend") */
+    cand.sort(function(x,y){return y.len-x.len||x.i-y.i;});
+    const out=[];
+    cand.forEach(function(c){
+      if(out.some(function(o){return o.i<c.i+c.len&&c.i<o.i+o.len;})) return;
+      out.push(c);
+    });
+    return out.map(function(c){
+      const th=l.slice(Math.max(0,c.i-4),c.i)==='the '?4:0;
+      return {id:c.id,s:c.i-th,e:c.i+c.len,i:c.i,txt:t.slice(c.i-th,c.i+c.len),plural:c.plural};
+    }).sort(function(x,y){return x.s-y.s;});
+  };
+  const join=function(l,word){return l.length<2?l.join(''):l.slice(0,-1).join(', ')+' '+word+' '+l[l.length-1];};
+  /* the names in a span, cut down to those that stay */
+  const trim=function(t,keep){
+    const all=find(t); if(!all.length) return {t:t,n:0,all:0};
+    const k=all.filter(function(x){return keep(x.id);});
+    if(k.length===all.length) return {t:t,n:k.length,all:all.length};
+    if(!k.length) return {t:'',n:0,all:all.length};
+    const a0=all[0].s, a1=all[all.length-1].e, word=/\bor\b/.test(t.slice(a0,a1).toLowerCase())?'or':'and';
+    const names=k.map(function(x,i){return i||a0>0?x.txt:x.txt.charAt(0).toUpperCase()+x.txt.slice(1);});
+    let rest=t.slice(a1);
+    const one=k.length===1&&!k[0].plural;
+    if(one) rest=rest.replace(/^ are\b/,' is').replace(/^ keep\b/,' keeps');
+    return {t:t.slice(0,a0)+join(names,word)+rest,n:k.length,all:all.length};
+  };
+  let claimed=0, claimKept=0, claimOut=[];
+  const parts=text.match(/[^.!?]+[.!?]*\s*/g)||[text];
+  const out=parts.map(function(sen){
+    const tail=/\s*$/.exec(sen)[0], body=sen.slice(0,sen.length-tail.length);
+    const cut=body.search(/, so /i);
+    let claim=cut<0?body:body.slice(0,cut), later=cut<0?'':body.slice(cut);
+    const stop=/[.!?]$/.test(claim)?'':(/[.!?]$/.test(later)?later.slice(-1):'');
+    if(stop) later=later.slice(0,-1);
+    const c=trim(claim,function(id){return list.indexOf(id)>=0;});
+    claimed+=c.all; claimKept+=c.n;
+    find(claim).forEach(function(x){if(list.indexOf(x.id)<0) claimOut.push(x.id);});
+    let l2=later;
+    if(later&&safe){const r=trim(later,function(id){return safe.indexOf(id)<0;}); l2=r.all&&!r.n?'':r.t;}
+    /* the claim named only stretches that are not in: it goes, and a suggestion for later stands on its own */
+    if(c.all&&!c.n){
+      const rest=l2.replace(/^,\s*so\s+/i,'');
+      return rest?rest.charAt(0).toUpperCase()+rest.slice(1)+(stop||'.')+tail:'';
+    }
+    return c.t+l2+(stop||'')+tail;
+  });
+  /* a line about a part she did not ask for: just the sentences that still hold */
+  const asked=!Array.isArray(focus)||(pt&&focus.indexOf(pt[0])>=0);
+  if(claimed&&!claimKept&&!asked) return out.join('').replace(/\s+$/,'');
+  if(claimed&&!claimKept){
+    const allOut=claimOut.every(function(id){return avoid.indexOf(id)>=0;});
+    return allOut?'Nothing for '+what+' suits your answers here, so this routine leaves '+(pt&&/s$/.test(pt[1])?'them':'it')+' out.'
+      :'The stretches for '+what+' that suit your answers did not fit in '+mins+' minutes.';
+  }
+  return out.join('').replace(/\s+$/,'');
 }
 /* The settled form of the disc care entry, in whichever shape the data gives it: a BRIEF.care entry `discOld`, or an
    `old` object on the disc entry ({text, share, avoid, prefer, left}), else the disc entry without its lower share. */
@@ -2669,6 +2731,7 @@ function advisePlan(ans){
     return true;
   };
   const strapNo=ans.strap==='no';
+  let safe=[];     /* what the safety rules and care notes leave out, as against her practical limits */
   ADVICE.rules.forEach(function(r){
     if(r.areas){
       /* what she wants to stretch, then where it hurts, ahead of the goals */
@@ -2692,6 +2755,7 @@ function advisePlan(ans){
     if(r.share!=null) share=Math.min(share,r.share);
     if(r.why) why.push({text:r.why,needs:r.needs||null});
   });
+  safe=avoid.slice();
   /* her practical limits, after the safety rules: the strap and where she will stretch */
   const lc=function(t){t=String(t||''); return t.charAt(0).toLowerCase()+t.slice(1);};
   const takeOut=function(ids,reason){
@@ -2734,6 +2798,7 @@ function advisePlan(ans){
     /* no follow-up in the data: an old disc still drops the lower share (the settled form of the entry) */
     if(!fo&&cid==='disc'&&ans.disc==='old') c=discOld(CARE,c);
     takeOut(c.avoid,c.left||'they need extra care with what you told me, so they are left out to be safe');
+    L(c.avoid).forEach(function(x){if(EX[x]) uniq(safe,x);});
     if(typeof c.share==='number'&&isFinite(c.share)) share=Math.min(share,Math.max(0,c.share));
     carePref.push(c);
     if(c.text&&care.indexOf(String(c.text))<0) care.push(String(c.text));
@@ -2835,7 +2900,7 @@ function advisePlan(ans){
   const limitText=lim.length?lim.map(function(t,i){return i?lc(t):t;}).join(', ')+'.':'';
   /* the stretches each note names as the nearest (allowed ones only), so the routine can be checked against them */
   const noteNames=notes.map(function(t){return named(t).filter(function(id){return avoid.indexOf(id)<0;});});
-  return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30), notes:notes, limits:lim, limitText:limitText, care:care, noteNames:noteNames};
+  return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30), notes:notes, limits:lim, limitText:limitText, care:care, noteNames:noteNames, safe:safe};
 }
 /* ---------- "Describe a routine": reading a brief typed in her own words ----------
    The words and what they mean are data, in BRIEF (the physio agent's block above). This code finds them, works out
@@ -3307,7 +3372,7 @@ function briefPlan(interp){
   if(!base) base=mins+' minute stretch';
   base=String(base).slice(0,30);
   try{P.name=typeof BRIEF_USE.uniqueName==='function'?BRIEF_USE.uniqueName(base):base;}catch(e){P.name=base;}
-  P.notes=gapNotes(P.notes,list,avoid,mins,focus);
+  P.notes=gapNotes(P.notes,list,avoid,mins,focus,safe);
   P.focus=focus; P.list=list; P.why=why; P.left=left; P.avoid=avoid; P.prefer=prefer; P.cautionShare=cs;
   return P;
 }
@@ -5787,7 +5852,7 @@ function advBuild(){
     p.notes.push(have<T?'Only about '+mw(hv)+' of stretches '+(hv===1?'suits':'suit')+' your answers, so this routine comes to about '+mw(a)+', not '+mins+'.'
       :'This routine comes to about '+mw(a)+', not '+mins+'. Stretches that need care are kept to a small share of the time, and nothing else that suits your answers would fit.');
   }
-  p.notes=gapNotes(p.notes,list,p.avoid,mins,p.focus);
+  p.notes=gapNotes(p.notes,list,p.avoid,mins,p.focus,p.safe);
   AD.plan=p; AD.list=list;
   if(!AD.name){const pr=advPrevRoutine(); AD.name=pr?pr.name:uniqueName(p.name);}
 }
