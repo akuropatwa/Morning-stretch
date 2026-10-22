@@ -2582,6 +2582,23 @@ function advSingle(k){
   if(q.single===false) return false;
   return (typeof k==='string'&&ADV_SINGLE.indexOf(k)>=0)||!q.none;
 }
+/* A gap line ("There is no standing hamstring hold. Leg swings are the nearest...") may only point to a stretch that is
+   actually in the routine. If none it names is in the list, it becomes a plain line about that part: nothing suits
+   (the named stretches are left out by her answers), or they did not fit in the time. Lines that name no stretch stay. */
+function gapNote(text,list,avoid,mins){
+  text=String(text||''); if(!text) return text;
+  const t=text.toLowerCase();
+  const names=Object.keys(EX).filter(function(id){
+    const n=EX[id].name.toLowerCase(), m=n.replace(/^(standing|seated) /,'');
+    return t.indexOf(n)>=0||(m!==n&&t.indexOf(m)>=0);
+  });
+  if(!names.length||names.some(function(id){return (list||[]).indexOf(id)>=0;})) return text;
+  const pt=PARTS.filter(function(x){return t.indexOf(x[1].toLowerCase().split(/[ ,]/)[0].replace(/s$/,''))>=0;})[0];
+  const what=pt?'your '+pt[1].toLowerCase():'that';
+  const allOut=names.every(function(id){return (avoid||[]).indexOf(id)>=0;});
+  return allOut?'Nothing for '+what+' suits your answers here, so this routine leaves '+(pt?'them':'it')+' out.'
+    :'The stretches for '+what+' that suit your answers did not fit in '+mins+' minutes.';
+}
 /* The settled form of the disc care entry, in whichever shape the data gives it: a BRIEF.care entry `discOld`, or an
    `old` object on the disc entry ({text, share, avoid, prefer, left}), else the disc entry without its lower share. */
 function discOld(CARE,disc){
@@ -2670,7 +2687,7 @@ function advisePlan(ans){
     });
     /* only the ones she would otherwise have had first are named in "Left out on purpose"; the limit line says the rest */
     const named=out.filter(function(id){return prefer.indexOf(id)>=0&&avoid.indexOf(id)<0;});
-    takeOut(named,W.left||'they do not suit where you will stretch ('+lc(W.label)+')');
+    takeOut(named,W.left||'they do not suit where you will stretch ('+lc(String(W.short||W.label).replace(/\bmy\b/g,'your'))+')');
     takeOut(out,'');
     if(only||not.length) limits.push(W.short||W.limit||W.label||'');
   }
@@ -2734,6 +2751,31 @@ function advisePlan(ans){
     return said.indexOf(nm.split(/[ ,]/)[0].replace(/s$/,''))<0;
   });
   if(short.length) notes.push('Nothing for your '+short.map(function(pt){return lc(PARTS.filter(function(x){return x[0]===pt;})[0][1]);}).join(' or ')+' suits your answers, so this routine leaves '+(short.length===1?'it':'them')+' out.');
+  /* An area she wants to stretch whose usual stretches her limits rule out (hamstrings, standing only): the stretches
+     for that area that are still allowed come first (leg swings standing; leg swings and the nerve glide at a desk),
+     as Describe does. Its own stretches, any of that body part, and Describe's area list for that part all count.
+     Nothing a safety rule left out comes back: anything in avoid stays out. */
+  let AREAS=[]; try{if(typeof BRIEF!=='undefined'&&BRIEF&&Array.isArray(BRIEF.areas)) AREAS=BRIEF.areas;}catch(e){}
+  const named=function(t){t=String(t||'').toLowerCase(); return Object.keys(EX).filter(function(id){
+    const n=EX[id].name.toLowerCase(), m=n.replace(/^(standing|seated) /,'');
+    return t.indexOf(n)>=0||(m!==n&&t.indexOf(m)>=0);});};
+  const gapPick={};
+  stretchOpts.forEach(function(o){
+    const usual=L(o.prefer).filter(function(id){return !!EX[id];});
+    if(!usual.length||usual.some(function(id){return avoid.indexOf(id)<0;})) return;
+    L(o.parts).forEach(function(pt){
+      const pool=[];
+      L(o.ids).forEach(function(id){uniq(pool,id);});
+      AREAS.forEach(function(a){if(a&&L(a.parts).length===1&&a.parts[0]===pt) L(a.ids).forEach(function(id){uniq(pool,id);});});
+      Object.keys(EX).forEach(function(id){if(EX[id].part===pt) uniq(pool,id);});
+      /* the ones the option's gap line names go first (it says they are the nearest) */
+      const line=W&&W.gaps&&W.gaps[pt]||W&&W.note||'';
+      const first=named(line);
+      const ok=pool.filter(function(id){return EX[id]&&avoid.indexOf(id)<0;}).sort(function(a,b){return (first.indexOf(a)<0?1:0)-(first.indexOf(b)<0?1:0);});
+      if(ok.length) gapPick[pt]=ok;
+      ok.slice().reverse().forEach(function(id){const i=prefer.indexOf(id); if(i>=0) prefer.splice(i,1); prefer.unshift(id);});
+    });
+  });
   /* a care entry's prefer (an old, settled disc: press-ups for a lower back routine): picked first, only when one of
      its preferWhen parts is in the focus, and never bringing back anything left out */
   carePref.forEach(function(c){
@@ -2754,7 +2796,9 @@ function advisePlan(ans){
   else if(g0&&g0.name) name=g0.name;
   const lim=limits.filter(Boolean);
   const limitText=lim.length?lim.map(function(t,i){return i?lc(t):t;}).join(', ')+'.':'';
-  return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30), notes:notes, limits:lim, limitText:limitText, care:care};
+  /* the stretches each note names as the nearest (allowed ones only), so the routine can be checked against them */
+  const noteNames=notes.map(function(t){return named(t).filter(function(id){return avoid.indexOf(id)<0;});});
+  return {focus:focus, avoid:avoid, prefer:pref, cautionShare:share, why:why, left:left, name:name.slice(0,30), notes:notes, limits:lim, limitText:limitText, care:care, noteNames:noteNames};
 }
 /* ---------- "Describe a routine": reading a brief typed in her own words ----------
    The words and what they mean are data, in BRIEF (the physio agent's block above). This code finds them, works out
@@ -3226,6 +3270,7 @@ function briefPlan(interp){
   if(!base) base=mins+' minute stretch';
   base=String(base).slice(0,30);
   try{P.name=typeof BRIEF_USE.uniqueName==='function'?BRIEF_USE.uniqueName(base):base;}catch(e){P.name=base;}
+  P.notes=P.notes.map(function(t){return gapNote(t,list,avoid,mins);}).filter(function(t,i,a){return t&&a.indexOf(t)===i;});
   P.focus=focus; P.list=list; P.why=why; P.left=left; P.avoid=avoid; P.prefer=prefer; P.cautionShare=cs;
   return P;
 }
@@ -5705,6 +5750,7 @@ function advBuild(){
     p.notes.push(have<T?'Only about '+mw(hv)+' of stretches '+(hv===1?'suits':'suit')+' your answers, so this routine comes to about '+mw(a)+', not '+mins+'.'
       :'This routine comes to about '+mw(a)+', not '+mins+'. Stretches that need care are kept to a small share of the time, and nothing else that suits your answers would fit.');
   }
+  p.notes=p.notes.map(function(t){return gapNote(t,list,p.avoid,mins);}).filter(function(t,i,a){return t&&a.indexOf(t)===i;});
   AD.plan=p; AD.list=list;
   if(!AD.name){const pr=advPrevRoutine(); AD.name=pr?pr.name:uniqueName(p.name);}
 }
